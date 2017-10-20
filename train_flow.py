@@ -1,11 +1,11 @@
 import os
 
-omp_threads = 136
+omp_threads = 50
 intra_threads = 2
 os.environ["KMP_BLOCKTIME"] = "0" 
 os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
 os.environ["OMP_NUM_THREADS"]= str(omp_threads)
-os.environ['OMP_SCHEDULE'] = 'dynamic'
+#os.environ['OMP_SCHEDULE'] = 'dynamic'
 os.environ['MKL_VERBOSE'] = '1'
 os.environ['KMP_SETTINGS'] = '1'
 
@@ -24,7 +24,7 @@ K.set_image_dim_ordering('tf')
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import History 
 from keras.models import Model
-from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, Dropout, concatenate
+from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, Dropout, concatenate, Dense
 #from keras.layers import Convolution3D, MaxPooling3D, UpSampling3D
 #from keras.layers import core
 from keras.optimizers import Adam
@@ -46,19 +46,22 @@ def dice_coef_loss(y_true, y_pred):
 	return -K.log(dice_coef(y_true, y_pred))
 
 
-def model5_MultiLayer(weights=False, 
-	filepath="", 
-	img_rows = 224, 
-	img_cols = 224, 
-	n_cl_in=3,
-	n_cl_out=3, 
-	dropout=0.2, 
-	learning_rate = 0.001,
-	print_summary = False):
+def model5_MultiLayer(weights, 
+	filepath, 
+	img_rows,
+	img_cols,
+	n_cl_in,
+	n_cl_out,
+    options, run_metadata):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
+	dropout=0.5
+	learning_rate = 0.001
+	print_summary = False
+
 	inputs = Input((img_rows, img_cols, n_cl_in))
-	conv1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(inputs)
+	x = inputs #Dense(128, activation='relu')(inputs)  # fully-connected layer with 128 units and ReLU activation
+	conv1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(x)
 	conv1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv1)
 	pool1 = MaxPooling2D(pool_size=(2, 2), data_format='channels_last')(conv1)
 
@@ -101,7 +104,7 @@ def model5_MultiLayer(weights=False,
 	
 	model.compile(optimizer=Adam(lr=learning_rate),
 		loss='binary_crossentropy', #dice_coef_loss,
-		metrics=['accuracy'])
+		metrics=['accuracy'], options=options, run_metadata=run_metadata)
 
 	if weights and len(filepath)>0:
 		model.load_weights(filepath)
@@ -206,10 +209,19 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	validation_generator = DataGenerator(**params).generate(NUM_VAL)
 
 
+	sess = tf.Session(config=tf.ConfigProto(
+        intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
+
+
+	run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+	run_metadata = tf.RunMetadata()
+
+	K.set_session(sess)
+
 	print('-'*30)
 	print('Creating and compiling model...')
 	print('-'*30)
-	model		= model5_MultiLayer(False, False, img_rows, img_cols, input_no,	output_no)
+	model		= model5_MultiLayer(False, False, img_rows, img_cols, input_no,	output_no, run_options, run_metadata)
 	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
 	print ("Writing model to ", model_fn)
 
@@ -234,15 +246,8 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# K.set_session(sess)
 
 
-	sess = tf.Session(config=tf.ConfigProto(
-        intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
-
 	
 
-	# run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-	# run_metadata = tf.RunMetadata()
-
-	K.set_session(sess)
 
 	history = model.fit_generator(generator = training_generator,
                     steps_per_epoch = NUM_TRAIN//BATCH_SIZE,
@@ -250,13 +255,13 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
                     validation_steps = NUM_VAL//BATCH_SIZE,
                     verbose=1, callbacks=[model_checkpoint], workers=1)
 
-	# from tensorflow.python.client import timeline
+	from tensorflow.python.client import timeline
 
-	# # Create the Timeline object, and write it to a json
-	# tl = timeline.Timeline(step_stats=run_metadata.step_stats)
-	# ctf = tl.generate_chrome_trace_format()
-	# with open('timeline.json', 'w') as f:
-	#     f.write(ctf)
+	# Create the Timeline object, and write it to a json
+	tl = timeline.Timeline(step_stats=run_metadata.step_stats)
+	ctf = tl.generate_chrome_trace_format()
+	with open('timeline_train_flow.json', 'w') as f:
+	    f.write(ctf)
 
 	json_fn = os.path.join(data_path, fn+'.json')
 	with open(json_fn,'w') as f:

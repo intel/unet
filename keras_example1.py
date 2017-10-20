@@ -18,7 +18,10 @@ limitations under the License.
 
 '''
   Test program to evaluate if MKL is being used.
-  This should produce messages at runtime about MKL.
+  This should produce messages at runtime about MKL, such as:
+  MKL_VERBOSE SGEMM(N,N,10,128,128,0x7f3b0effc148,0x7f3a9d088440,10,0x7f3a10203c40,128,0x7f3b0effc150,0x7f3a9d0ce040,10) 41.32us CNR:OFF Dyn:1 FastMM:1 TID:0  NThr:50 WDiv:HOST:+0.000
+  MKL_VERBOSE SGEMM(N,T,10,128,128,0x7f3b0f7fd148,0x7f3a9d0d0840,10,0x7f3a10203c40,128,0x7f3b0f7fd150,0x7f3a101f0040,10) 60.00us CNR:OFF Dyn:1 FastMM:1 TID:0  NThr:50 WDiv:HOST:+0.000
+
   It should also produce a Tensorflow timeline showing
   the execution trace. 
 '''
@@ -63,7 +66,7 @@ batchSize = 128  # Btach size for network training
 '''
 Use tensorflow placeholders as the input and label variables for our model.
 '''
-img = tf.placeholder(tf.float32, shape=(batchSize, 28, 28, 1)) # Images are 28x28x1 (HxWxC)
+img = tf.placeholder(tf.float32, shape=(batchSize, 784)) # Images are 28x28x1 (HxWxC)
 labels = tf.placeholder(tf.float32, shape=(batchSize, 10))
 
 # Keras layers can be called on TensorFlow tensors.
@@ -87,7 +90,7 @@ sess.run(init_op)
 # two random arrays. In reality we want to have a generator to
 # load in batch data iteratively.
 batch ={}
-batch[0] = np.random.rand(batchSize, 28, 28, 1)
+batch[0] = np.random.rand(batchSize, 784)
 batch[1] = np.random.rand(batchSize,10)
 
 # Run training loop
@@ -96,16 +99,16 @@ with sess.as_default():
 	run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 	run_metadata = tf.RunMetadata()
 
-    for i in range(100):
-        #batch = mnist_data.train.next_batch(50)
-        
-        # train_step.run(feed_dict={img: batch[0],
-        #                           labels: batch[1]})
+	for i in range(100):
+	    #batch = mnist_data.train.next_batch(50)
+	    
+	    # train_step.run(feed_dict={img: batch[0],
+	    #                           labels: batch[1]})
 
 		sess.run(train_step,
 		             feed_dict={img: batch[0],
 		                          labels: batch[1]},
-		             options=options,
+		             options=run_options,
 		             run_metadata=run_metadata)
 
 	'''
