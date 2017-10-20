@@ -47,6 +47,8 @@ os.environ['KMP_SETTINGS'] = '1'  # prints the KNL settings at runtime
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
 
+os.environ['MKL_DYNAMIC']='1'
+
 import tensorflow as tf
 
 sess = tf.Session(config=tf.ConfigProto(
@@ -61,7 +63,7 @@ from keras.objectives import categorical_crossentropy
 
 import numpy as np
 
-batchSize = 128  # Btach size for network training
+batchSize = 1024  # Batch size for network training
 
 '''
 Use tensorflow placeholders as the input and label variables for our model.
