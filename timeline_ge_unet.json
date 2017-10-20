@@ -1,0 +1,4240 @@
+{
+    "traceEvents": [
+        {
+            "ph": "M",
+            "args": {
+                "name": "Allocators"
+            },
+            "pid": 0,
+            "name": "process_name"
+        },
+        {
+            "ph": "M",
+            "args": {
+                "name": "/job:localhost/replica:0/task:0/cpu:0 Compute"
+            },
+            "pid": 1,
+            "name": "process_name"
+        },
+        {
+            "ph": "M",
+            "args": {
+                "name": "/job:localhost/replica:0/task:0/cpu:0 Tensors"
+            },
+            "pid": 2,
+            "name": "process_name"
+        },
+        {
+            "name": "NoOp",
+            "args": {
+                "name": "_SOURCE",
+                "op": "NoOp"
+            },
+            "pid": 1,
+            "ts": 1508534382576268,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 487
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/sub/_51__cf__26",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576854,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 39
+        },
+        {
+            "name": "_Arg",
+            "args": {
+                "name": "_arg_dropout_1/keras_learning_phase_0_2",
+                "op": "_Arg"
+            },
+            "pid": 1,
+            "ts": 1508534382576859,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 52
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "up_sampling2d_1/strided_slice/stack",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576903,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 21
+        },
+        {
+            "name": "_Arg",
+            "args": {
+                "name": "_arg_conv2d_11_target_0_1",
+                "op": "_Arg"
+            },
+            "pid": 1,
+            "ts": 1508534382576856,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 60
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "up_sampling2d_1/strided_slice/stack_1",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576933,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "up_sampling2d_1/Const",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576956,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "concatenate_1/concat/axis",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576978,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 14
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/Const",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382576998,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 14
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/sub_1/x",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577019,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 14
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_1/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382576962,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 68
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/Mean/reduction_indices",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577039,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "_Arg",
+            "args": {
+                "name": "_arg_input_1_0_3",
+                "op": "_Arg"
+            },
+            "pid": 1,
+            "ts": 1508534382576843,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 226
+        },
+        {
+            "name": "_Arg",
+            "args": {
+                "name": "_arg_conv2d_11_sample_weights_0_0",
+                "op": "_Arg"
+            },
+            "pid": 1,
+            "ts": 1508534382576874,
+            "cat": "Op",
+            "tid": 4,
+            "ph": "X",
+            "dur": 198
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/Mean_1/reduction_indices",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577062,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_0",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577046,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 29
+        },
+        {
+            "name": "Switch",
+            "args": {
+                "input0": "_arg_dropout_1/keras_learning_phase_0_2",
+                "input1": "_arg_dropout_1/keras_learning_phase_0_2",
+                "name": "dropout_1/cond/Switch",
+                "op": "Switch"
+            },
+            "pid": 1,
+            "ts": 1508534382576946,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 142
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382576911,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 0
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382576946,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 0
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382576911,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 1
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382576946,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 1
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/NotEqual/y",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577097,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_1",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577078,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 41
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_1/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577099,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 62
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_1/kernel",
+                "input1": "DMT/_0",
+                "name": "conv2d_1/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577108,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 55
+        },
+        {
+            "name": "conv2d_1/kernel",
+            "pid": 1,
+            "ts": 1508534382577030,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 2
+        },
+        {
+            "name": "conv2d_1/kernel",
+            "pid": 1,
+            "ts": 1508534382577108,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 2
+        },
+        {
+            "name": "DMT/_0",
+            "pid": 1,
+            "ts": 1508534382577075,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 3
+        },
+        {
+            "name": "DMT/_0",
+            "pid": 1,
+            "ts": 1508534382577108,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 3
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/conv2d_11_loss/Const_1",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577162,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 19
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_2",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577171,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 25
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "loss/mul/x",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577190,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 14
+        },
+        {
+            "name": "Identity",
+            "args": {
+                "input0": "_arg_dropout_1/keras_learning_phase_0_2",
+                "name": "dropout_1/cond/pred_id",
+                "op": "Identity"
+            },
+            "pid": 1,
+            "ts": 1508534382577142,
+            "cat": "Op",
+            "tid": 4,
+            "ph": "X",
+            "dur": 76
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382576911,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 4
+        },
+        {
+            "name": "_arg_dropout_1/keras_learning_phase_0_2",
+            "pid": 1,
+            "ts": 1508534382577142,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 4
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_2/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577173,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 52
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "metrics/acc/Const",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577211,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_2/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577188,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 39
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_4",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577235,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 19
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_1/bias",
+                "input1": "DMT/_2",
+                "name": "conv2d_1/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577204,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 48
+        },
+        {
+            "name": "conv2d_1/bias",
+            "pid": 1,
+            "ts": 1508534382577161,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 5
+        },
+        {
+            "name": "conv2d_1/bias",
+            "pid": 1,
+            "ts": 1508534382577204,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 5
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_3/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577238,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 40
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_5",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577258,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 21
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_2/kernel",
+                "input1": "DMT/_4",
+                "name": "conv2d_2/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577261,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 36
+        },
+        {
+            "name": "conv2d_2/kernel",
+            "pid": 1,
+            "ts": 1508534382577225,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 6
+        },
+        {
+            "name": "conv2d_2/kernel",
+            "pid": 1,
+            "ts": 1508534382577261,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 6
+        },
+        {
+            "name": "DMT/_4",
+            "pid": 1,
+            "ts": 1508534382577254,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 7
+        },
+        {
+            "name": "DMT/_4",
+            "pid": 1,
+            "ts": 1508534382577261,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 7
+        },
+        {
+            "name": "NotEqual",
+            "args": {
+                "input0": "_arg_conv2d_11_sample_weights_0_0",
+                "input1": "loss/conv2d_11_loss/NotEqual/y",
+                "name": "loss/conv2d_11_loss/NotEqual",
+                "op": "NotEqual"
+            },
+            "pid": 1,
+            "ts": 1508534382577247,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 73
+        },
+        {
+            "name": "_arg_conv2d_11_sample_weights_0_0",
+            "pid": 1,
+            "ts": 1508534382577072,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 8
+        },
+        {
+            "name": "_arg_conv2d_11_sample_weights_0_0",
+            "pid": 1,
+            "ts": 1508534382577247,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 8
+        },
+        {
+            "name": "loss/conv2d_11_loss/NotEqual/y",
+            "pid": 1,
+            "ts": 1508534382577113,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 9
+        },
+        {
+            "name": "loss/conv2d_11_loss/NotEqual/y",
+            "pid": 1,
+            "ts": 1508534382577247,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 9
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_7",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577289,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 164
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_3/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577454,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 26
+        },
+        {
+            "name": "Cast",
+            "args": {
+                "input0": "loss/conv2d_11_loss/NotEqual",
+                "name": "loss/conv2d_11_loss/Cast",
+                "op": "Cast"
+            },
+            "pid": 1,
+            "ts": 1508534382577462,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 42
+        },
+        {
+            "name": "loss/conv2d_11_loss/NotEqual",
+            "pid": 1,
+            "ts": 1508534382577320,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 10
+        },
+        {
+            "name": "loss/conv2d_11_loss/NotEqual",
+            "pid": 1,
+            "ts": 1508534382577462,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 10
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_3/kernel",
+                "input1": "DMT/_7",
+                "name": "conv2d_3/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577462,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 50
+        },
+        {
+            "name": "DMT/_7",
+            "pid": 1,
+            "ts": 1508534382577453,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 11
+        },
+        {
+            "name": "DMT/_7",
+            "pid": 1,
+            "ts": 1508534382577462,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 11
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_8",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577488,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 18
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_2/bias",
+                "input1": "DMT/_5",
+                "name": "conv2d_2/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577298,
+            "cat": "Op",
+            "tid": 4,
+            "ph": "X",
+            "dur": 249
+        },
+        {
+            "name": "conv2d_2/bias",
+            "pid": 1,
+            "ts": 1508534382577227,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 12
+        },
+        {
+            "name": "conv2d_2/bias",
+            "pid": 1,
+            "ts": 1508534382577298,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 12
+        },
+        {
+            "name": "DMT/_5",
+            "pid": 1,
+            "ts": 1508534382577279,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 13
+        },
+        {
+            "name": "DMT/_5",
+            "pid": 1,
+            "ts": 1508534382577298,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 13
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_4/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577527,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 29
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_3/bias",
+                "input1": "DMT/_8",
+                "name": "conv2d_3/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577531,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 37
+        },
+        {
+            "name": "conv2d_3/bias",
+            "pid": 1,
+            "ts": 1508534382577480,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 14
+        },
+        {
+            "name": "conv2d_3/bias",
+            "pid": 1,
+            "ts": 1508534382577531,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 14
+        },
+        {
+            "name": "DMT/_8",
+            "pid": 1,
+            "ts": 1508534382577506,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 15
+        },
+        {
+            "name": "DMT/_8",
+            "pid": 1,
+            "ts": 1508534382577531,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 15
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Cast",
+                "input1": "loss/conv2d_11_loss/Const_1",
+                "name": "loss/conv2d_11_loss/Mean_2",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534382577522,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 50
+        },
+        {
+            "name": "loss/conv2d_11_loss/Cast",
+            "pid": 1,
+            "ts": 1508534382577504,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 16
+        },
+        {
+            "name": "loss/conv2d_11_loss/Cast",
+            "pid": 1,
+            "ts": 1508534382577522,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 16
+        },
+        {
+            "name": "loss/conv2d_11_loss/Const_1",
+            "pid": 1,
+            "ts": 1508534382577181,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 17
+        },
+        {
+            "name": "loss/conv2d_11_loss/Const_1",
+            "pid": 1,
+            "ts": 1508534382577522,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 17
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_10",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577564,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_4/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577561,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 26
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_5/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577582,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 27
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_11",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577595,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_11/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577585,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 35
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_4/kernel",
+                "input1": "DMT/_10",
+                "name": "conv2d_4/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577587,
+            "cat": "Op",
+            "tid": 4,
+            "ph": "X",
+            "dur": 34
+        },
+        {
+            "name": "conv2d_4/kernel",
+            "pid": 1,
+            "ts": 1508534382577556,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 18
+        },
+        {
+            "name": "conv2d_4/kernel",
+            "pid": 1,
+            "ts": 1508534382577587,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 18
+        },
+        {
+            "name": "DMT/_10",
+            "pid": 1,
+            "ts": 1508534382577580,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 19
+        },
+        {
+            "name": "DMT/_10",
+            "pid": 1,
+            "ts": 1508534382577587,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 19
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_13",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577618,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 37
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_38",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577642,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 18
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_5/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577651,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 28
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_5/kernel",
+                "input1": "DMT/_13",
+                "name": "conv2d_5/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577663,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 30
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_14",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577687,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_4/bias",
+                "input1": "DMT/_11",
+                "name": "conv2d_4/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577621,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 82
+        },
+        {
+            "name": "DMT/_11",
+            "pid": 1,
+            "ts": 1508534382577610,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 20
+        },
+        {
+            "name": "DMT/_11",
+            "pid": 1,
+            "ts": 1508534382577621,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 20
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_11/bias",
+                "input1": "DMT/_38",
+                "name": "conv2d_11/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577668,
+            "cat": "Op",
+            "tid": 4,
+            "ph": "X",
+            "dur": 48
+        },
+        {
+            "name": "conv2d_11/bias",
+            "pid": 1,
+            "ts": 1508534382577620,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 21
+        },
+        {
+            "name": "conv2d_11/bias",
+            "pid": 1,
+            "ts": 1508534382577668,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 21
+        },
+        {
+            "name": "DMT/_38",
+            "pid": 1,
+            "ts": 1508534382577660,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 22
+        },
+        {
+            "name": "DMT/_38",
+            "pid": 1,
+            "ts": 1508534382577668,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "t",
+            "id": 22
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_6/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577706,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 27
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_6/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577717,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 26
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_5/bias",
+                "input1": "DMT/_14",
+                "name": "conv2d_5/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577709,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 33
+        },
+        {
+            "name": "DMT/_14",
+            "pid": 1,
+            "ts": 1508534382577702,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 23
+        },
+        {
+            "name": "DMT/_14",
+            "pid": 1,
+            "ts": 1508534382577709,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 23
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_16",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577740,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_11/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577729,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 28
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_17",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577750,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_37",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577765,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 15
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_7/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382577755,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 28
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_6/kernel",
+                "input1": "DMT/_16",
+                "name": "conv2d_6/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577762,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 37
+        },
+        {
+            "name": "conv2d_6/kernel",
+            "pid": 1,
+            "ts": 1508534382577733,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 24
+        },
+        {
+            "name": "conv2d_6/kernel",
+            "pid": 1,
+            "ts": 1508534382577762,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 24
+        },
+        {
+            "name": "DMT/_16",
+            "pid": 1,
+            "ts": 1508534382577755,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 25
+        },
+        {
+            "name": "DMT/_16",
+            "pid": 1,
+            "ts": 1508534382577762,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 25
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_21",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382577791,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_6/bias",
+                "input1": "DMT/_17",
+                "name": "conv2d_6/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577773,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 33
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_7/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578296,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 57
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_11/kernel",
+                "input1": "DMT/_37",
+                "name": "conv2d_11/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382577787,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 80
+        },
+        {
+            "name": "conv2d_11/kernel",
+            "pid": 1,
+            "ts": 1508534382577757,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 26
+        },
+        {
+            "name": "conv2d_11/kernel",
+            "pid": 1,
+            "ts": 1508534382577787,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 26
+        },
+        {
+            "name": "DMT/_37",
+            "pid": 1,
+            "ts": 1508534382577780,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 27
+        },
+        {
+            "name": "DMT/_37",
+            "pid": 1,
+            "ts": 1508534382577787,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 27
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_22",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578368,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 19
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_8/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578374,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 34
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_10/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578390,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 38
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_24",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578416,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 18
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_35",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578438,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 20
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_7/bias",
+                "input1": "DMT/_22",
+                "name": "conv2d_7/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578395,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 66
+        },
+        {
+            "name": "conv2d_7/bias",
+            "pid": 1,
+            "ts": 1508534382578353,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 28
+        },
+        {
+            "name": "conv2d_7/bias",
+            "pid": 1,
+            "ts": 1508534382578395,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 28
+        },
+        {
+            "name": "DMT/_22",
+            "pid": 1,
+            "ts": 1508534382578387,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 29
+        },
+        {
+            "name": "DMT/_22",
+            "pid": 1,
+            "ts": 1508534382578395,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 29
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_8/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578477,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 28
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_8/kernel",
+                "input1": "DMT/_24",
+                "name": "conv2d_8/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578442,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 60
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_10/bias",
+                "input1": "DMT/_35",
+                "name": "conv2d_10/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578467,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 43
+        },
+        {
+            "name": "conv2d_10/bias",
+            "pid": 1,
+            "ts": 1508534382578428,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 30
+        },
+        {
+            "name": "conv2d_10/bias",
+            "pid": 1,
+            "ts": 1508534382578467,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 30
+        },
+        {
+            "name": "DMT/_35",
+            "pid": 1,
+            "ts": 1508534382578458,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 31
+        },
+        {
+            "name": "DMT/_35",
+            "pid": 1,
+            "ts": 1508534382578467,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 31
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_26",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578514,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 17
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_7/kernel",
+                "input1": "DMT/_21",
+                "name": "conv2d_7/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578367,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 154
+        },
+        {
+            "name": "conv2d_7/kernel",
+            "pid": 1,
+            "ts": 1508534382577783,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 32
+        },
+        {
+            "name": "conv2d_7/kernel",
+            "pid": 1,
+            "ts": 1508534382578367,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 32
+        },
+        {
+            "name": "DMT/_21",
+            "pid": 1,
+            "ts": 1508534382577807,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 33
+        },
+        {
+            "name": "DMT/_21",
+            "pid": 1,
+            "ts": 1508534382578367,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 33
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_9/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578520,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 32
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_10/kernel",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578523,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 31
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_8/bias",
+                "input1": "DMT/_26",
+                "name": "conv2d_8/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578540,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 33
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_30",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578561,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 18
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_33",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578564,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 17
+        },
+        {
+            "name": "VariableV2",
+            "args": {
+                "name": "conv2d_9/bias",
+                "op": "VariableV2"
+            },
+            "pid": 1,
+            "ts": 1508534382578559,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 48
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_9/kernel",
+                "input1": "DMT/_30",
+                "name": "conv2d_9/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578586,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 30
+        },
+        {
+            "name": "conv2d_9/kernel",
+            "pid": 1,
+            "ts": 1508534382578552,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 34
+        },
+        {
+            "name": "conv2d_9/kernel",
+            "pid": 1,
+            "ts": 1508534382578586,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 34
+        },
+        {
+            "name": "DMT/_30",
+            "pid": 1,
+            "ts": 1508534382578579,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 35
+        },
+        {
+            "name": "DMT/_30",
+            "pid": 1,
+            "ts": 1508534382578586,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 35
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_10/kernel",
+                "input1": "DMT/_33",
+                "name": "conv2d_10/kernel/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578590,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 29
+        },
+        {
+            "name": "conv2d_10/kernel",
+            "pid": 1,
+            "ts": 1508534382578554,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 36
+        },
+        {
+            "name": "conv2d_10/kernel",
+            "pid": 1,
+            "ts": 1508534382578590,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 36
+        },
+        {
+            "name": "DMT/_33",
+            "pid": 1,
+            "ts": 1508534382578581,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 37
+        },
+        {
+            "name": "DMT/_33",
+            "pid": 1,
+            "ts": 1508534382578590,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 37
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_31",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382578618,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 59
+        },
+        {
+            "name": "_MklIdentity",
+            "args": {
+                "input0": "conv2d_9/bias",
+                "input1": "DMT/_31",
+                "name": "conv2d_9/bias/read",
+                "op": "_MklIdentity"
+            },
+            "pid": 1,
+            "ts": 1508534382578685,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 55
+        },
+        {
+            "name": "conv2d_9/bias",
+            "pid": 1,
+            "ts": 1508534382578607,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 38
+        },
+        {
+            "name": "conv2d_9/bias",
+            "pid": 1,
+            "ts": 1508534382578685,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 38
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_1/bias/read",
+                "input3": "DMT/_1",
+                "input0": "_arg_input_1_0_3",
+                "input1": "conv2d_1/kernel/read",
+                "name": "conv2d_1/BiasAdd",
+                "input4": "conv2d_1/kernel/read:1",
+                "input5": "DMT/_3",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "Op",
+            "tid": 5,
+            "ph": "X",
+            "dur": 41164
+        },
+        {
+            "name": "_arg_input_1_0_3",
+            "pid": 1,
+            "ts": 1508534382577069,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 39
+        },
+        {
+            "name": "_arg_input_1_0_3",
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "t",
+            "id": 39
+        },
+        {
+            "name": "conv2d_1/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577163,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 40
+        },
+        {
+            "name": "conv2d_1/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "t",
+            "id": 40
+        },
+        {
+            "name": "conv2d_1/bias/read",
+            "pid": 1,
+            "ts": 1508534382577252,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 41
+        },
+        {
+            "name": "conv2d_1/bias/read",
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "t",
+            "id": 41
+        },
+        {
+            "name": "DMT/_1",
+            "pid": 1,
+            "ts": 1508534382577119,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 42
+        },
+        {
+            "name": "DMT/_1",
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "t",
+            "id": 42
+        },
+        {
+            "name": "conv2d_1/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577163,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 43
+        },
+        {
+            "name": "conv2d_1/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577264,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "t",
+            "id": 43
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_1/BiasAdd",
+                "input1": "conv2d_1/BiasAdd:1",
+                "name": "conv2d_1/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534382618481,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 43940
+        },
+        {
+            "name": "conv2d_1/BiasAdd",
+            "pid": 1,
+            "ts": 1508534382618428,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "s",
+            "id": 44
+        },
+        {
+            "name": "conv2d_1/BiasAdd",
+            "pid": 1,
+            "ts": 1508534382618481,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 44
+        },
+        {
+            "name": "conv2d_1/BiasAdd:1",
+            "pid": 1,
+            "ts": 1508534382618428,
+            "cat": "DataFlow",
+            "tid": 5,
+            "ph": "s",
+            "id": 45
+        },
+        {
+            "name": "conv2d_1/BiasAdd:1",
+            "pid": 1,
+            "ts": 1508534382618481,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 45
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_6",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382662471,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 24
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_2/bias/read",
+                "input3": "conv2d_1/Relu:1",
+                "input0": "conv2d_1/Relu",
+                "input1": "conv2d_2/kernel/read",
+                "name": "conv2d_2/BiasAdd",
+                "input4": "conv2d_2/kernel/read:1",
+                "input5": "DMT/_6",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534382662503,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 130731
+        },
+        {
+            "name": "conv2d_2/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577297,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 46
+        },
+        {
+            "name": "conv2d_2/kernel/read",
+            "pid": 1,
+            "ts": 1508534382662503,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 46
+        },
+        {
+            "name": "conv2d_2/bias/read",
+            "pid": 1,
+            "ts": 1508534382577547,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 47
+        },
+        {
+            "name": "conv2d_2/bias/read",
+            "pid": 1,
+            "ts": 1508534382662503,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 47
+        },
+        {
+            "name": "conv2d_2/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577297,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 48
+        },
+        {
+            "name": "conv2d_2/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382662503,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 48
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_2/BiasAdd",
+                "input1": "conv2d_2/BiasAdd:1",
+                "name": "conv2d_2/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534382793288,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 43705
+        },
+        {
+            "name": "_MklMaxPool",
+            "args": {
+                "input0": "conv2d_2/Relu",
+                "input1": "conv2d_2/Relu:1",
+                "name": "max_pooling2d_1/MaxPool",
+                "op": "_MklMaxPool"
+            },
+            "pid": 1,
+            "ts": 1508534382837044,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 32013
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_9",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382869108,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 24
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_3/bias/read",
+                "input3": "max_pooling2d_1/MaxPool:2",
+                "input0": "max_pooling2d_1/MaxPool",
+                "input1": "conv2d_3/kernel/read",
+                "name": "conv2d_3/BiasAdd",
+                "input4": "conv2d_3/kernel/read:1",
+                "input5": "DMT/_9",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534382869141,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 65797
+        },
+        {
+            "name": "conv2d_3/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577512,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 49
+        },
+        {
+            "name": "conv2d_3/kernel/read",
+            "pid": 1,
+            "ts": 1508534382869141,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 49
+        },
+        {
+            "name": "conv2d_3/bias/read",
+            "pid": 1,
+            "ts": 1508534382577568,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 50
+        },
+        {
+            "name": "conv2d_3/bias/read",
+            "pid": 1,
+            "ts": 1508534382869141,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 50
+        },
+        {
+            "name": "conv2d_3/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577512,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 51
+        },
+        {
+            "name": "conv2d_3/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382869141,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 51
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_3/BiasAdd",
+                "input1": "conv2d_3/BiasAdd:1",
+                "name": "conv2d_3/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534382934995,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 28424
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_12",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534382963470,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_4/bias/read",
+                "input3": "conv2d_3/Relu:1",
+                "input0": "conv2d_3/Relu",
+                "input1": "conv2d_4/kernel/read",
+                "name": "conv2d_4/BiasAdd",
+                "input4": "conv2d_4/kernel/read:1",
+                "input5": "DMT/_12",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534382963500,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 120313
+        },
+        {
+            "name": "conv2d_4/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577621,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 52
+        },
+        {
+            "name": "conv2d_4/kernel/read",
+            "pid": 1,
+            "ts": 1508534382963500,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 52
+        },
+        {
+            "name": "conv2d_4/bias/read",
+            "pid": 1,
+            "ts": 1508534382577703,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 53
+        },
+        {
+            "name": "conv2d_4/bias/read",
+            "pid": 1,
+            "ts": 1508534382963500,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 53
+        },
+        {
+            "name": "conv2d_4/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577621,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 54
+        },
+        {
+            "name": "conv2d_4/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382963500,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 54
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_4/BiasAdd",
+                "input1": "conv2d_4/BiasAdd:1",
+                "name": "conv2d_4/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534383083868,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 28831
+        },
+        {
+            "name": "_MklMaxPool",
+            "args": {
+                "input0": "conv2d_4/Relu",
+                "input1": "conv2d_4/Relu:1",
+                "name": "max_pooling2d_2/MaxPool",
+                "op": "_MklMaxPool"
+            },
+            "pid": 1,
+            "ts": 1508534383112750,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 21434
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_15",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534383134235,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 26
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_5/bias/read",
+                "input3": "max_pooling2d_2/MaxPool:2",
+                "input0": "max_pooling2d_2/MaxPool",
+                "input1": "conv2d_5/kernel/read",
+                "name": "conv2d_5/BiasAdd",
+                "input4": "conv2d_5/kernel/read:1",
+                "input5": "DMT/_15",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534383134268,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 60484
+        },
+        {
+            "name": "conv2d_5/bias/read",
+            "pid": 1,
+            "ts": 1508534382577742,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 55
+        },
+        {
+            "name": "conv2d_5/bias/read",
+            "pid": 1,
+            "ts": 1508534383134268,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 55
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_5/BiasAdd",
+                "input1": "conv2d_5/BiasAdd:1",
+                "name": "conv2d_5/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534383194810,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16530
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_18",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534383211392,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_6/bias/read",
+                "input3": "conv2d_5/Relu:1",
+                "input0": "conv2d_5/Relu",
+                "input1": "conv2d_6/kernel/read",
+                "name": "conv2d_6/BiasAdd",
+                "input4": "conv2d_6/kernel/read:1",
+                "input5": "DMT/_18",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534383211422,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 107869
+        },
+        {
+            "name": "conv2d_6/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577799,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 56
+        },
+        {
+            "name": "conv2d_6/kernel/read",
+            "pid": 1,
+            "ts": 1508534383211422,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 56
+        },
+        {
+            "name": "conv2d_6/bias/read",
+            "pid": 1,
+            "ts": 1508534382577806,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 57
+        },
+        {
+            "name": "conv2d_6/bias/read",
+            "pid": 1,
+            "ts": 1508534383211422,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 57
+        },
+        {
+            "name": "conv2d_6/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577799,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 58
+        },
+        {
+            "name": "conv2d_6/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534383211422,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 58
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_6/BiasAdd",
+                "input1": "conv2d_6/BiasAdd:1",
+                "name": "conv2d_6/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534383319359,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16142
+        },
+        {
+            "name": "_MklToTf",
+            "args": {
+                "input0": "conv2d_6/Relu",
+                "input1": "conv2d_6/Relu:1",
+                "name": "Mkl2Tf/_41",
+                "op": "_MklToTf"
+            },
+            "pid": 1,
+            "ts": 1508534383335552,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 38571
+        },
+        {
+            "name": "Shape",
+            "args": {
+                "input0": "conv2d_6/Relu",
+                "name": "up_sampling2d_1/Shape",
+                "op": "Shape"
+            },
+            "pid": 1,
+            "ts": 1508534383374176,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 53
+        },
+        {
+            "name": "StridedSlice",
+            "args": {
+                "input2": "up_sampling2d_1/strided_slice/stack_1",
+                "input3": "up_sampling2d_1/strided_slice/stack_2",
+                "input0": "up_sampling2d_1/Shape",
+                "input1": "up_sampling2d_1/strided_slice/stack",
+                "name": "up_sampling2d_1/strided_slice",
+                "op": "StridedSlice"
+            },
+            "pid": 1,
+            "ts": 1508534383374243,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 67
+        },
+        {
+            "name": "Mul",
+            "args": {
+                "input0": "up_sampling2d_1/strided_slice",
+                "input1": "up_sampling2d_1/Const",
+                "name": "up_sampling2d_1/mul",
+                "op": "Mul"
+            },
+            "pid": 1,
+            "ts": 1508534383374328,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 42
+        },
+        {
+            "name": "ResizeNearestNeighbor",
+            "args": {
+                "input0": "conv2d_6/Relu",
+                "input1": "up_sampling2d_1/mul",
+                "name": "up_sampling2d_1/ResizeNearestNeighbor",
+                "op": "ResizeNearestNeighbor"
+            },
+            "pid": 1,
+            "ts": 1508534383374383,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 430766
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_19",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534383805200,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 23
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_20",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534383805231,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "_MklConcatV2",
+            "args": {
+                "input2": "concatenate_1/concat/axis",
+                "input3": "DMT/_19",
+                "input0": "up_sampling2d_1/ResizeNearestNeighbor",
+                "input1": "conv2d_4/Relu",
+                "name": "concatenate_1/concat",
+                "input4": "conv2d_4/Relu:1",
+                "input5": "DMT/_20",
+                "op": "_MklConcatV2"
+            },
+            "pid": 1,
+            "ts": 1508534383805255,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 376107
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_23",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534384181416,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 26
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_7/bias/read",
+                "input3": "concatenate_1/concat:1",
+                "input0": "concatenate_1/concat",
+                "input1": "conv2d_7/kernel/read",
+                "name": "conv2d_7/BiasAdd",
+                "input4": "conv2d_7/kernel/read:1",
+                "input5": "DMT/_23",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534384181450,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 664704
+        },
+        {
+            "name": "conv2d_7/kernel/read",
+            "pid": 1,
+            "ts": 1508534382578521,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 59
+        },
+        {
+            "name": "conv2d_7/kernel/read",
+            "pid": 1,
+            "ts": 1508534384181450,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 59
+        },
+        {
+            "name": "conv2d_7/bias/read",
+            "pid": 1,
+            "ts": 1508534382578461,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 60
+        },
+        {
+            "name": "conv2d_7/bias/read",
+            "pid": 1,
+            "ts": 1508534384181450,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 60
+        },
+        {
+            "name": "conv2d_7/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382578521,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 61
+        },
+        {
+            "name": "conv2d_7/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534384181450,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 61
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_7/BiasAdd",
+                "input1": "conv2d_7/BiasAdd:1",
+                "name": "conv2d_7/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534384846207,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 27791
+        },
+        {
+            "name": "_MklToTf",
+            "args": {
+                "input0": "conv2d_7/Relu",
+                "input1": "conv2d_7/Relu:1",
+                "name": "Mkl2Tf/_42",
+                "op": "_MklToTf"
+            },
+            "pid": 1,
+            "ts": 1508534384874051,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 77516
+        },
+        {
+            "name": "Switch",
+            "args": {
+                "input0": "conv2d_7/Relu",
+                "input1": "dropout_1/cond/pred_id",
+                "name": "dropout_1/cond/mul/Switch",
+                "op": "Switch"
+            },
+            "pid": 1,
+            "ts": 1508534384951619,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 64
+        },
+        {
+            "name": "dropout_1/cond/pred_id",
+            "pid": 1,
+            "ts": 1508534382577218,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 62
+        },
+        {
+            "name": "dropout_1/cond/pred_id",
+            "pid": 1,
+            "ts": 1508534384951619,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 62
+        },
+        {
+            "name": "Merge",
+            "args": {
+                "input0": "dropout_1/cond/Switch_1",
+                "input1": "dropout_1/cond/dropout/mul",
+                "name": "dropout_1/cond/Merge",
+                "op": "Merge"
+            },
+            "pid": 1,
+            "ts": 1508534384951702,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 54
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_25",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534384951771,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_27",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534384951800,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_8/bias/read",
+                "input3": "DMT/_25",
+                "input0": "dropout_1/cond/Merge",
+                "input1": "conv2d_8/kernel/read",
+                "name": "conv2d_8/BiasAdd",
+                "input4": "conv2d_8/kernel/read:1",
+                "input5": "DMT/_27",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534384951860,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 194751
+        },
+        {
+            "name": "conv2d_8/kernel/read",
+            "pid": 1,
+            "ts": 1508534382578502,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 63
+        },
+        {
+            "name": "conv2d_8/kernel/read",
+            "pid": 1,
+            "ts": 1508534384951860,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 63
+        },
+        {
+            "name": "conv2d_8/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382578502,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 64
+        },
+        {
+            "name": "conv2d_8/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534384951860,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 64
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_8/BiasAdd",
+                "input1": "conv2d_8/BiasAdd:1",
+                "name": "conv2d_8/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534385146685,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 29347
+        },
+        {
+            "name": "_MklToTf",
+            "args": {
+                "input0": "conv2d_8/Relu",
+                "input1": "conv2d_8/Relu:1",
+                "name": "Mkl2Tf/_44",
+                "op": "_MklToTf"
+            },
+            "pid": 1,
+            "ts": 1508534385176084,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 92080
+        },
+        {
+            "name": "Shape",
+            "args": {
+                "input0": "conv2d_8/Relu",
+                "name": "up_sampling2d_2/Shape",
+                "op": "Shape"
+            },
+            "pid": 1,
+            "ts": 1508534385268218,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 53
+        },
+        {
+            "name": "StridedSlice",
+            "args": {
+                "input2": "up_sampling2d_2/strided_slice/stack_1",
+                "input3": "up_sampling2d_2/strided_slice/stack_2",
+                "input0": "up_sampling2d_2/Shape",
+                "input1": "up_sampling2d_2/strided_slice/stack",
+                "name": "up_sampling2d_2/strided_slice",
+                "op": "StridedSlice"
+            },
+            "pid": 1,
+            "ts": 1508534385268623,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 118
+        },
+        {
+            "name": "Mul",
+            "args": {
+                "input0": "up_sampling2d_2/strided_slice",
+                "input1": "up_sampling2d_2/Const",
+                "name": "up_sampling2d_2/mul",
+                "op": "Mul"
+            },
+            "pid": 1,
+            "ts": 1508534385268765,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 40
+        },
+        {
+            "name": "ResizeNearestNeighbor",
+            "args": {
+                "input0": "conv2d_8/Relu",
+                "input1": "up_sampling2d_2/mul",
+                "name": "up_sampling2d_2/ResizeNearestNeighbor",
+                "op": "ResizeNearestNeighbor"
+            },
+            "pid": 1,
+            "ts": 1508534385268817,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1521755
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_28",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534386790623,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 50
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_29",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534386790681,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 16
+        },
+        {
+            "name": "_MklConcatV2",
+            "args": {
+                "input2": "concatenate_2/concat/axis",
+                "input3": "DMT/_28",
+                "input0": "up_sampling2d_2/ResizeNearestNeighbor",
+                "input1": "conv2d_2/Relu",
+                "name": "concatenate_2/concat",
+                "input4": "conv2d_2/Relu:1",
+                "input5": "DMT/_29",
+                "op": "_MklConcatV2"
+            },
+            "pid": 1,
+            "ts": 1508534386790704,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 671071
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_32",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534387461824,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_9/bias/read",
+                "input3": "concatenate_2/concat:1",
+                "input0": "concatenate_2/concat",
+                "input1": "conv2d_9/kernel/read",
+                "name": "conv2d_9/BiasAdd",
+                "input4": "conv2d_9/kernel/read:1",
+                "input5": "DMT/_32",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534387461854,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1720239
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_9/BiasAdd",
+                "input1": "conv2d_9/BiasAdd:1",
+                "name": "conv2d_9/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534389182146,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 43260
+        },
+        {
+            "name": "_MklToTf",
+            "args": {
+                "input0": "conv2d_9/Relu",
+                "input1": "conv2d_9/Relu:1",
+                "name": "Mkl2Tf/_46",
+                "op": "_MklToTf"
+            },
+            "pid": 1,
+            "ts": 1508534389225459,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 381637
+        },
+        {
+            "name": "Switch",
+            "args": {
+                "input0": "conv2d_9/Relu",
+                "input1": "dropout_2/cond/pred_id",
+                "name": "dropout_2/cond/mul/Switch",
+                "op": "Switch"
+            },
+            "pid": 1,
+            "ts": 1508534389607148,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 34
+        },
+        {
+            "name": "Merge",
+            "args": {
+                "input0": "dropout_2/cond/Switch_1",
+                "input1": "dropout_2/cond/dropout/mul",
+                "name": "dropout_2/cond/Merge",
+                "op": "Merge"
+            },
+            "pid": 1,
+            "ts": 1508534389607198,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 44
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_34",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534389607257,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_36",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534389607286,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 17
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_10/bias/read",
+                "input3": "DMT/_34",
+                "input0": "dropout_2/cond/Merge",
+                "input1": "conv2d_10/kernel/read",
+                "name": "conv2d_10/BiasAdd",
+                "input4": "conv2d_10/kernel/read:1",
+                "input5": "DMT/_36",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534389607344,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 619830
+        },
+        {
+            "name": "conv2d_10/kernel/read",
+            "pid": 1,
+            "ts": 1508534382578619,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 65
+        },
+        {
+            "name": "conv2d_10/kernel/read",
+            "pid": 1,
+            "ts": 1508534389607344,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 65
+        },
+        {
+            "name": "conv2d_10/bias/read",
+            "pid": 1,
+            "ts": 1508534382578510,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 66
+        },
+        {
+            "name": "conv2d_10/bias/read",
+            "pid": 1,
+            "ts": 1508534389607344,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 66
+        },
+        {
+            "name": "conv2d_10/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382578619,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 67
+        },
+        {
+            "name": "conv2d_10/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534389607344,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 67
+        },
+        {
+            "name": "_MklRelu",
+            "args": {
+                "input0": "conv2d_10/BiasAdd",
+                "input1": "conv2d_10/BiasAdd:1",
+                "name": "conv2d_10/Relu",
+                "op": "_MklRelu"
+            },
+            "pid": 1,
+            "ts": 1508534390227228,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 43554
+        },
+        {
+            "name": "Const",
+            "args": {
+                "name": "DMT/_39",
+                "op": "Const"
+            },
+            "pid": 1,
+            "ts": 1508534390270834,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "_MklConv2DWithBias",
+            "args": {
+                "input2": "conv2d_11/bias/read",
+                "input3": "conv2d_10/Relu:1",
+                "input0": "conv2d_10/Relu",
+                "input1": "conv2d_11/kernel/read",
+                "name": "conv2d_11/BiasAdd",
+                "input4": "conv2d_11/kernel/read:1",
+                "input5": "DMT/_39",
+                "op": "_MklConv2DWithBias"
+            },
+            "pid": 1,
+            "ts": 1508534390270864,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 250518
+        },
+        {
+            "name": "conv2d_11/kernel/read",
+            "pid": 1,
+            "ts": 1508534382577867,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 68
+        },
+        {
+            "name": "conv2d_11/kernel/read",
+            "pid": 1,
+            "ts": 1508534390270864,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 68
+        },
+        {
+            "name": "conv2d_11/bias/read",
+            "pid": 1,
+            "ts": 1508534382577716,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 69
+        },
+        {
+            "name": "conv2d_11/bias/read",
+            "pid": 1,
+            "ts": 1508534390270864,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 69
+        },
+        {
+            "name": "conv2d_11/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534382577867,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 70
+        },
+        {
+            "name": "conv2d_11/kernel/read:1",
+            "pid": 1,
+            "ts": 1508534390270864,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 70
+        },
+        {
+            "name": "_MklToTf",
+            "args": {
+                "input0": "conv2d_11/BiasAdd",
+                "input1": "conv2d_11/BiasAdd:1",
+                "name": "Mkl2Tf/_48",
+                "op": "_MklToTf"
+            },
+            "pid": 1,
+            "ts": 1508534390521434,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 13554
+        },
+        {
+            "name": "Sigmoid",
+            "args": {
+                "input0": "conv2d_11/BiasAdd",
+                "name": "conv2d_11/Sigmoid",
+                "op": "Sigmoid"
+            },
+            "pid": 1,
+            "ts": 1508534390535041,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 8913
+        },
+        {
+            "name": "Round",
+            "args": {
+                "input0": "conv2d_11/Sigmoid",
+                "name": "metrics/acc/Round",
+                "op": "Round"
+            },
+            "pid": 1,
+            "ts": 1508534390544020,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 6943
+        },
+        {
+            "name": "Equal",
+            "args": {
+                "input0": "_arg_conv2d_11_target_0_1",
+                "input1": "metrics/acc/Round",
+                "name": "metrics/acc/Equal",
+                "op": "Equal"
+            },
+            "pid": 1,
+            "ts": 1508534390551012,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 2609
+        },
+        {
+            "name": "_arg_conv2d_11_target_0_1",
+            "pid": 1,
+            "ts": 1508534382576916,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 71
+        },
+        {
+            "name": "_arg_conv2d_11_target_0_1",
+            "pid": 1,
+            "ts": 1508534390551012,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 71
+        },
+        {
+            "name": "Cast",
+            "args": {
+                "input0": "metrics/acc/Equal",
+                "name": "metrics/acc/Cast",
+                "op": "Cast"
+            },
+            "pid": 1,
+            "ts": 1508534390553693,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1839
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "metrics/acc/Cast",
+                "input1": "metrics/acc/Mean/reduction_indices",
+                "name": "metrics/acc/Mean",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534390555582,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 33
+        },
+        {
+            "name": "Minimum",
+            "args": {
+                "input0": "conv2d_11/Sigmoid",
+                "input1": "loss/conv2d_11_loss/sub",
+                "name": "loss/conv2d_11_loss/clip_by_value/Minimum",
+                "op": "Minimum"
+            },
+            "pid": 1,
+            "ts": 1508534390543996,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 13241
+        },
+        {
+            "name": "conv2d_11/Sigmoid",
+            "pid": 1,
+            "ts": 1508534390543954,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 72
+        },
+        {
+            "name": "conv2d_11/Sigmoid",
+            "pid": 1,
+            "ts": 1508534390543996,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 72
+        },
+        {
+            "name": "Maximum",
+            "args": {
+                "input0": "loss/conv2d_11_loss/clip_by_value/Minimum",
+                "input1": "loss/conv2d_11_loss/Const",
+                "name": "loss/conv2d_11_loss/clip_by_value",
+                "op": "Maximum"
+            },
+            "pid": 1,
+            "ts": 1508534390557289,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1437
+        },
+        {
+            "name": "loss/conv2d_11_loss/clip_by_value/Minimum",
+            "pid": 1,
+            "ts": 1508534390557237,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 73
+        },
+        {
+            "name": "loss/conv2d_11_loss/clip_by_value/Minimum",
+            "pid": 1,
+            "ts": 1508534390557289,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 73
+        },
+        {
+            "name": "Sub",
+            "args": {
+                "input0": "loss/conv2d_11_loss/sub_1/x",
+                "input1": "loss/conv2d_11_loss/clip_by_value",
+                "name": "loss/conv2d_11_loss/sub_1",
+                "op": "Sub"
+            },
+            "pid": 1,
+            "ts": 1508534390558755,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1715
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "metrics/acc/Mean",
+                "input1": "metrics/acc/Const",
+                "name": "metrics/acc/Mean_1",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534390555624,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 7047
+        },
+        {
+            "name": "metrics/acc/Mean",
+            "pid": 1,
+            "ts": 1508534390555615,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 74
+        },
+        {
+            "name": "metrics/acc/Mean",
+            "pid": 1,
+            "ts": 1508534390555624,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 74
+        },
+        {
+            "name": "metrics/acc/Const",
+            "pid": 1,
+            "ts": 1508534382577226,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 75
+        },
+        {
+            "name": "metrics/acc/Const",
+            "pid": 1,
+            "ts": 1508534390555624,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 75
+        },
+        {
+            "name": "_Retval",
+            "args": {
+                "input0": "metrics/acc/Mean_1",
+                "name": "_retval_metrics/acc/Mean_1_0_1",
+                "op": "_Retval"
+            },
+            "pid": 1,
+            "ts": 1508534390562701,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 21
+        },
+        {
+            "name": "metrics/acc/Mean_1",
+            "pid": 1,
+            "ts": 1508534390562671,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 76
+        },
+        {
+            "name": "metrics/acc/Mean_1",
+            "pid": 1,
+            "ts": 1508534390562701,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 76
+        },
+        {
+            "name": "RealDiv",
+            "args": {
+                "input0": "loss/conv2d_11_loss/clip_by_value",
+                "input1": "loss/conv2d_11_loss/sub_1",
+                "name": "loss/conv2d_11_loss/div",
+                "op": "RealDiv"
+            },
+            "pid": 1,
+            "ts": 1508534390560523,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 2192
+        },
+        {
+            "name": "loss/conv2d_11_loss/clip_by_value",
+            "pid": 1,
+            "ts": 1508534390558726,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 77
+        },
+        {
+            "name": "loss/conv2d_11_loss/clip_by_value",
+            "pid": 1,
+            "ts": 1508534390560523,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 77
+        },
+        {
+            "name": "loss/conv2d_11_loss/sub_1",
+            "pid": 1,
+            "ts": 1508534390560470,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 78
+        },
+        {
+            "name": "loss/conv2d_11_loss/sub_1",
+            "pid": 1,
+            "ts": 1508534390560523,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 78
+        },
+        {
+            "name": "Log",
+            "args": {
+                "input0": "loss/conv2d_11_loss/div",
+                "name": "loss/conv2d_11_loss/Log",
+                "op": "Log"
+            },
+            "pid": 1,
+            "ts": 1508534390562740,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 3941
+        },
+        {
+            "name": "loss/conv2d_11_loss/div",
+            "pid": 1,
+            "ts": 1508534390562715,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 79
+        },
+        {
+            "name": "loss/conv2d_11_loss/div",
+            "pid": 1,
+            "ts": 1508534390562740,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 79
+        },
+        {
+            "name": "ZerosLike",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Log",
+                "name": "loss/conv2d_11_loss/logistic_loss/zeros_like",
+                "op": "ZerosLike"
+            },
+            "pid": 1,
+            "ts": 1508534390566745,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1942
+        },
+        {
+            "name": "Neg",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Log",
+                "name": "loss/conv2d_11_loss/logistic_loss/Neg",
+                "op": "Neg"
+            },
+            "pid": 1,
+            "ts": 1508534390566752,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 1930
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390566681,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 80
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390566752,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 80
+        },
+        {
+            "name": "GreaterEqual",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Log",
+                "input1": "loss/conv2d_11_loss/logistic_loss/zeros_like",
+                "name": "loss/conv2d_11_loss/logistic_loss/GreaterEqual",
+                "op": "GreaterEqual"
+            },
+            "pid": 1,
+            "ts": 1508534390568748,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 2152
+        },
+        {
+            "name": "Select",
+            "args": {
+                "input2": "loss/conv2d_11_loss/Log",
+                "input0": "loss/conv2d_11_loss/logistic_loss/GreaterEqual",
+                "input1": "loss/conv2d_11_loss/logistic_loss/Neg",
+                "name": "loss/conv2d_11_loss/logistic_loss/Select_1",
+                "op": "Select"
+            },
+            "pid": 1,
+            "ts": 1508534390570985,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 2354
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Neg",
+            "pid": 1,
+            "ts": 1508534390568682,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 81
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Neg",
+            "pid": 1,
+            "ts": 1508534390570985,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 81
+        },
+        {
+            "name": "Mul",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Log",
+                "input1": "_arg_conv2d_11_target_0_1",
+                "name": "loss/conv2d_11_loss/logistic_loss/mul",
+                "op": "Mul"
+            },
+            "pid": 1,
+            "ts": 1508534390566731,
+            "cat": "Op",
+            "tid": 2,
+            "ph": "X",
+            "dur": 10422
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390566681,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 82
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390566731,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "t",
+            "id": 82
+        },
+        {
+            "name": "Select",
+            "args": {
+                "input2": "loss/conv2d_11_loss/logistic_loss/zeros_like",
+                "input0": "loss/conv2d_11_loss/logistic_loss/GreaterEqual",
+                "input1": "loss/conv2d_11_loss/Log",
+                "name": "loss/conv2d_11_loss/logistic_loss/Select",
+                "op": "Select"
+            },
+            "pid": 1,
+            "ts": 1508534390573132,
+            "cat": "Op",
+            "tid": 1,
+            "ph": "X",
+            "dur": 4783
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/GreaterEqual",
+            "pid": 1,
+            "ts": 1508534390570900,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 83
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/GreaterEqual",
+            "pid": 1,
+            "ts": 1508534390573132,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 83
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390566681,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 84
+        },
+        {
+            "name": "loss/conv2d_11_loss/Log",
+            "pid": 1,
+            "ts": 1508534390573132,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 84
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/zeros_like",
+            "pid": 1,
+            "ts": 1508534390568687,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 85
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/zeros_like",
+            "pid": 1,
+            "ts": 1508534390573132,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "t",
+            "id": 85
+        },
+        {
+            "name": "Sub",
+            "args": {
+                "input0": "loss/conv2d_11_loss/logistic_loss/Select",
+                "input1": "loss/conv2d_11_loss/logistic_loss/mul",
+                "name": "loss/conv2d_11_loss/logistic_loss/sub",
+                "op": "Sub"
+            },
+            "pid": 1,
+            "ts": 1508534390577948,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1186
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Select",
+            "pid": 1,
+            "ts": 1508534390577915,
+            "cat": "DataFlow",
+            "tid": 1,
+            "ph": "s",
+            "id": 86
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Select",
+            "pid": 1,
+            "ts": 1508534390577948,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 86
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/mul",
+            "pid": 1,
+            "ts": 1508534390577153,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 87
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/mul",
+            "pid": 1,
+            "ts": 1508534390577948,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 87
+        },
+        {
+            "name": "Exp",
+            "args": {
+                "input0": "loss/conv2d_11_loss/logistic_loss/Select_1",
+                "name": "loss/conv2d_11_loss/logistic_loss/Exp",
+                "op": "Exp"
+            },
+            "pid": 1,
+            "ts": 1508534390573370,
+            "cat": "Op",
+            "tid": 3,
+            "ph": "X",
+            "dur": 22980
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Select_1",
+            "pid": 1,
+            "ts": 1508534390573339,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "s",
+            "id": 88
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Select_1",
+            "pid": 1,
+            "ts": 1508534390573370,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "t",
+            "id": 88
+        },
+        {
+            "name": "Log1p",
+            "args": {
+                "input0": "loss/conv2d_11_loss/logistic_loss/Exp",
+                "name": "loss/conv2d_11_loss/logistic_loss/Log1p",
+                "op": "Log1p"
+            },
+            "pid": 1,
+            "ts": 1508534390596374,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 56062
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Exp",
+            "pid": 1,
+            "ts": 1508534390596350,
+            "cat": "DataFlow",
+            "tid": 3,
+            "ph": "s",
+            "id": 89
+        },
+        {
+            "name": "loss/conv2d_11_loss/logistic_loss/Exp",
+            "pid": 1,
+            "ts": 1508534390596374,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 89
+        },
+        {
+            "name": "Add",
+            "args": {
+                "input0": "loss/conv2d_11_loss/logistic_loss/sub",
+                "input1": "loss/conv2d_11_loss/logistic_loss/Log1p",
+                "name": "loss/conv2d_11_loss/logistic_loss",
+                "op": "Add"
+            },
+            "pid": 1,
+            "ts": 1508534390652466,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 1013
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "loss/conv2d_11_loss/logistic_loss",
+                "input1": "loss/conv2d_11_loss/Mean/reduction_indices",
+                "name": "loss/conv2d_11_loss/Mean",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534390653510,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 33
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Mean",
+                "input1": "loss/conv2d_11_loss/Mean_1/reduction_indices",
+                "name": "loss/conv2d_11_loss/Mean_1",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534390653553,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 623
+        },
+        {
+            "name": "Mul",
+            "args": {
+                "input0": "loss/conv2d_11_loss/Mean_1",
+                "input1": "_arg_conv2d_11_sample_weights_0_0",
+                "name": "loss/conv2d_11_loss/mul",
+                "op": "Mul"
+            },
+            "pid": 1,
+            "ts": 1508534390654205,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 41
+        },
+        {
+            "name": "_arg_conv2d_11_sample_weights_0_0",
+            "pid": 1,
+            "ts": 1508534382577072,
+            "cat": "DataFlow",
+            "tid": 4,
+            "ph": "s",
+            "id": 90
+        },
+        {
+            "name": "_arg_conv2d_11_sample_weights_0_0",
+            "pid": 1,
+            "ts": 1508534390654205,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 90
+        },
+        {
+            "name": "RealDiv",
+            "args": {
+                "input0": "loss/conv2d_11_loss/mul",
+                "input1": "loss/conv2d_11_loss/Mean_2",
+                "name": "loss/conv2d_11_loss/div_1",
+                "op": "RealDiv"
+            },
+            "pid": 1,
+            "ts": 1508534390654257,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 35
+        },
+        {
+            "name": "loss/conv2d_11_loss/Mean_2",
+            "pid": 1,
+            "ts": 1508534382577572,
+            "cat": "DataFlow",
+            "tid": 2,
+            "ph": "s",
+            "id": 91
+        },
+        {
+            "name": "loss/conv2d_11_loss/Mean_2",
+            "pid": 1,
+            "ts": 1508534390654257,
+            "cat": "DataFlow",
+            "tid": 0,
+            "ph": "t",
+            "id": 91
+        },
+        {
+            "name": "Mean",
+            "args": {
+                "input0": "loss/conv2d_11_loss/div_1",
+                "input1": "loss/conv2d_11_loss/Const_2",
+                "name": "loss/conv2d_11_loss/Mean_3",
+                "op": "Mean"
+            },
+            "pid": 1,
+            "ts": 1508534390654302,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 43
+        },
+        {
+            "name": "Mul",
+            "args": {
+                "input0": "loss/mul/x",
+                "input1": "loss/conv2d_11_loss/Mean_3",
+                "name": "loss/mul",
+                "op": "Mul"
+            },
+            "pid": 1,
+            "ts": 1508534390654355,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 22
+        },
+        {
+            "name": "NoOp",
+            "args": {
+                "input0": "^loss/mul",
+                "input1": "^metrics/acc/Mean_1",
+                "name": "group_deps",
+                "op": "NoOp"
+            },
+            "pid": 1,
+            "ts": 1508534390654407,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 12
+        },
+        {
+            "name": "_Retval",
+            "args": {
+                "input0": "loss/mul",
+                "name": "_retval_loss/mul_0_0",
+                "op": "_Retval"
+            },
+            "pid": 1,
+            "ts": 1508534390654435,
+            "cat": "Op",
+            "tid": 0,
+            "ph": "X",
+            "dur": 44
+        }
+    ]
+}
