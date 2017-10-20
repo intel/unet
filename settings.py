@@ -2,7 +2,7 @@ BASE = "/home/bduser/ge_tensorflow/data/"
 DATA_PATH = BASE+"/slices"
 OUT_PATH  = BASE+"slices/Results/"
 IMG_ROWS = 128
-IMG_COLS = 128 
+IMG_COLS = 128
 RESCALE_FACTOR = 1
 SLICE_BY = 5 
 
@@ -10,7 +10,7 @@ SLICE_BY = 5
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
-EPOCHS = 10
+EPOCHS = 1 #10
 
 MODEL_FN = "brainWholeTumor" #Name for Mode=1
 #MODEL_FN = "brainActiveTumor" #Name for Mode=2

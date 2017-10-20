@@ -1,10 +1,11 @@
 import os
 
 num_threads = 50
+num_intra_op_threads = 5
 
 os.environ["KMP_BLOCKTIME"] = "infinite" # This seems to keep processors at max usage
 os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
-os.environ["OMP_NUM_THREADS"]= "{}".format(num_threads)
+os.environ["OMP_NUM_THREADS"]= str(num_threads)
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
 os.environ['MKL_VERBOSE'] = '1'
@@ -12,8 +13,26 @@ os.environ['MKL_VERBOSE'] = '1'
 os.environ['TF_ENABLE_WINOGRAD_NONFUSED'] = '1'
 os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
+os.environ['MKL_NUM_THREADS'] =str(num_threads)
+
+# The timeline trace for TF is saved to this file.
+# To view it, run this python script, then load the json file by 
+# starting Google Chrome browser and pointing the URI to chrome://trace
+# There should be a button at the top left of the graph where
+# you can load in this json file.
+timeline_filename = 'timeline_ge_unet.json'
+
+import time
 
 import tensorflow as tf
+
+# configuration session
+sess = tf.Session(config=tf.ConfigProto(
+       intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
+
+run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+run_metadata = tf.RunMetadata()
+
 
 from keras import backend as K
 
@@ -67,22 +86,36 @@ def model5_MultiLayer(weights=False,
 	conv3 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv3)
 	pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
 
-	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool3)
-	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv4)
-	pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+	# conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool3)
+	# conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv4)
+	# pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
-	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool4)
-	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv5)
+	# conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool4)
+	# conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv5)
 
-	up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
-	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up6)
-	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv6)
+	# up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
+	# conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up6)
+	# conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv6)
 
-	up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
-	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up7)
-	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv7)
+	# up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
+	# conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up7)
+	# conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv7)
 
-	up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
+ #    up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
+	# up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
+	# conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up8)
+	# conv8 = Dropout(dropout)(conv8)
+	# conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv8)
+	
+	# up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
+	# conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up9)
+	# conv9 = Dropout(dropout)(conv9)
+	# conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv9)
+
+	# conv10 = Conv2D(filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid', data_format='channels_last')(conv9)
+	# model = Model(inputs=[inputs], outputs=[conv10])
+
+	up8 = concatenate([UpSampling2D(size=(2, 2))(conv3), conv2], axis=3)
 	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up8)
 	conv8 = Dropout(dropout)(conv8)
 	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv8)
@@ -96,9 +129,10 @@ def model5_MultiLayer(weights=False,
 	model = Model(inputs=[inputs], outputs=[conv10])
 
 	
+	
 	model.compile(optimizer=Adam(lr=learning_rate),
 		loss='binary_crossentropy', #dice_coef_loss,
-		metrics=['accuracy'])
+		metrics=['accuracy'], options=run_options, run_metadata=run_metadata)
 
 	if weights and len(filepath)>0:
 		model.load_weights(filepath)
@@ -111,6 +145,11 @@ def model5_MultiLayer(weights=False,
 def load_data(data_path, prefix = "_train"):
 	imgs_train = np.load(os.path.join(data_path, 'imgs'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 	msks_train = np.load(os.path.join(data_path, 'msks'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
+
+	sz = imgs_train.shape[0]//20
+
+	imgs_train = imgs_train[:sz]
+	msks_train = msks_train[:sz]
 
 	return imgs_train, msks_train
 
@@ -153,11 +192,13 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
 	fn= "model", mode = 1):
 	
-	# configuration session
-	sess = tf.Session(config=tf.ConfigProto(
-	       intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=5))
+	last_time = time.time()
+	start_time = last_time
+
 	K.set_session(sess)
 	K.set_image_dim_ordering('tf')	
+	print('Time elapsed to start session = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
 
 	print('-'*30)
 	print('Loading and preprocessing train data...')
@@ -166,14 +207,19 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
 		mode)
 
-	print('Shape = {}'.format(imgs_train.shape))
+	print('Shape train = {}'.format(imgs_train.shape))
+	print('Time elapsed for training data = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
 	
 	print('-'*30)
 	print('Loading and preprocessing test data...')
 	print('-'*30)
 	imgs_test, msks_test = load_data(data_path,"_test")
 	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
+	print('Shape test = {}'.format(imgs_test.shape))
 
+	print('Time elapsed for test data = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
 
 	print('-'*30)
 	print('Creating and compiling model...')
@@ -186,6 +232,9 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# saves all models when set to False
 
 
+	print('Time elapsed for model compiling = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
+
 	print('-'*30)
 	print('Fitting model...')
 	print('-'*30)
@@ -196,6 +245,20 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		validation_data = (imgs_test, msks_test),
 		verbose=1, 
 		callbacks=[model_checkpoint])
+
+	print('Time elapsed for model training = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
+
+	'''
+	Save the training timeline
+	'''
+	from tensorflow.python.client import timeline
+
+	fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+	chrome_trace = fetched_timeline.generate_chrome_trace_format()
+	with open(timeline_filename, 'w') as f:
+	    f.write(chrome_trace)
+
 
 	json_fn = os.path.join(data_path, fn+'.json')
 	with open(json_fn,'w') as f:
@@ -209,6 +272,8 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
 	model.load_weights(model_fn)
 
+	last_time = time.time()
+
 	print('-'*30)
 	print('Predicting masks on test data...')
 	print('-'*30)
@@ -218,6 +283,11 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	scores = model.evaluate(imgs_test, msks_test, batch_size=128,verbose = 2)
 	print ("Evaluation Scores", scores)
+
+	print('Time elapsed for model evaluation = {} seconds'.format(time.time() - last_time))
+	last_time = time.time()
+
+	print('Total Time elapsed for entire script = {} seconds'.format(time.time() - start_time))
 
 if __name__ =="__main__":
 	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR, 
