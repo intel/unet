@@ -1,26 +1,49 @@
+import argparse
+parser = argparse.ArgumentParser()
+
+
+parser.add_argument("num_threads", type=int, default=34, help="the number of threads")
+parser.add_argument("num_intra_threads", type=int, default=2, help="the number of intraop threads")
+parser.add_argument("blocktime", type=int, default=30, help="blocktime")
+parser.add_argument("")
+
+args = parser.parse_args()
+
 import os
 
-num_threads = 50
-num_intra_op_threads = 5
+num_threads = args.num_threads
+num_intra_op_threads = args.num_intra_threads
 
-os.environ["KMP_BLOCKTIME"] = "infinite" # This seems to keep processors at max usage
-os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
+if (args.blocktime > 1000):
+	blocktime = 'infinite'
+else:
+	blocktime = str(args.blocktime)
+
+os.environ["KMP_BLOCKTIME"] = blocktime
+os.environ["KMP_AFFINITY"]="granularity=thread,compact" #,1,0"
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
-os.environ["TF_ADJUST_HUE_FUSED"] = '1'
-os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
+# os.environ["TF_ADJUST_HUE_FUSED"] = '1'
+# os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
 os.environ['MKL_VERBOSE'] = '1'
+
+# os.environ['MIC_ENV_PREFIX'] = 'PHI'
+# os.environ['PHI_KMP_AFFINITY'] = 'compact'
+# os.environ['PHI_KMP_PLACE_THREADS'] = '60c,3t'
+# os.environ['PHI_OMP_NUM_THREADS'] = str(num_threads)
 
 os.environ['TF_ENABLE_WINOGRAD_NONFUSED'] = '1'
 os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
 os.environ['MKL_NUM_THREADS'] =str(num_threads)
 
+os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
+
 # The timeline trace for TF is saved to this file.
 # To view it, run this python script, then load the json file by 
 # starting Google Chrome browser and pointing the URI to chrome://trace
 # There should be a button at the top left of the graph where
 # you can load in this json file.
-timeline_filename = 'timeline_ge_unet.json'
+timeline_filename = 'timeline_ge_unet_{}_{}_{}.json'.format(blocktime, num_threads, num_intra_op_threads)
 
 import time
 
@@ -86,36 +109,22 @@ def model5_MultiLayer(weights=False,
 	conv3 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv3)
 	pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
 
-	# conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool3)
-	# conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv4)
-	# pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool3)
+	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv4)
+	pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
-	# conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool4)
-	# conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv5)
+	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool4)
+	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv5)
 
-	# up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
-	# conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up6)
-	# conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv6)
+	up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
+	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up6)
+	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv6)
 
-	# up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
-	# conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up7)
-	# conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv7)
+	up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
+	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up7)
+	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv7)
 
- #    up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
-	# up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
-	# conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up8)
-	# conv8 = Dropout(dropout)(conv8)
-	# conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv8)
-	
-	# up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
-	# conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up9)
-	# conv9 = Dropout(dropout)(conv9)
-	# conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv9)
-
-	# conv10 = Conv2D(filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid', data_format='channels_last')(conv9)
-	# model = Model(inputs=[inputs], outputs=[conv10])
-
-	up8 = concatenate([UpSampling2D(size=(2, 2))(conv3), conv2], axis=3)
+ 	up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
 	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up8)
 	conv8 = Dropout(dropout)(conv8)
 	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv8)
@@ -127,7 +136,6 @@ def model5_MultiLayer(weights=False,
 
 	conv10 = Conv2D(filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid', data_format='channels_last')(conv9)
 	model = Model(inputs=[inputs], outputs=[conv10])
-
 	
 	
 	model.compile(optimizer=Adam(lr=learning_rate),
@@ -146,10 +154,10 @@ def load_data(data_path, prefix = "_train"):
 	imgs_train = np.load(os.path.join(data_path, 'imgs'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 	msks_train = np.load(os.path.join(data_path, 'msks'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 
-	sz = imgs_train.shape[0]//20
+	# sz = imgs_train.shape[0]//20
 
-	imgs_train = imgs_train[:sz]
-	msks_train = msks_train[:sz]
+	# imgs_train = imgs_train[:sz]
+	# msks_train = msks_train[:sz]
 
 	return imgs_train, msks_train
 
@@ -161,9 +169,6 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	mode: int between 1-3
 	"""
 
-	imgs = imgs.astype('float32')
-	msks = msks.astype('float32')
-
 	shp = imgs.shape
 	new_imgs = np.zeros((shp[0],shp[1],shp[2],input_no))
 	new_msks = np.zeros((shp[0],shp[1],shp[2],output_no))
@@ -171,22 +176,22 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	if mode==1:
 		new_imgs[:,:,:,0] = imgs[:,:,:,2] # flair
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
-		print('-'*10,' Whole tumor', '-'*10)
+		# print('-'*10,' Whole tumor', '-'*10)
 	elif mode == 2:
 		#core (non enhancing)
 		new_imgs[:,:,:,0] = imgs[:,:,:,0] # t1 post
 		new_msks[:,:,:,0] = msks[:,:,:,3]
-		print('-'*10,' Predicing enhancing tumor', '-'*10)
+		# print('-'*10,' Predicing enhancing tumor', '-'*10)
 	elif mode == 3:
 		#core (non enhancing)
 		new_imgs[:,:,:,0] = imgs[:,:,:,1]# t2 post
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,2]+msks[:,:,:,3]# active core
-		print('-'*10,' Predicing active Core', '-'*10)
+		# print('-'*10,' Predicing active Core', '-'*10)
 
 	else:
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
 
-	return np.copy(new_imgs), np.copy(new_msks)
+	return new_imgs, new_msks
 
 
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
@@ -200,51 +205,52 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Time elapsed to start session = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
-	print('-'*30)
-	print('Loading and preprocessing train data...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Loading and preprocessing train data...')
+	# print('-'*30)
 	imgs_train, msks_train = load_data(data_path,"_train")
 	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
 		mode)
 
 	print('Shape train = {}'.format(imgs_train.shape))
-	print('Time elapsed for training data = {} seconds'.format(time.time() - last_time))
+	print('Time elapsed for training data loading = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 	
-	print('-'*30)
-	print('Loading and preprocessing test data...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Loading and preprocessing test data...')
+	# print('-'*30)
 	imgs_test, msks_test = load_data(data_path,"_test")
 	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
 	print('Shape test = {}'.format(imgs_test.shape))
 
-	print('Time elapsed for test data = {} seconds'.format(time.time() - last_time))
+	print('Time elapsed for test data loading = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
-	print('-'*30)
-	print('Creating and compiling model...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Creating and compiling model...')
+	# print('-'*30)
 	model		= model5_MultiLayer(False, False, img_rows, img_cols, input_no,	output_no)
 	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
-	print ("Writing model to ", model_fn)
+	# print ("Writing model to ", model_fn)
 
-	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
+	#model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
 	# saves all models when set to False
 
 
 	print('Time elapsed for model compiling = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
-	print('-'*30)
-	print('Fitting model...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Fitting model...')
+	# print('-'*30)
 	history = History()
 	history = model.fit(imgs_train, msks_train, 
 		batch_size=1024, #128, 
 		epochs=n_epoch, 
 		validation_data = (imgs_test, msks_test),
-		verbose=1, 
-		callbacks=[model_checkpoint])
+		verbose=1)
+	# , 
+	# 	callbacks=[model_checkpoint])
 
 	print('Time elapsed for model training = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
@@ -265,23 +271,24 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		f.write(model.to_json())
 
 
-	print('-'*30)
-	print('Loading saved weights...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Loading saved weights...')
+	# print('-'*30)
 	epochNo = len(history.history['loss'])-1
 	model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
 	model.load_weights(model_fn)
 
+	print('Time elapsed for model save/load to disk = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
-	print('-'*30)
-	print('Predicting masks on test data...')
-	print('-'*30)
+	# print('-'*30)
+	# print('Predicting masks on test data...')
+	# print('-'*30)
 	msks_pred = model.predict(imgs_test, verbose=1)
-	print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
+	# print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
 	np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
 
-	scores = model.evaluate(imgs_test, msks_test, batch_size=128,verbose = 2)
+	scores = model.evaluate(imgs_test, msks_test, batch_size=128, verbose = 2)
 	print ("Evaluation Scores", scores)
 
 	print('Time elapsed for model evaluation = {} seconds'.format(time.time() - last_time))
