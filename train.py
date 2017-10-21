@@ -5,7 +5,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("num_threads", type=int, default=34, help="the number of threads")
 parser.add_argument("num_intra_threads", type=int, default=2, help="the number of intraop threads")
 parser.add_argument("blocktime", type=int, default=30, help="blocktime")
-parser.add_argument("")
 
 args = parser.parse_args()
 
@@ -198,7 +197,6 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	fn= "model", mode = 1):
 	
 	last_time = time.time()
-	start_time = last_time
 
 	K.set_session(sess)
 	K.set_image_dim_ordering('tf')	
@@ -294,11 +292,13 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Time elapsed for model evaluation = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
-	print('Total Time elapsed for entire script = {} seconds'.format(time.time() - start_time))
-
 if __name__ =="__main__":
+
+	start_time = time.time()
+
 	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR, 
 		settings.IMG_COLS/settings.RESCALE_FACTOR, 
 		settings.EPOCHS, settings.IN_CHANNEL_NO, \
 		settings.OUT_CHANNEL_NO, settings.MODEL_FN, settings.MODE)
 
+	print('Total Time elapsed for entire script = {} seconds'.format(time.time() - start_time))
