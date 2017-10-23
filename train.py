@@ -35,7 +35,7 @@ os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
 os.environ['MKL_NUM_THREADS'] =str(num_threads)
 
-os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
+#os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
 
 # The timeline trace for TF is saved to this file.
 # To view it, run this python script, then load the json file by 
@@ -57,6 +57,16 @@ run_metadata = tf.RunMetadata()
 
 
 from keras import backend as K
+
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+	concat_axis = -1
+	data_format = 'channels_last'
+	K.set_image_dim_ordering('tf')	
+else:
+	concat_axis = 1
+	data_format = 'channels_first'
+	K.set_image_dim_ordering('th')	
 
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import History 
@@ -94,46 +104,50 @@ def model5_MultiLayer(weights=False,
 	learning_rate = 0.001,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
-	
-	inputs = Input((img_rows, img_cols, n_cl_in))
-	conv1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(inputs)
-	conv1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv1)
-	pool1 = MaxPooling2D(pool_size=(2, 2), data_format='channels_last')(conv1)
 
-	conv2 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool1)
-	conv2 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv2)
-	pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+	if CHANNEL_LAST:
+		inputs = Input((img_rows, img_cols, n_cl_in))
+	else:
+		inputs = Input((n_cl_in, img_rows, img_cols))
 
-	conv3 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool2)
-	conv3 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv3)
-	pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+	conv1 = Conv2D(name='conv1a', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(inputs)
+	conv1 = Conv2D(name='conv1b', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv1)
+	pool1 = MaxPooling2D(name='pool1', pool_size=(2, 2), data_format=data_format)(conv1)
 
-	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool3)
-	conv4 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv4)
-	pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+	conv2 = Conv2D(name='conv2a', filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(pool1)
+	conv2 = Conv2D(name='conv2b', filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv2)
+	pool2 = MaxPooling2D(pool_size=(2, 2), data_format=data_format)(conv2)
 
-	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(pool4)
-	conv5 = Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv5)
+	conv3 = Conv2D(name='conv3a', filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(pool2)
+	conv3 = Conv2D(name='conv3b', filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv3)
+	pool3 = MaxPooling2D(pool_size=(2, 2), data_format=data_format)(conv3)
 
-	up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
-	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up6)
-	conv6 = Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv6)
+	conv4 = Conv2D(name='conv4a', filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format )(pool3)
+	conv4 = Conv2D(name='conv4b', filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format )(conv4)
+	pool4 = MaxPooling2D(pool_size=(2, 2), data_format=data_format)(conv4)
 
-	up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
-	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up7)
-	conv7 = Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv7)
+	conv5 = Conv2D(name='conv5a', filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format )(pool4)
+	conv5 = Conv2D(name='conv5b', filters=512, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format )(conv5)
 
- 	up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
-	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up8)
+	up6 = concatenate([UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
+	conv6 = Conv2D(name='conv6a', filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(up6)
+	conv6 = Conv2D(name='conv6b', filters=256, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv6)
+
+	up7 = concatenate([UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
+	conv7 = Conv2D(name='conv7a', filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(up7)
+	conv7 = Conv2D(name='conv7b', filters=128, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv7)
+
+ 	up8 = concatenate([UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
+	conv8 = Conv2D(name='conv8a', filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(up8)
 	conv8 = Dropout(dropout)(conv8)
-	conv8 = Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv8)
+	conv8 = Conv2D(name='conv8b', filters=64, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv8)
 	
-	up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
-	conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(up9)
+	up9 = concatenate([UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
+	conv9 = Conv2D(name='conv9a', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(up9)
 	conv9 = Dropout(dropout)(conv9)
-	conv9 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format='channels_last')(conv9)
+	conv9 = Conv2D(name='conv9b', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv9)
 
-	conv10 = Conv2D(filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid', data_format='channels_last')(conv9)
+	conv10 = Conv2D(name='conv10', filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid', data_format=data_format)(conv9)
 	model = Model(inputs=[inputs], outputs=[conv10])
 	
 	
@@ -190,8 +204,12 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	else:
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
 
-	return new_imgs, new_msks
 
+	if not CHANNEL_LAST:
+		new_imgs = np.transpose(new_imgs, [0,3,1,2])
+		new_msks = np.transpose(new_msks, [0,3,1,2])
+
+	return new_imgs, new_msks
 
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
 	fn= "model", mode = 1):
@@ -199,7 +217,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	last_time = time.time()
 
 	K.set_session(sess)
-	K.set_image_dim_ordering('tf')	
+	
 	print('Time elapsed to start session = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
 
@@ -243,7 +261,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# print('-'*30)
 	history = History()
 	history = model.fit(imgs_train, msks_train, 
-		batch_size=1024, #128, 
+		batch_size=512, #128, 
 		epochs=n_epoch, 
 		validation_data = (imgs_test, msks_test),
 		verbose=1)
@@ -269,28 +287,28 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		f.write(model.to_json())
 
 
-	# print('-'*30)
-	# print('Loading saved weights...')
-	# print('-'*30)
-	epochNo = len(history.history['loss'])-1
-	model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
-	model.load_weights(model_fn)
+	# # print('-'*30)
+	# # print('Loading saved weights...')
+	# # print('-'*30)
+	# epochNo = len(history.history['loss'])-1
+	# model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
+	# model.load_weights(model_fn)
 
-	print('Time elapsed for model save/load to disk = {} seconds'.format(time.time() - last_time))
-	last_time = time.time()
+	# print('Time elapsed for model save/load to disk = {} seconds'.format(time.time() - last_time))
+	# last_time = time.time()
 
-	# print('-'*30)
-	# print('Predicting masks on test data...')
-	# print('-'*30)
-	msks_pred = model.predict(imgs_test, verbose=1)
-	# print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
-	np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
+	# # print('-'*30)
+	# # print('Predicting masks on test data...')
+	# # print('-'*30)
+	# msks_pred = model.predict(imgs_test, verbose=1)
+	# # print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
+	# np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
 
-	scores = model.evaluate(imgs_test, msks_test, batch_size=128, verbose = 2)
-	print ("Evaluation Scores", scores)
+	# scores = model.evaluate(imgs_test, msks_test, batch_size=128, verbose = 2)
+	# print ("Evaluation Scores", scores)
 
-	print('Time elapsed for model evaluation = {} seconds'.format(time.time() - last_time))
-	last_time = time.time()
+	# print('Time elapsed for model evaluation = {} seconds'.format(time.time() - last_time))
+	# last_time = time.time()
 
 if __name__ =="__main__":
 
