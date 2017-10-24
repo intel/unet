@@ -36,14 +36,15 @@ import os
 
 omp_threads = 50
 intra_threads = 5
-os.environ["KMP_BLOCKTIME"] = "1" 
-os.environ["KMP_AFFINITY"]="granularity=thread,compact"
+os.environ["KMP_BLOCKTIME"] = "0" 
+os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
 os.environ["OMP_NUM_THREADS"]= str(omp_threads)
 os.environ['MKL_VERBOSE'] = '1'
 #os.environ['KMP_SETTINGS'] = '1'
 
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'  # Get rid of the AVX, SSE warnings
 
 #os.environ['MKL_DYNAMIC']='1'
 
@@ -51,13 +52,9 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm  # pip install tqdm
 
-batch_size = 1024  #2048 #1024 #128
-training_epochs = 5
+batch_size = 256
+training_epochs = 10
 display_step = 1
-
-img_height = 128  # Needs to be an even number for max pooling to work
-img_width = 128   # Needs to be an even number for max pooling to work
-n_channels = 1
 
 BASE = "/home/bduser/ge_tensorflow/data/"
 OUT_PATH  = BASE+"slices/Results/"
@@ -118,7 +115,10 @@ imgs_file_test,  msks_file_test  = update_channels(imgs_file_test, msks_file_tes
 
 assert imgs_file_train.shape == msks_file_train.shape # Make sure images and masks are same size and count
 
-data_shape = (None, imgs_file_train.shape[1], imgs_file_train.shape[2], imgs_file_train.shape[3])
+img_height = imgs_file_train.shape[1]  # Needs to be an even number for max pooling to work
+img_width = imgs_file_train.shape[2]   # Needs to be an even number for max pooling to work
+n_channels = imgs_file_train.shape[3]
+data_shape = (None, img_height, img_width, n_channels)
 
 imgs_placeholder = tf.placeholder(imgs_file_train.dtype, shape=data_shape)
 msks_placeholder = tf.placeholder(msks_file_train.dtype, shape=data_shape)
@@ -164,16 +164,41 @@ up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)
 conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
-pred_msk = tf.layers.conv2d(name='prediction_mask', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
+pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
+
+out_msk = tf.nn.sigmoid(pred_msk)
 
 '''
 END UNET Implementation
 '''
 
+def IOU(y_pred, y_true):
+    """Returns a (approx) IOU score
+    intesection = y_pred.flatten() * y_true.flatten()
+    Then, IOU = 2 * intersection / (y_pred.sum() + y_true.sum() + 1e-7) + 1e-7
+    Args:
+        y_pred (4-D array): (N, H, W, 1)
+        y_true (4-D array): (N, H, W, 1)
+    Returns:
+        float: IOU score
+    """
+    H, W, _ = y_pred.get_shape().as_list()[1:]
+
+    pred_flat = tf.reshape(y_pred, [-1, H * W])
+    true_flat = tf.reshape(y_true, [-1, H * W])
+
+    intersection = 2 * tf.reduce_sum(pred_flat * true_flat, axis=1) + 1e-7
+    denominator = tf.reduce_sum(pred_flat, axis=1) + tf.reduce_sum(true_flat, axis=1) + 1e-7
+
+    return tf.reduce_mean(intersection / denominator)
+
+
 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=msks_placeholder, logits=pred_msk))
+iou_cost = IOU(out_msk, msks_placeholder)
 
+# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
+train_step = tf.train.AdamOptimizer().minimize(loss)
 
 # Initialize all variables
 init_op = tf.global_variables_initializer()
@@ -192,6 +217,7 @@ init = tf.global_variables_initializer()
 
 num_samples = imgs_file_train.shape[0]
 
+
 # Start training
 with sess.as_default():
 
@@ -202,42 +228,42 @@ with sess.as_default():
     # Fit all training data
     for epoch in range(training_epochs):
 
-    	idx = 0
+        for idx in tqdm(range(0, num_samples, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
 
-        for i in tqdm(range(num_samples//batch_size)):
+        	# X_batch, y_batch = sess.run([X_train_op, y_train_op])
 
-			sess.run(train_step, 
-				feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+batch_size)], 
-				msks_placeholder: msks_file_train[idx:(idx+batch_size)]})
+        	# sess.run(train_step, feed_dict={imgs_placeholder: X_batch, msks_placeholder: y_batch})
+        	# lossVal = sess.run(loss, feed_dict={imgs_placeholder: X_batch, msks_placeholder: y_batch})
 
-			idx += batch_size
-
-		# Take care of partial batch
-		if ((num_samples%batch_size) > 0):
-			sess.run(train_step, 
-				feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+(num_samples%batch_size))], 
-					msks_placeholder: msks_file_train[idx:(idx+(num_samples%batch_size))]})			
+        	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+batch_size)], msks_placeholder: msks_file_train[idx:(idx+batch_size)]})
+        	
+        # Handle partial batches (if num_samples is not evenly divisible by batch_size)
+        # if (num_samples%batch_size) > 0:
+        # 	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+(num_samples%batch_size))], msks_placeholder: msks_file_train[idx:(idx+(num_samples%batch_size))]})
+        	
 
         # Display logs per epoch step
         if (epoch+1) % display_step == 0:
             #loss_train = sess.run(loss, feed_dict={imgs_placeholder: imgs_file_train, msks_placeholder: msks_file_train})
 
-            loss_test = sess.run(loss, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
-            print("Epoch: {}, test loss={:.6f}".format(epoch+1, loss_test))
+            loss_test, iou_test = sess.run([loss, iou_cost], feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
+            #iou_test = sess.run(iou_loss, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
+            print('Epoch: {}, test loss = {:.6f}, IOU = {:.6f}'.format(epoch+1, loss_test, iou_test))
 
 
-        from tensorflow.python.client import timeline
+    from tensorflow.python.client import timeline
 
-	fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-	chrome_trace = fetched_timeline.generate_chrome_trace_format()
-	with open(timeline_filename, 'w') as f:
-	    f.write(chrome_trace)
+    fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+    chrome_trace = fetched_timeline.generate_chrome_trace_format()
+    with open(timeline_filename, 'w') as f:
+    	f.write(chrome_trace)
 
-    print("Training finished.")
+    print('Training finished.')
 
     print('Predicting segmentation masks for test set')
-    test_preds = sess.run(pred_msk, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
-    np.save('test_predictions.npy')
+    test_preds = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
+    
+    np.save('test_predictions.npy', test_preds)
     print('Test set segmentation masks saved to test_predictions.npy')
 
 
