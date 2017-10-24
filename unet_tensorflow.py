@@ -52,7 +52,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm  # pip install tqdm
 
-batch_size = 256
+batch_size = 1024
 training_epochs = 10
 display_step = 1
 
@@ -158,10 +158,12 @@ conv7 = tf.layers.conv2d(name='conv7b', inputs=conv7, filters=128, kernel_size=[
 
 up8 = tf.concat([tf.image.resize_nearest_neighbor(conv7, (img_height//2, img_width//2)), conv2], -1, name='up8')
 conv8 = tf.layers.conv2d(name='conv8a', inputs=up8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+conv8 = tf.nn.dropout(conv8, 0.5)
 conv8 = tf.layers.conv2d(name='conv8b', inputs=conv8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
 up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)), conv1], -1, name='up9')
 conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+conv9 = tf.nn.dropout(conv9, 0.5)
 conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
 pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
@@ -172,8 +174,9 @@ out_msk = tf.nn.sigmoid(pred_msk)
 END UNET Implementation
 '''
 
-def IOU(y_pred, y_true):
-    """Returns a (approx) IOU score
+def dice_coefficient(y_pred, y_true):
+    '''
+    Returns Dice coefficient (related to IOU)
     intesection = y_pred.flatten() * y_true.flatten()
     Then, IOU = 2 * intersection / (y_pred.sum() + y_true.sum() + 1e-7) + 1e-7
     Args:
@@ -181,11 +184,12 @@ def IOU(y_pred, y_true):
         y_true (4-D array): (N, H, W, 1)
     Returns:
         float: IOU score
-    """
-    H, W, _ = y_pred.get_shape().as_list()[1:]
+    '''
+    H, W = y_pred.get_shape().as_list()[1:3]  # Get the height and width of the image
+    shape = H*W
 
-    pred_flat = tf.reshape(y_pred, [-1, H * W])
-    true_flat = tf.reshape(y_true, [-1, H * W])
+    pred_flat = tf.reshape(y_pred, [-1, shape])
+    true_flat = tf.reshape(y_true, [-1, shape])
 
     intersection = 2 * tf.reduce_sum(pred_flat * true_flat, axis=1) + 1e-7
     denominator = tf.reduce_sum(pred_flat, axis=1) + tf.reduce_sum(true_flat, axis=1) + 1e-7
@@ -194,7 +198,7 @@ def IOU(y_pred, y_true):
 
 
 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=msks_placeholder, logits=pred_msk))
-iou_cost = IOU(out_msk, msks_placeholder)
+dice_cost = dice_coefficient(out_msk, msks_placeholder)
 
 # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
@@ -246,9 +250,9 @@ with sess.as_default():
         if (epoch+1) % display_step == 0:
             #loss_train = sess.run(loss, feed_dict={imgs_placeholder: imgs_file_train, msks_placeholder: msks_file_train})
 
-            loss_test, iou_test = sess.run([loss, iou_cost], feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
+            loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
             #iou_test = sess.run(iou_loss, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
-            print('Epoch: {}, test loss = {:.6f}, IOU = {:.6f}'.format(epoch+1, loss_test, iou_test))
+            print('Epoch: {}, test loss = {:.6f}, Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
 
 
     from tensorflow.python.client import timeline
@@ -261,7 +265,7 @@ with sess.as_default():
     print('Training finished.')
 
     print('Predicting segmentation masks for test set')
-    test_preds = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
+    test_preds = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test})
     
     np.save('test_predictions.npy', test_preds)
     print('Test set segmentation masks saved to test_predictions.npy')
