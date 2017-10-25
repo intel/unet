@@ -182,26 +182,21 @@ def create_unet(imgs_placeholder):
 
 def dice_coefficient(y_pred, y_true):
     '''
-    Returns Dice coefficient (related to IOU)
-    intesection = y_pred.flatten() * y_true.flatten()
-    Then, IOU = 2 * intersection / (y_pred.sum() + y_true.sum() + 1e-7) + 1e-7
-    Args:
-        y_pred (4-D array): (N, H, W, 1)
-        y_true (4-D array): (N, H, W, 1)
-    Returns:
-        float: IOU score
+    Returns Dice coefficient
+    2 * intersection / union
+
     '''
-    H, W = y_pred.get_shape().as_list()[1:3]  # Get the height and width of the image
-    shape = H*W
+    smoothing = 1e-7
 
-    pred_flat = tf.reshape(y_pred, [-1, shape])
-    true_flat = tf.reshape(y_true, [-1, shape])
+    intersection = tf.reduce_sum(y_pred * y_true, axis=[1, 2, 3]) + smoothing
+    
+    # Sorensen Dice
+    denominator = tf.reduce_sum(y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true, axis=[1, 2, 3]) + smoothing
 
-    intersection = 2 * tf.reduce_sum(pred_flat * true_flat, axis=1) + 1e-7
-    denominator = tf.reduce_sum(pred_flat, axis=1) + tf.reduce_sum(true_flat, axis=1) + 1e-7
+    # Jaccard Dice
+    #denominator = tf.reduce_sum(y_pred*y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true*y_true, axis=[1, 2, 3]) + smoothing
 
-    return tf.reduce_mean(intersection / denominator)
-
+    return tf.reduce_mean(2. * intersection / denominator)
 
 
 pred_msk, out_msk = create_unet(imgs_placeholder)
@@ -242,9 +237,13 @@ with sess.as_default():
     '''
     Load the previously saved model file if it exists
     '''
-    if (USE_SAVED_MODEL) and (os.path.exists(savedModelWeightsFileName)):
+    if USE_SAVED_MODEL:
         # Restore variables from disk.
-        saver.restore(sess, savedModelWeightsFileName)
+        try:
+            saver.restore(sess, savedModelWeightsFileName)
+            print('Restoring weights from previously-saved file: {}'.format(savedModelWeightsFileName))
+        except:
+            sess.run(init)
     else:
         # Run the initializer
         sess.run(init)
@@ -254,7 +253,7 @@ with sess.as_default():
     # Fit all training data
     for epoch in range(training_epochs):
 
-        for idx in tqdm(range(0, num_samples, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
+        for idx in tqdm(range(0, num_samples-1, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
 
         	# X_batch, y_batch = sess.run([X_train_op, y_train_op])
 
