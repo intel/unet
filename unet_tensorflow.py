@@ -253,7 +253,7 @@ with sess.as_default():
     # Fit all training data
     for epoch in range(training_epochs):
 
-        for idx in tqdm(range(0, num_samples-1, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
+        for idx in tqdm(range(0, num_samples-batch_size, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
 
         	# X_batch, y_batch = sess.run([X_train_op, y_train_op])
 
