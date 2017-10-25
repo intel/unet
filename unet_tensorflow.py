@@ -35,11 +35,15 @@ limitations under the License.
 # you can load in this json file.
 timeline_filename = 'tf_timeline_unet.json'
 
+# The model will be saved to this file
+savedModelWeightsFileName = 'savedModels/unet_model_weights_ge.ckpt'
+USE_SAVED_MODEL = True  # Start training by loading in a previously trained model
+
 import os
 
-omp_threads = 50
-intra_threads = 5
-os.environ["KMP_BLOCKTIME"] = "0" 
+omp_threads = 50 # 50
+intra_threads = 5 # 5 
+os.environ["KMP_BLOCKTIME"] = "0" # 0
 os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
 os.environ["OMP_NUM_THREADS"]= str(omp_threads)
 os.environ['MKL_VERBOSE'] = '1'
@@ -127,55 +131,54 @@ imgs_placeholder = tf.placeholder(imgs_file_train.dtype, shape=data_shape)
 msks_placeholder = tf.placeholder(msks_file_train.dtype, shape=data_shape)
 
 
-'''
-BEGIN 
-TF UNET IMPLEMENTATION
-'''
+def create_unet(imgs_placeholder):
+    '''
+    BEGIN 
+    TF UNET IMPLEMENTATION
+    '''
 
-conv1 = tf.layers.conv2d(name='conv1a', inputs=imgs_placeholder, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv1 = tf.layers.conv2d(name='conv1b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-pool1 = tf.layers.max_pooling2d(name='pool1', inputs=conv1, pool_size=[2,2], strides=2) # img = 64 x 64 if original size was 128 x 128
+    conv1 = tf.layers.conv2d(name='conv1a', inputs=imgs_placeholder, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv1 = tf.layers.conv2d(name='conv1b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    pool1 = tf.layers.max_pooling2d(name='pool1', inputs=conv1, pool_size=[2,2], strides=2) # img = 64 x 64 if original size was 128 x 128
 
-conv2 = tf.layers.conv2d(name='conv2a', inputs=pool1, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv2 = tf.layers.conv2d(name='conv2b', inputs=conv2, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-pool2 = tf.layers.max_pooling2d(name='pool2', inputs=conv2, pool_size=[2, 2], strides=2) # img = 32 x 32 if original size was 128 x 128
+    conv2 = tf.layers.conv2d(name='conv2a', inputs=pool1, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv2 = tf.layers.conv2d(name='conv2b', inputs=conv2, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    pool2 = tf.layers.max_pooling2d(name='pool2', inputs=conv2, pool_size=[2, 2], strides=2) # img = 32 x 32 if original size was 128 x 128
 
-conv3 = tf.layers.conv2d(name='conv3a', inputs=pool2, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv3 = tf.layers.conv2d(name='conv3b', inputs=conv3, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-pool3 = tf.layers.max_pooling2d(name='pool3', inputs=conv3, pool_size=[2, 2], strides=2) # img = 16 x 16 if original size was 128 x 128
+    conv3 = tf.layers.conv2d(name='conv3a', inputs=pool2, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv3 = tf.layers.conv2d(name='conv3b', inputs=conv3, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    pool3 = tf.layers.max_pooling2d(name='pool3', inputs=conv3, pool_size=[2, 2], strides=2) # img = 16 x 16 if original size was 128 x 128
 
-conv4 = tf.layers.conv2d(name='conv4a', inputs=pool3, filters=256, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv4 = tf.layers.conv2d(name='conv4b', inputs=conv4, filters=256, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-pool4 = tf.layers.max_pooling2d(name='pool4', inputs=conv4, pool_size=[2, 2], strides=2) #img = 8 x 8 if original size was 128 x 128
+    conv4 = tf.layers.conv2d(name='conv4a', inputs=pool3, filters=256, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv4 = tf.layers.conv2d(name='conv4b', inputs=conv4, filters=256, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    pool4 = tf.layers.max_pooling2d(name='pool4', inputs=conv4, pool_size=[2, 2], strides=2) #img = 8 x 8 if original size was 128 x 128
 
-conv5 = tf.layers.conv2d(name='conv5a', inputs=pool4, filters=512, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv5 = tf.layers.conv2d(name='conv5b', inputs=conv5, filters=512, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv5 = tf.layers.conv2d(name='conv5a', inputs=pool4, filters=512, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv5 = tf.layers.conv2d(name='conv5b', inputs=conv5, filters=512, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
-up6 = tf.concat([tf.image.resize_nearest_neighbor(conv5, (img_height//8, img_width//8)), conv4], -1, name='up6')
-conv6 = tf.layers.conv2d(name='conv6a', inputs=up6, filters=256, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
-conv6 = tf.layers.conv2d(name='conv6b', inputs=conv6, filters=256, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
+    up6 = tf.concat([tf.image.resize_nearest_neighbor(conv5, (img_height//8, img_width//8)), conv4], -1, name='up6')
+    conv6 = tf.layers.conv2d(name='conv6a', inputs=up6, filters=256, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
+    conv6 = tf.layers.conv2d(name='conv6b', inputs=conv6, filters=256, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
 
-up7 = tf.concat([tf.image.resize_nearest_neighbor(conv6, (img_height//4, img_width//4)), conv3], -1, name='up7')
-conv7 = tf.layers.conv2d(name='conv7a', inputs=up7, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv7 = tf.layers.conv2d(name='conv7b', inputs=conv7, filters=128, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
+    up7 = tf.concat([tf.image.resize_nearest_neighbor(conv6, (img_height//4, img_width//4)), conv3], -1, name='up7')
+    conv7 = tf.layers.conv2d(name='conv7a', inputs=up7, filters=128, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv7 = tf.layers.conv2d(name='conv7b', inputs=conv7, filters=128, kernel_size=[3,3], activation=tf.nn.relu, padding='SAME')
 
-up8 = tf.concat([tf.image.resize_nearest_neighbor(conv7, (img_height//2, img_width//2)), conv2], -1, name='up8')
-conv8 = tf.layers.conv2d(name='conv8a', inputs=up8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv8 = tf.nn.dropout(conv8, 0.5)
-conv8 = tf.layers.conv2d(name='conv8b', inputs=conv8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    up8 = tf.concat([tf.image.resize_nearest_neighbor(conv7, (img_height//2, img_width//2)), conv2], -1, name='up8')
+    conv8 = tf.layers.conv2d(name='conv8a', inputs=up8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv8 = tf.nn.dropout(conv8, 0.5)
+    conv8 = tf.layers.conv2d(name='conv8b', inputs=conv8, filters=64, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
-up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)), conv1], -1, name='up9')
-conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
-conv9 = tf.nn.dropout(conv9, 0.5)
-conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)), conv1], -1, name='up9')
+    conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv9 = tf.nn.dropout(conv9, 0.5)
+    conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
-pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
+    pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
 
-out_msk = tf.nn.sigmoid(pred_msk)
+    out_msk = tf.nn.sigmoid(pred_msk)
 
-'''
-END UNET Implementation
-'''
+    return pred_msk, out_msk
 
 def dice_coefficient(y_pred, y_true):
     '''
@@ -200,6 +203,9 @@ def dice_coefficient(y_pred, y_true):
     return tf.reduce_mean(intersection / denominator)
 
 
+
+pred_msk, out_msk = create_unet(imgs_placeholder)
+
 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=msks_placeholder, logits=pred_msk))
 dice_cost = dice_coefficient(out_msk, msks_placeholder)
 
@@ -207,17 +213,17 @@ dice_cost = dice_coefficient(out_msk, msks_placeholder)
 
 train_step = tf.train.AdamOptimizer().minimize(loss)
 
+# Add ops to save and restore all the variables.
+saver = tf.train.Saver()
+
 # Initialize all variables
 init_op = tf.global_variables_initializer()
 
 options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
 
-# sess = tf.Session(config=tf.ConfigProto(
-#         intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
-
-sess = tf.Session(config=tf.ConfigProto(device_count={"CPU":12}, inter_op_parallelism_threads=1, intra_op_parallelism_threads=1))
-
+sess = tf.Session(config=tf.ConfigProto(
+        intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
 
 sess.run(init_op, options=options, run_metadata=run_metadata)
 
@@ -233,9 +239,17 @@ print('Batch size = {}'.format(batch_size))
 # Start training
 with sess.as_default():
 
-    # Run the initializer
-    sess.run(init)
+    '''
+    Load the previously saved model file if it exists
+    '''
+    if (USE_SAVED_MODEL) and (os.path.exists(savedModelWeightsFileName)):
+        # Restore variables from disk.
+        saver.restore(sess, savedModelWeightsFileName)
+    else:
+        # Run the initializer
+        sess.run(init)
 
+    last_loss = float('inf') # Initialize to infinity
     
     # Fit all training data
     for epoch in range(training_epochs):
@@ -261,6 +275,15 @@ with sess.as_default():
             loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
             #iou_test = sess.run(iou_loss, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
             print('Epoch: {}, test loss = {:.6f}, Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
+
+            '''
+            Save the model if it is an improvement
+            '''
+            if loss_test < last_loss:
+                last_loss = loss_test
+                # Save the variables to disk.
+                save_path = saver.save(sess, savedModelWeightsFileName)
+                print('UNet Model weights saved in file: {}'.format(save_path))
 
 
     from tensorflow.python.client import timeline
