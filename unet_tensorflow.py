@@ -23,6 +23,9 @@ limitations under the License.
   
   It should also produce a Tensorflow timeline showing
   the execution trace. 
+
+  Usage:  numactl -p 1 python unet_tensorflow.py
+
 '''
 
 # The timeline trace for TF is saved to this file.
@@ -53,7 +56,7 @@ import numpy as np
 from tqdm import tqdm  # pip install tqdm
 
 batch_size = 1024
-training_epochs = 10
+training_epochs = 15
 display_step = 1
 
 BASE = "/home/bduser/ge_tensorflow/data/"
@@ -210,8 +213,11 @@ init_op = tf.global_variables_initializer()
 options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
 
-sess = tf.Session(config=tf.ConfigProto(
-        intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
+# sess = tf.Session(config=tf.ConfigProto(
+#         intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
+
+sess = tf.Session(config=tf.ConfigProto(device_count={"CPU":12}, inter_op_parallelism_threads=1, intra_op_parallelism_threads=1))
+
 
 sess.run(init_op, options=options, run_metadata=run_metadata)
 
@@ -220,7 +226,9 @@ sess.run(init_op, options=options, run_metadata=run_metadata)
 init = tf.global_variables_initializer()
 
 num_samples = imgs_file_train.shape[0]
-
+print('Number of training samples = {}'.format(num_samples))
+print('Number of testing samples = {}'.format(imgs_file_test.shape[0]))
+print('Batch size = {}'.format(batch_size))
 
 # Start training
 with sess.as_default():
@@ -242,8 +250,8 @@ with sess.as_default():
         	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+batch_size)], msks_placeholder: msks_file_train[idx:(idx+batch_size)]})
         	
         # Handle partial batches (if num_samples is not evenly divisible by batch_size)
-        # if (num_samples%batch_size) > 0:
-        # 	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+(num_samples%batch_size))], msks_placeholder: msks_file_train[idx:(idx+(num_samples%batch_size))]})
+        if (num_samples%batch_size) > 0:
+        	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+(num_samples%batch_size))], msks_placeholder: msks_file_train[idx:(idx+(num_samples%batch_size))]})
         	
 
         # Display logs per epoch step
