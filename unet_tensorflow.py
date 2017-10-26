@@ -172,7 +172,7 @@ def create_unet(imgs_placeholder):
     up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)), conv1], -1, name='up9')
     conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
     conv9 = tf.nn.dropout(conv9, 0.5)
-    conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+    conv9 = tf.layers.conv2d(name='conv9b', inputs=conv9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
     pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
 

@@ -24,10 +24,10 @@ limitations under the License.
   Future version should probably use a batch iterator so that the entire file doesn't have
   to be loaded into memory all at once.
   After training the UNet, the script outputs:
-  	1. A trace file of the program execution - Useful for optimization
-  	2. A file of the graph variables (we currently save just the variables not the entire model)
-  	3. A numpy file with the model predictions based on the testing data. This can be compared
-  	     with msks_test.npy to evaluate the model's peformance.
+	1. A trace file of the program execution - Useful for optimization
+	2. A file of the graph variables (we currently save just the variables not the entire model)
+	3. A numpy file with the model predictions based on the testing data. This can be compared
+		 with msks_test.npy to evaluate the model's peformance.
 
   Usage:  numactl -p 1 python unet_tensorflow.py
 
@@ -82,7 +82,7 @@ def create_unet(imgs_placeholder):
 	up9 = tf.concat([tf.image.resize_nearest_neighbor(conv8, (img_height, img_width)), conv1], -1, name='up9')
 	conv9 = tf.layers.conv2d(name='conv9a', inputs=up9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 	conv9 = tf.nn.dropout(conv9, 0.5)
-	conv9 = tf.layers.conv2d(name='conv9b', inputs=conv1, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
+	conv9 = tf.layers.conv2d(name='conv9b', inputs=conv9, filters=32, kernel_size=[3, 3], activation=tf.nn.relu, padding='SAME')
 
 	pred_msk = tf.layers.conv2d(name='prediction_mask_loss', inputs=conv9, filters=1, kernel_size=[1,1], activation=None, padding='SAME')
 
@@ -91,24 +91,26 @@ def create_unet(imgs_placeholder):
 	return pred_msk, out_msk
 
 def dice_coefficient(y_pred, y_true):
-    '''
-    Returns Dice coefficient
-    2 * intersection / union
+	'''
+	Returns Dice coefficient
+	2 * intersection / union
 
-    '''
-    smoothing = 1e-7
+	NOTE: If we are using a sigmoid rather than a softmax, then the segmentation mask prediction
+	is not binary, but rather a continuous number between 0 and 1. Therefore, the Dice coefficient
+	and similar measures (e.g. IOU) will typically be lower.
 
-    y_pred_bool = tf.round(y_pred)
+	'''
+	smoothing = 1e-7
 
-    intersection = tf.reduce_sum(y_pred_bool * y_true, axis=[1, 2, 3]) + smoothing
-    
-    # Sorensen Dice
-    denominator = tf.reduce_sum(y_pred_bool, axis=[1, 2, 3]) + tf.reduce_sum(y_true, axis=[1, 2, 3]) + smoothing
+	intersection = tf.reduce_sum(y_pred * y_true, axis=[1, 2, 3]) + smoothing
+	
+	# Sorensen Dice
+	denominator = tf.reduce_sum(y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true, axis=[1, 2, 3]) + smoothing
 
-    # Jaccard Dice
-    #denominator = tf.reduce_sum(y_pred*y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true*y_true, axis=[1, 2, 3]) + smoothing
+	# Jaccard Dice
+	#denominator = tf.reduce_sum(y_pred*y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true*y_true, axis=[1, 2, 3]) + smoothing
 
-    return tf.reduce_mean(2. * intersection / denominator)
+	return tf.reduce_mean(2. * intersection / denominator)
 
 
 def SaveTraceTimeline(run_metadata, **settings):
@@ -127,10 +129,38 @@ def SaveTraceTimeline(run_metadata, **settings):
 		print('Wrote trace file {}'.format(settings['timeline_filename']))
 
 
-def SavePredictionsFile(test_preds, *settings):
+def SavePredictionsFile(test_preds, **settings):
+
+	'''
+	Save the predictions from the testing data
+	'''
 	
-	np.save(settings['predictions file'], test_preds)
-	print('Test set segmentation masks saved to {}'.format(settings['predictions file']))
+	np.save(settings['test predictions file'], test_preds)
+	print('Test set segmentation masks saved to {}'.format(settings['test predictions file']))
+
+def TestModel(sess, loss, dice_cost, imgs_placeholder, imgs_file_test, 
+		msks_placeholder, msks_file_test, last_loss, saver, **settings):
+
+	'''
+	Calculate the loss on the testing set and save the model weights if the testing loss has improved.
+	'''
+
+	loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, 
+		msks_placeholder: msks_file_test})
+	
+	print('Epoch: {}, test loss = {:.6f}, (Continuous) Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
+
+	'''
+	Save the model if it is an improvement otherwise skip saving
+	'''
+	if loss_test < last_loss:
+		last_loss = loss_test
+		# Save the variables to disk.
+		save_path = saver.save(sess, settings['savedModelWeightsFileName'])
+		print('UNet Model weights saved in file: {}'.format(save_path))
+
+	return last_loss
+
 
 '''
 BEGIN Main Script
@@ -147,17 +177,21 @@ if __name__ =="__main__":
 	# Create UNet model in Tensorflow graph
 	pred_msk, out_msk = create_unet(imgs_placeholder)
 
-	loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=msks_placeholder, logits=pred_msk))
-	dice_cost = dice_coefficient(out_msk, msks_placeholder)
+	with tf.name_scope('Loss'):
+		loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=msks_placeholder, logits=pred_msk))
+		tf.summary.scalar('loss', loss)
+
+	with tf.name_scope('Dice_cost'):
+		dice_cost = dice_coefficient(out_msk, msks_placeholder)
+		tf.summary.scalar('dice_cost', dice_cost)
 
 	# train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
-	train_step = tf.train.AdamOptimizer().minimize(loss)
+	with tf.name_scope('Adam_Optimizer'):
+		train_step = tf.train.AdamOptimizer().minimize(loss)
 
 	# Add ops to save and restore all the variables.
-	saver = tf.train.Saver()
-
-	# Initialize all variables
-	init_op = tf.global_variables_initializer()
+	with tf.name_scope('Save_weights'):
+		saver = tf.train.Saver()
 
 	# Create a trace for the graph execution so that we can evaluate for optimizations
 	options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
@@ -171,7 +205,8 @@ if __name__ =="__main__":
 	# Start training
 	with sess.as_default():
 
-		sess.run(init_op, options=options, run_metadata=run_metadata)
+		# Initialize graph variables and set trace
+		sess.run(tf.global_variables_initializer(), options=options, run_metadata=run_metadata)
 
 		if settings['USE_SAVED_MODEL']:
 			try:
@@ -179,6 +214,10 @@ if __name__ =="__main__":
 				print('Restoring weights from previously-saved file: {}'.format(settings['savedModelWeightsFileName']))
 			except:
 				print('No saved weights file to load [{}].'.format(settings['savedModelWeightsFileName']))
+
+		# op to write logs to Tensorboard
+		mergedSummaries = tf.summary.merge_all()
+		train_writer = tf.summary.FileWriter(settings['logs_path'], sess.graph)
 
 		last_loss = float('inf') # Initialize to infinity
 		num_samples = imgs_file_train.shape[0]
@@ -192,8 +231,11 @@ if __name__ =="__main__":
 			for idx in tqdm(range(0, num_samples - settings['batch_size'], settings['batch_size']), 
 				desc='Epoch {} of {}'.format(epoch+1, settings['training_epochs'])):
 
-				sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+settings['batch_size'])], 
+				_, summary = sess.run([train_step, mergedSummaries], feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+settings['batch_size'])], 
 					msks_placeholder: msks_file_train[idx:(idx+settings['batch_size'])]})
+
+				# Write tensorboard logs at every iteration
+				train_writer.add_summary(summary, epoch * settings['training_epochs'] + idx)
 				
 			# Handle partial batches (if num_samples is not evenly divisible by batch_size)
 			if (num_samples%settings['batch_size']) > 0:
@@ -202,20 +244,11 @@ if __name__ =="__main__":
 				
 			# Display logs per epoch step
 			if (epoch+1) % settings['display_step'] == 0:
-	
-				loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, 
-					msks_placeholder: msks_file_test})
-				
-				print('Epoch: {}, test loss = {:.6f}, Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
+				# Test the model against the testing data set and report losses
+				last_loss = TestModel(sess, loss, dice_cost, imgs_placeholder, imgs_file_test, 
+					msks_placeholder, msks_file_test, last_loss, saver, **settings)
 
-				'''
-				Save the model if it is an improvement otherwise skip saving
-				'''
-				if loss_test < last_loss:
-					last_loss = loss_test
-					# Save the variables to disk.
-					save_path = saver.save(sess, settings['savedModelWeightsFileName'])
-					print('UNet Model weights saved in file: {}'.format(save_path))
+				
 
 		# Save the program execution trace.
 		SaveTraceTimeline(run_metadata, **settings)
@@ -223,9 +256,14 @@ if __name__ =="__main__":
 		# Make prediction segmentation masks based on the test data
 		print('Predicting segmentation masks for test set')
 		test_preds = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test})
-		SavePredictionsFile(test_preds, *settings)
+		SavePredictionsFile(test_preds, **settings)
 
+		sess.close() # Close the TF session
 		print('Training finished.')
+
+		print('To view the Tensorboard:\nRun the command line:\n' \
+		  '--> tensorboard --logdir={} --port 6006\n' \
+		  'Then open http://0.0.0.0:6006/ into your web browser'.format(settings['logs_path']))
 
 	
 	

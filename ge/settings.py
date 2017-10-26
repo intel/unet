@@ -17,7 +17,7 @@ limitations under the License.
 '''
 settings = {}   # Create a settings dictionary. This way we can just pass the dictionary to functions
 settings['batch_size'] = 1024
-settings['training_epochs'] = 50
+settings['training_epochs'] = 1
 settings['display_step'] = 1
 
 settings['BASE'] = '/home/bduser/ge_tensorflow/data/'
@@ -56,6 +56,8 @@ settings['USE_SAVED_MODEL'] = True  # Start training by loading in a previously 
 # The predictions for the testing data set will be saved to this file. This way we can compare it to msks_test.npy
 settings['test predictions file'] = 'test_predictions.npy'
 
+settings['logs_path'] = 'tensorboard_logs/'
+
 
 '''
 Settings for KNL
@@ -65,8 +67,9 @@ import os
 settings['omp_threads'] = 50 # 50 
 settings['intra_threads'] = 5 # 5 
 os.environ["KMP_BLOCKTIME"] = "0" # 0 - Let KNL figure out the optimal time
-os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
-os.environ["OMP_NUM_THREADS"]= str(settings['omp_threads'])
+#os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
+os.environ['KMP_AFFINITY']='compact,granularity=fine'
+os.environ['OMP_NUM_THREADS']= str(settings['omp_threads'])
 #os.environ['MKL_VERBOSE'] = '1'
 #os.environ['KMP_SETTINGS'] = '1'  # If true, then it outputs the device settings
 

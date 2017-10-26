@@ -72,8 +72,11 @@ def CreatePlaceholder(imgs_data, msks_data):
 	n_channels = imgs_data.shape[3]
 	data_shape = (None, img_height, img_width, n_channels)
 
-	imgs_placeholder = tf.placeholder(imgs_data.dtype, shape=data_shape)
-	msks_placeholder = tf.placeholder(msks_data.dtype, shape=data_shape)
+	with tf.name_scope('Input'):
+		imgs_placeholder = tf.placeholder(imgs_data.dtype, shape=data_shape, name='Image')
+
+	with tf.name_scope('Label'):
+		msks_placeholder = tf.placeholder(msks_data.dtype, shape=data_shape, name='Segmentation_Mask')
 
 	return imgs_placeholder, msks_placeholder
 
