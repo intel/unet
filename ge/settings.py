@@ -17,7 +17,7 @@ limitations under the License.
 '''
 settings = {}   # Create a settings dictionary. This way we can just pass the dictionary to functions
 settings['batch_size'] = 1024
-settings['training_epochs'] = 15
+settings['training_epochs'] = 50
 settings['display_step'] = 1
 
 settings['BASE'] = '/home/bduser/ge_tensorflow/data/'

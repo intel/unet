@@ -91,26 +91,24 @@ def create_unet(imgs_placeholder):
 	return pred_msk, out_msk
 
 def dice_coefficient(y_pred, y_true):
-	'''
-	Returns Dice coefficient (related to IOU)
-	intesection = y_pred.flatten() * y_true.flatten()
-	Then, IOU = 2 * intersection / (y_pred.sum() + y_true.sum() + 1e-7) + 1e-7
-	Args:
-		y_pred (4-D array): (N, H, W, 1)
-		y_true (4-D array): (N, H, W, 1)
-	Returns:
-		float: IOU score
-	'''
-	H, W = y_pred.get_shape().as_list()[1:3]  # Get the height and width of the image
-	shape = H*W
+    '''
+    Returns Dice coefficient
+    2 * intersection / union
 
-	pred_flat = tf.reshape(y_pred, [-1, shape])
-	true_flat = tf.reshape(y_true, [-1, shape])
+    '''
+    smoothing = 1e-7
 
-	intersection = 2 * tf.reduce_sum(pred_flat * true_flat, axis=1) + 1e-7
-	denominator = tf.reduce_sum(pred_flat, axis=1) + tf.reduce_sum(true_flat, axis=1) + 1e-7
+    y_pred_bool = tf.round(y_pred)
 
-	return tf.reduce_mean(intersection / denominator)
+    intersection = tf.reduce_sum(y_pred_bool * y_true, axis=[1, 2, 3]) + smoothing
+    
+    # Sorensen Dice
+    denominator = tf.reduce_sum(y_pred_bool, axis=[1, 2, 3]) + tf.reduce_sum(y_true, axis=[1, 2, 3]) + smoothing
+
+    # Jaccard Dice
+    #denominator = tf.reduce_sum(y_pred*y_pred, axis=[1, 2, 3]) + tf.reduce_sum(y_true*y_true, axis=[1, 2, 3]) + smoothing
+
+    return tf.reduce_mean(2. * intersection / denominator)
 
 
 def SaveTraceTimeline(run_metadata, **settings):
