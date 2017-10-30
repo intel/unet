@@ -58,13 +58,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'  # Get rid of the AVX, SSE warnings
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm  # pip install tqdm
+from tensorflow.python.client import timeline
 
 batch_size = 1024
 training_epochs = 15
 display_step = 1
 
-BASE = "/home/bduser/ge_tensorflow/data/"
-OUT_PATH  = BASE+"slices/Results/"
+BASE = "/home/bduser/tensorflow/GE/step1_train_model/Data/"
+OUT_PATH  = BASE+"Data-Large/"
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
@@ -255,12 +256,11 @@ with sess.as_default():
 
         for idx in tqdm(range(0, num_samples-batch_size, batch_size), desc='Epoch {} of {}'.format(epoch+1, training_epochs)):
 
-        	# X_batch, y_batch = sess.run([X_train_op, y_train_op])
-
-        	# sess.run(train_step, feed_dict={imgs_placeholder: X_batch, msks_placeholder: y_batch})
-        	# lossVal = sess.run(loss, feed_dict={imgs_placeholder: X_batch, msks_placeholder: y_batch})
-
-        	sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+batch_size)], msks_placeholder: msks_file_train[idx:(idx+batch_size)]})
+            sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+batch_size)], msks_placeholder: msks_file_train[idx:(idx+batch_size)]})
+            fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+            chrome_trace = fetched_timeline.generate_chrome_trace_format()
+            with open(timeline_filename, 'w') as f:
+                f.write(chrome_trace)
         	
         # Handle partial batches (if num_samples is not evenly divisible by batch_size)
         if (num_samples%batch_size) > 0:
@@ -269,10 +269,8 @@ with sess.as_default():
 
         # Display logs per epoch step
         if (epoch+1) % display_step == 0:
-            #loss_train = sess.run(loss, feed_dict={imgs_placeholder: imgs_file_train, msks_placeholder: msks_file_train})
-
+            
             loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
-            #iou_test = sess.run(iou_loss, feed_dict={imgs_placeholder: imgs_file_test, msks_placeholder: msks_file_test})
             print('Epoch: {}, test loss = {:.6f}, Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
 
             '''
@@ -284,13 +282,6 @@ with sess.as_default():
                 save_path = saver.save(sess, savedModelWeightsFileName)
                 print('UNet Model weights saved in file: {}'.format(save_path))
 
-
-    from tensorflow.python.client import timeline
-
-    fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-    chrome_trace = fetched_timeline.generate_chrome_trace_format()
-    with open(timeline_filename, 'w') as f:
-    	f.write(chrome_trace)
 
     print('Training finished.')
 

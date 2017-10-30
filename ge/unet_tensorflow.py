@@ -144,23 +144,70 @@ def TestModel(sess, loss, dice_cost, imgs_placeholder, imgs_file_test,
 	'''
 	Calculate the loss on the testing set and save the model weights if the testing loss has improved.
 	'''
+	import math
 
-	loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test, 
-		msks_placeholder: msks_file_test})
+	num_samples = imgs_file_test.shape[0]
+
+	sum_loss = 0.
+	sum_dice = 0.
+
+	print('Calculating loss on test set. Number of test samples = {}'.format(num_samples))
+
+	for idx in tqdm(range(0, num_samples - settings['batch_size'], settings['batch_size']), 
+				desc='Epoch {} of {}'.format(epoch+1, settings['training_epochs'])):
+
+		loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_test[idx:(idx+settings['batch_size'])], 
+						msks_placeholder: msks_file_test[idx:(idx+settings['batch_size'])]})
+
+		sum_loss += loss_test
+		sum_dice += dice_test
 	
-	print('Epoch: {}, test loss = {:.6f}, (Continuous) Dice coefficient = {:.6f}'.format(epoch+1, loss_test, dice_test))
+	print(math.ceil(num_samples/settings['batch_size']))
+
+	# Handle partial batches (if num_samples is not evenly divisible by batch_size)
+	if np.mod(num_samples, settings['batch_size']) > 0:
+		loss_test, dice_test = sess.run([loss, dice_cost], feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+np.mod(num_samples,settings['batch_size']))], 
+			msks_placeholder: msks_file_train[idx:(idx+np.mod(num_samples,settings['batch_size']))]})
+		sum_loss += loss_test
+		sum_dice += dice_test	
+
+	avg_loss = sum_loss / math.ceil(num_samples/settings['batch_size'])
+	avg_dice = sum_dice / math.ceil(num_samples/settings['batch_size'])
+
+	print('Epoch: {}, test loss = {:.6f}, (Continuous) Dice coefficient = {:.6f}'.format(epoch+1, avg_loss, avg_dice))
 
 	'''
 	Save the model if it is an improvement otherwise skip saving
 	'''
-	if loss_test < last_loss:
-		last_loss = loss_test
+	if avg_loss < last_loss:
+		last_loss = avg_loss
 		# Save the variables to disk.
 		save_path = saver.save(sess, settings['savedModelWeightsFileName'])
 		print('UNet Model weights saved in file: {}'.format(save_path))
 
 	return last_loss
 
+
+def MakePredictions(sess, imgs_placeholder, imgs_file_test, **settings):
+
+	'''
+	Calculate the loss on the testing set and save the model weights if the testing loss has improved.
+	'''
+	num_samples = imgs_file_test.shape[0]
+	predictions = np.zeros(imgs_file_test.shape)
+
+	print('Predicting segmentation masks on test set. Number of test samples = {}'.format(num_samples))
+
+	for idx in tqdm(range(0, num_samples - settings['batch_size'], settings['batch_size']), 
+				desc='Epoch {} of {}'.format(epoch+1, settings['training_epochs'])):
+
+		predictions[idx:((idx+settings['batch_size']))] = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test[idx:(idx+settings['batch_size'])]})
+
+	# Handle partial batches (if num_samples is not evenly divisible by batch_size)
+	if np.mod(num_samples, settings['batch_size']) > 0:
+		predictions[idx:(idx+np.mod(num_samples,settings['batch_size']))] = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+np.mod(num_samples,settings['batch_size']))]})
+		
+	return predictions
 
 '''
 BEGIN Main Script
@@ -236,11 +283,11 @@ if __name__ =="__main__":
 
 				# Write tensorboard logs at every iteration
 				train_writer.add_summary(summary, epoch * settings['training_epochs'] + idx)
-				
+			
 			# Handle partial batches (if num_samples is not evenly divisible by batch_size)
-			if (num_samples%settings['batch_size']) > 0:
-				sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+(num_samples%settings['batch_size']))], 
-					msks_placeholder: msks_file_train[idx:(idx+(num_samples%settings['batch_size']))]})
+			if np.mod(num_samples, settings['batch_size']) > 0:
+				sess.run(train_step, feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+np.mod(num_samples,settings['batch_size']))], 
+					msks_placeholder: msks_file_train[idx:(idx+np.mod(num_samples,settings['batch_size']))]})
 				
 			# Display logs per epoch step
 			if (epoch+1) % settings['display_step'] == 0:
@@ -254,8 +301,7 @@ if __name__ =="__main__":
 		SaveTraceTimeline(run_metadata, **settings)
 
 		# Make prediction segmentation masks based on the test data
-		print('Predicting segmentation masks for test set')
-		test_preds = sess.run(out_msk, feed_dict={imgs_placeholder: imgs_file_test})
+		test_preds = MakePredictions(sess, imgs_placeholder, imgs_file_test, **settings)
 		SavePredictionsFile(test_preds, **settings)
 
 		sess.close() # Close the TF session
