@@ -54,7 +54,7 @@ def LoadandPreprocessData(**settings):
 	print('Number of testing samples = {:,}'.format(imgs_test_file.shape[0]))
 	print('Batch size = {:,}'.format(settings['batch_size']))
 
-	return imgs_train_data, msks_train_data, imgs_test_data, msks_test_data
+	return imgs_train_data[:2048], msks_train_data[:2048], imgs_test_data[:2048], msks_test_data[:2048]
 
 def CreatePlaceholder(imgs_data, msks_data):
 	'''

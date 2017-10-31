@@ -41,10 +41,10 @@ USE_SAVED_MODEL = True  # Start training by loading in a previously trained mode
 
 import os
 
-omp_threads = 50 # 50
-intra_threads = 5 # 5 
+omp_threads = 68 # 50
+intra_threads = 68 # 5 
 os.environ["KMP_BLOCKTIME"] = "0" # 0
-os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
+os.environ["KMP_AFFINITY"]="granularity=thread,compact,duplicates,0,0"
 os.environ["OMP_NUM_THREADS"]= str(omp_threads)
 os.environ['MKL_VERBOSE'] = '1'
 #os.environ['KMP_SETTINGS'] = '1'
@@ -115,7 +115,7 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	else:
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
 
-	return new_imgs.astype(np.float32), new_msks.astype(np.float32)
+	return new_imgs[0:2048].astype(np.float32), new_msks[0:2048].astype(np.float32)
 
 imgs_file_train, msks_file_train = update_channels(imgs_file_train, msks_file_train, IN_CHANNEL_NO, OUT_CHANNEL_NO, MODE)
 imgs_file_test,  msks_file_test  = update_channels(imgs_file_test, msks_file_test, IN_CHANNEL_NO, OUT_CHANNEL_NO, MODE)
@@ -126,7 +126,7 @@ assert imgs_file_train.shape == msks_file_train.shape # Make sure images and mas
 img_height = imgs_file_train.shape[1]  # Needs to be an even number for max pooling to work
 img_width = imgs_file_train.shape[2]   # Needs to be an even number for max pooling to work
 n_channels = imgs_file_train.shape[3]
-data_shape = (None, img_height, img_width, n_channels)
+data_shape = (settings['batch_size'], img_height, img_width, n_channels)
 
 imgs_placeholder = tf.placeholder(imgs_file_train.dtype, shape=data_shape)
 msks_placeholder = tf.placeholder(msks_file_train.dtype, shape=data_shape)

@@ -279,7 +279,7 @@ if __name__ =="__main__":
 				desc='Epoch {} of {}'.format(epoch+1, settings['training_epochs'])):
 
 				_, summary = sess.run([train_step, mergedSummaries], feed_dict={imgs_placeholder: imgs_file_train[idx:(idx+settings['batch_size'])], 
-					msks_placeholder: msks_file_train[idx:(idx+settings['batch_size'])]})
+					msks_placeholder: msks_file_train[idx:(idx+settings['batch_size'])]}, options=options, run_metadata=run_metadata)
 
 				# Write tensorboard logs at every iteration
 				train_writer.add_summary(summary, epoch * settings['training_epochs'] + idx)

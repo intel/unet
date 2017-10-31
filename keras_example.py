@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+	 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,13 +38,15 @@ import os
 omp_threads = 50
 intra_threads = 5
 os.environ["KMP_BLOCKTIME"] = "1" 
-os.environ["KMP_AFFINITY"]="granularity=thread,compact"
+os.environ["KMP_AFFINITY"]="granularity=thread,compact,duplicates,0,0"
 os.environ["OMP_NUM_THREADS"]= str(omp_threads)
 os.environ['MKL_VERBOSE'] = '1'
 #os.environ['KMP_SETTINGS'] = '1'
 
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
+
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'  # Get rid of the AVX, SSE warnings
 
 os.environ['MKL_DYNAMIC']='1'
 
@@ -53,8 +55,10 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
+from tensorflow.python.client import timeline
+
 sess = tf.Session(config=tf.ConfigProto(
-        intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
+		intra_op_parallelism_threads=omp_threads, inter_op_parallelism_threads=intra_threads))
 
 from keras import backend as K
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, Dropout, concatenate
@@ -130,15 +134,16 @@ batch[1] = np.random.rand(batch_size,128,128,1)
 with sess.as_default():
 
 	for i in tqdm(range(num_samples//batch_size)):
-	    #batch = mnist_data.train.next_batch(50)
-	    
-	    train_step.run(feed_dict={img: batch[0],
-	                              labels: batch[1]})
+		#batch = mnist_data.train.next_batch(50)
+		
+		sess.run(train_step, feed_dict={img: batch[0],
+								  labels: batch[1]}, options=options, run_metadata=run_metadata)
 
-	from tensorflow.python.client import timeline
+	
+	
 
 	fetched_timeline = timeline.Timeline(run_metadata.step_stats)
 	chrome_trace = fetched_timeline.generate_chrome_trace_format()
 	with open(timeline_filename, 'w') as f:
-	    f.write(chrome_trace)
+		f.write(chrome_trace)
 

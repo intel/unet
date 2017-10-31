@@ -1,3 +1,5 @@
+# Usage: numactl -p 1 python train.py 50 5 30
+
 import argparse
 parser = argparse.ArgumentParser()
 
@@ -10,6 +12,7 @@ args = parser.parse_args()
 
 import os
 
+
 num_threads = args.num_threads
 num_intra_op_threads = args.num_intra_threads
 
@@ -20,10 +23,15 @@ else:
 
 os.environ["KMP_BLOCKTIME"] = blocktime
 os.environ["KMP_AFFINITY"]="granularity=thread,compact" #,1,0"
+#os.environ['KMP_AFFINITY']='scatter,granularity=fine'
+os.environ['KMP_PLACE_THREADS']='4T'
+
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
 # os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 # os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
 os.environ['MKL_VERBOSE'] = '1'
+os.environ['MKL_DYNAMIC']='1'
+
 
 # os.environ['MIC_ENV_PREFIX'] = 'PHI'
 # os.environ['PHI_KMP_AFFINITY'] = 'compact'
@@ -34,6 +42,7 @@ os.environ['TF_ENABLE_WINOGRAD_NONFUSED'] = '1'
 os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
 os.environ['MKL_NUM_THREADS'] =str(num_threads)
+os.environ['GOTO_NUM_THREADS'] = str(num_threads)
 
 #os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
 
@@ -68,7 +77,7 @@ else:
 	data_format = 'channels_first'
 	K.set_image_dim_ordering('th')	
 
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint,TensorBoard
 from keras.callbacks import History 
 from keras.models import Model
 
@@ -106,9 +115,9 @@ def model5_MultiLayer(weights=False,
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 
 	if CHANNEL_LAST:
-		inputs = Input((img_rows, img_cols, n_cl_in))
+		inputs = Input((img_rows, img_cols, n_cl_in), name='Images')
 	else:
-		inputs = Input((n_cl_in, img_rows, img_cols))
+		inputs = Input((n_cl_in, img_rows, img_cols), name='Images')
 
 	conv1 = Conv2D(name='conv1a', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(inputs)
 	conv1 = Conv2D(name='conv1b', filters=32, kernel_size=(3, 3), activation='relu', padding='same', data_format=data_format)(conv1)
@@ -153,7 +162,7 @@ def model5_MultiLayer(weights=False,
 	
 	model.compile(optimizer=Adam(lr=learning_rate),
 		loss='binary_crossentropy', #dice_coef_loss,
-		metrics=['accuracy'], options=run_options, run_metadata=run_metadata)
+		metrics=['accuracy', dice_coef], options=run_options, run_metadata=run_metadata)
 
 	if weights and len(filepath)>0:
 		model.load_weights(filepath)
@@ -167,10 +176,10 @@ def load_data(data_path, prefix = "_train"):
 	imgs_train = np.load(os.path.join(data_path, 'imgs'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 	msks_train = np.load(os.path.join(data_path, 'msks'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 
-	# sz = imgs_train.shape[0]//20
+	sz = imgs_train.shape[0]
 
-	# imgs_train = imgs_train[:sz]
-	# msks_train = msks_train[:sz]
+	imgs_train = imgs_train[:sz]
+	msks_train = msks_train[:sz]
 
 	return imgs_train, msks_train
 
@@ -261,12 +270,11 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# print('-'*30)
 	history = History()
 	history = model.fit(imgs_train, msks_train, 
-		batch_size=512, #128, 
+		batch_size=1024, #128, 
 		epochs=n_epoch, 
 		validation_data = (imgs_test, msks_test),
-		verbose=1)
-	# , 
-	# 	callbacks=[model_checkpoint])
+		verbose=1, 
+	 	callbacks=[TensorBoard(log_dir='./keras_tb_logs', write_graph=True, write_images=True)])               #model_checkpoint])
 
 	print('Time elapsed for model training = {} seconds'.format(time.time() - last_time))
 	last_time = time.time()
