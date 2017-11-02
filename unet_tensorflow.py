@@ -184,7 +184,7 @@ def create_unet(imgs_placeholder):
 def dice_coefficient(y_pred, y_true):
     '''
     Returns Dice coefficient
-    2 * intersection / union
+    2 * intersection / (|area 1| + |area 2|)
 
     '''
     smoothing = 1e-7
