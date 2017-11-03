@@ -21,7 +21,7 @@
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_upsampling', help='use upsampling instead of transposed convolution',
-                    action='store_true', default=False)
+					action='store_true', default=False)
 parser.add_argument("--num_threads", type=int, default=34, help="the number of threads")
 parser.add_argument("--num_intra_threads", type=int, default=1, help="the number of intraop threads")
 parser.add_argument("--batch_size", type=int, default=512, help="the batch size for training")
@@ -76,10 +76,7 @@ import tensorflow as tf
 
 # configuration session
 sess = tf.Session(config=tf.ConfigProto(
-       intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
-
-run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-run_metadata = tf.RunMetadata()
+	   intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
 
 
 from keras import backend as K
@@ -116,15 +113,28 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('-'*30)
 	print('Creating and compiling model...')
 	print('-'*30)
-	model		= model5_MultiLayer(args, False, False, img_rows, img_cols, input_no,	output_no)
+
+	run_metadata = tf.RunMetadata()  # For Tensorflow trace
+
+	model = model5_MultiLayer(args, False, False, img_rows, img_cols, input_no, output_no)
 	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
 	print ("Writing model to ", model_fn)
 
 	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
-	tensorboardBoard_checkpoint = TensorBoard(log_dir='keras_tensorboard/')
+	tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard', write_graph=True, write_images=True)
 
 	# saves all models when set to False
 
+	'''
+	Save the training timeline
+	'''
+	# from tensorflow.python.client import timeline
+
+	# fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+	# chrome_trace = fetched_timeline.generate_chrome_trace_format()
+	# with open(timeline_filename, 'w') as f:
+	# 	print('Saved Tensorflow trace to: {}'.format(timeline_filename))
+	# 	f.write(chrome_trace)
 
 	print('-'*30)
 	print('Fitting model...')
@@ -138,7 +148,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		epochs=n_epoch, 
 		validation_data = (imgs_test, msks_test),
 		verbose=1, 
-		callbacks=[model_checkpoint, tensorboardBoard_checkpoint])
+		callbacks=[model_checkpoint, tensorboard_checkpoint])
 
 	json_fn = os.path.join(data_path, fn+'.json')
 	with open(json_fn,'w') as f:
@@ -176,6 +186,7 @@ if __name__ =="__main__":
 		settings.OUT_CHANNEL_NO, settings.MODEL_FN, settings.MODE, args)
 
 	print('Total time elapsed for program = {} seconds'.format(time.time() - start_time))
+	print(datetime.datetime.now())
 
 
 
