@@ -39,7 +39,7 @@ os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
 os.environ['MKL_NUM_THREADS'] =str(num_threads)
 
-os.environ['KMP_SETTINGS'] = '0'  # Show the settins at runtime
+os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
 
 # The timeline trace for TF is saved to this file.
 # To view it, run this python script, then load the json file by 
@@ -85,7 +85,7 @@ def dice_coef(y_true, y_pred, smooth = 1. ):
 	return coef
 
 def dice_coef_loss(y_true, y_pred):
-	return -dice_coef(y_true, y_pred)
+	return -K.log(dice_coef(y_true, y_pred))
 
 
 def model5_MultiLayer(weights=False, 
@@ -99,7 +99,7 @@ def model5_MultiLayer(weights=False,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
-	upOP = True
+	upOP = False
 	if upOP: 
 		print ('Using UpSampling2D')
 	else:
@@ -162,13 +162,13 @@ def model5_MultiLayer(weights=False,
 	conv10 = Conv2D(filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid')(conv9)
 	model = Model(inputs=[inputs], outputs=[conv10])
 
-	
+	print('Using Dice loss to train.')
 	model.compile(optimizer=Adam(lr=learning_rate),
-		loss='binary_crossentropy', #dice_coef_loss,
+		loss=dice_coef_loss, #'binary_crossentropy', #dice_coef_loss,
 		metrics=['accuracy', dice_coef])
 
-	if weights and len(filepath)>0:
-		model.load_weights(filepath)
+	# if weights and len(filepath)>0:
+	# 	model.load_weights(filepath)
 
 	if print_summary:
 		print (model.summary())	
@@ -306,7 +306,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('-'*30)
 	msks_pred = model.predict(imgs_test, verbose=1)
 	print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
-	np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
+	np.save('msks_pred.npy', msks_pred)
 
 	scores = model.evaluate(imgs_test, msks_test, batch_size=128, verbose = 2)
 	print ("Evaluation Scores", scores)
@@ -317,6 +317,8 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 if __name__ =="__main__":
 
 	start_time = time.time()
+
+	print('Batch size = {}'.format(batch_size))
 
 	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS/settings.RESCALE_FACTOR, 
 		settings.IMG_COLS/settings.RESCALE_FACTOR, 

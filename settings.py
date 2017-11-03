@@ -10,7 +10,8 @@ SLICE_BY = 5
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
-EPOCHS = 5 #10
+EPOCHS = 1 #10
+BATCH_SIZE = 128
 
 MODEL_FN = "brainWholeTumor" #Name for Mode=1
 #MODEL_FN = "brainActiveTumor" #Name for Mode=2
