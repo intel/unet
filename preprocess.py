@@ -279,8 +279,8 @@ def create_datasets_4(img_path, img_rows, img_cols, img_slices, slice_by=5, resi
 	print('Test  ', curr_sl_te)
 
 def load_data(data_path, prefix = "_train"):
-	imgs_train = np.load(os.path.join(data_path, 'imgs'+prefix+'.npy'))
-	msks_train = np.load(os.path.join(data_path, 'msks'+prefix+'.npy'))
+	imgs_train = np.load(os.path.join(data_path, 'imgs'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
+	msks_train = np.load(os.path.join(data_path, 'msks'+prefix+'.npy'), mmap_mode='r', allow_pickle=False)
 
 	return imgs_train, msks_train
 
@@ -302,17 +302,17 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	if mode==1:
 		new_imgs[:,:,:,0] = imgs[:,:,:,2] # flair
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
-		print('-'*10,' Whole tumor', '-'*10)
+		#print('-'*10,' Whole tumor', '-'*10)
 	elif mode == 2:
 		#core (non enhancing)
 		new_imgs[:,:,:,0] = imgs[:,:,:,0] # t1 post
 		new_msks[:,:,:,0] = msks[:,:,:,3]
-		print('-'*10,' Predicing enhancing tumor', '-'*10)
+		#print('-'*10,' Predicing enhancing tumor', '-'*10)
 	elif mode == 3:
 		#core (non enhancing)
 		new_imgs[:,:,:,0] = imgs[:,:,:,1]# t2 post
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,2]+msks[:,:,:,3]# active core
-		print('-'*10,' Predicing active Core', '-'*10)
+		#print('-'*10,' Predicing active Core', '-'*10)
 
 	else:
 		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]

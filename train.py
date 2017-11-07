@@ -17,7 +17,7 @@
 # END - Limit Tensoflow to only use specific GPU
 # '''
 
-# numactl -p 1 python train.py --num_threads=50 --num_intra_threads=5 --batch_size=1024 --blocktime=0
+# numactl -p 1 python train.py --num_threads=50 --num_intra_threads=5 --batch_size=256 --blocktime=0
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_upsampling', help='use upsampling instead of transposed convolution',
@@ -74,10 +74,23 @@ import time
 
 import tensorflow as tf
 
-# configuration session
-sess = tf.Session(config=tf.ConfigProto(
-	   intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
 
+
+# configuration session
+# sess = tf.Session(config=tf.ConfigProto(
+# 	   intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
+
+# config = tf.ConfigProto(device_count={"CPU": 16},
+#                         intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads)
+
+config = tf.ConfigProto(intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads)
+
+config.graph_options.optimizer_options.opt_level = -1
+
+sess = tf.Session(config=config)
+
+run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 from keras import backend as K
 K.set_image_dim_ordering('tf')	
@@ -114,7 +127,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Creating and compiling model...')
 	print('-'*30)
 
-	run_metadata = tf.RunMetadata()  # For Tensorflow trace
+	
 
 	model = model5_MultiLayer(args, False, False, img_rows, img_cols, input_no, output_no)
 	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
@@ -122,19 +135,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
 	tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard', write_graph=True, write_images=True)
-
-	# saves all models when set to False
-
-	'''
-	Save the training timeline
-	'''
-	# from tensorflow.python.client import timeline
-
-	# fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-	# chrome_trace = fetched_timeline.generate_chrome_trace_format()
-	# with open(timeline_filename, 'w') as f:
-	# 	print('Saved Tensorflow trace to: {}'.format(timeline_filename))
-	# 	f.write(chrome_trace)
+	
 
 	print('-'*30)
 	print('Fitting model...')
@@ -155,6 +156,17 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		f.write(model.to_json())
 
 
+	'''
+	Save the training timeline
+	'''
+	from tensorflow.python.client import timeline
+
+	fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+	chrome_trace = fetched_timeline.generate_chrome_trace_format()
+	with open(timeline_filename, 'w') as f:
+		print('Saved Tensorflow trace to: {}'.format(timeline_filename))
+		f.write(chrome_trace)
+
 	print('-'*30)
 	print('Loading saved weights...')
 	print('-'*30)
@@ -166,11 +178,14 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Predicting masks on test data...')
 	print('-'*30)
 	msks_pred = model.predict(imgs_test, verbose=1)
-	print("Done ", epochNo, np.min(msks_pred), np.max(msks_pred))
+	
 	#np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
+
+	print('Saving predictions to file')
 	np.save('msks_pred.npy', msks_pred)
 
-	scores = model.evaluate(imgs_test, msks_test, batch_size=batch_size,verbose = 2)
+	print('Evaluating model')
+	scores = model.evaluate(imgs_test, msks_test, batch_size=batch_size, verbose = 2)
 	print ("Evaluation Scores", scores)
 
 if __name__ =="__main__":
