@@ -9,23 +9,19 @@
 # os.environ['CUDA_VISIBLE_DEVICES'] = '{}'.format(gpu_num)
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # Supress Tensforflow debug messages
 
-# import tensorflow as tf
-
-# import time
-
-# '''
-# END - Limit Tensoflow to only use specific GPU
-# '''
+# # '''
+# # END - Limit Tensoflow to only use specific GPU
+# # '''
 
 # numactl -p 1 python train.py --num_threads=50 --num_intra_threads=5 --batch_size=256 --blocktime=0
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_upsampling', help='use upsampling instead of transposed convolution',
 					action='store_true', default=False)
-parser.add_argument("--num_threads", type=int, default=34, help="the number of threads")
-parser.add_argument("--num_intra_threads", type=int, default=1, help="the number of intraop threads")
-parser.add_argument("--batch_size", type=int, default=512, help="the batch size for training")
-parser.add_argument("--blocktime", type=int, default=30, help="blocktime")
+parser.add_argument("--num_threads", type=int, default=50, help="the number of threads")
+parser.add_argument("--num_intra_threads", type=int, default=5, help="the number of intraop threads")
+parser.add_argument("--batch_size", type=int, default=256, help="the batch size for training")
+parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 
 args = parser.parse_args()
 
@@ -48,7 +44,7 @@ os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
-os.environ['MKL_VERBOSE'] = '1'
+#os.environ['MKL_VERBOSE'] = '1'
 os.environ['MKL_DYNAMIC']='1'
 
 # os.environ['MIC_ENV_PREFIX'] = 'PHI'
@@ -61,7 +57,7 @@ os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 
 os.environ['MKL_NUM_THREADS'] =str(num_threads)
 
-os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
+os.environ['KMP_SETTINGS'] = '0'  # Show the settins at runtime
 
 # The timeline trace for TF is saved to this file.
 # To view it, run this python script, then load the json file by 
@@ -105,6 +101,52 @@ from preprocess import *
 from helper import *
 import settings
 
+from keras.preprocessing.image import ImageDataGenerator
+
+def image_augmentation(imgs, masks): 
+	'''
+	This will perform image augmentation on BOTH the
+	image and mask. It returns a generator so that
+	every time it is called it will grab a new batch
+	and perform a random augmentation.
+	'''
+	data_gen_args = dict(shear_range=0.5,  #radians
+						 rotation_range=90., # degrees
+						 width_shift_range=0.1,
+						 height_shift_range=0.1,
+						 zoom_range=0.2, # +/- 20%
+						 horizontal_flip=True,
+						 vertical_flip = True)
+
+	image_datagen = ImageDataGenerator(**data_gen_args)
+	mask_datagen = ImageDataGenerator(**data_gen_args)
+
+	# Provide the same seed and keyword arguments to the fit and flow methods
+	# This should ensure that the same augmentations are done for the image and the mask.
+	seed = 816
+	image_datagen.fit(imgs, augment=True, seed=seed)
+	mask_datagen.fit(masks, augment=True, seed=seed)
+
+	# Create a batch generator for the images
+	image_generator = image_datagen.flow(
+		imgs,
+		batch_size=batch_size,
+		shuffle=True,
+		seed=seed)
+
+	# Create a batch generator for the masks
+	mask_generator = mask_datagen.flow(
+		masks,
+		batch_size=batch_size,
+		shuffle=True,
+		seed=seed)
+
+	# The generator needs to be an infinite loop that 
+	# yields after each batch (next). Otherwise, it will
+	# try to perform augmentation on the entire dataset and (probably) crash.
+	while True:
+		yield (image_generator.next(), mask_generator.next())
+
 
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
 	fn= "model", mode = 1, args=None):
@@ -127,14 +169,21 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Creating and compiling model...')
 	print('-'*30)
 
-	
-
 	model = model5_MultiLayer(args, False, False, img_rows, img_cols, input_no, output_no)
-	model_fn	= os.path.join(data_path, fn+'_{epoch:03d}.hdf5')
+
+	if (args.use_upsampling):
+		model_fn	= os.path.join(data_path, fn+'_upsampling.hdf5')
+	else:
+		model_fn	= os.path.join(data_path, fn+'_transposed.hdf5')
+
 	print ("Writing model to ", model_fn)
 
-	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=False) 
-	tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard', write_graph=True, write_images=True)
+	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=True) 
+
+	if (args.use_upsampling):
+		tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard_upsampling', write_graph=True, write_images=True)
+	else:
+		tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard_transposed', write_graph=True, write_images=True)
 	
 
 	print('-'*30)
@@ -144,12 +193,25 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	print('Batch size = {}'.format(batch_size))
 
+	# '''
+	# For image augmentation use model.fit_generator instead of model.fit
+	# '''
+	# train_generator = image_augmentation(imgs_train, msks_train)
+
+	# # fits the model on batches with real-time data augmentation:
+	# history = model.fit_generator(train_generator,
+	# 				steps_per_epoch=len(imgs_train) // batch_size, epochs=n_epoch, validation_data = (imgs_test, msks_test),
+	# 				callbacks=[model_checkpoint, tensorboard_checkpoint])
+
+	'''
+	Without image augmentation just use model.fit
+	'''
 	history = model.fit(imgs_train, msks_train, 
-		batch_size=batch_size, 
-		epochs=n_epoch, 
-		validation_data = (imgs_test, msks_test),
-		verbose=1, 
-		callbacks=[model_checkpoint, tensorboard_checkpoint])
+	 	batch_size=batch_size, 
+	 	epochs=n_epoch, 
+	 	validation_data = (imgs_test, msks_test),
+	 	verbose=1, 
+	 	callbacks=[model_checkpoint, tensorboard_checkpoint])
 
 	json_fn = os.path.join(data_path, fn+'.json')
 	with open(json_fn,'w') as f:
@@ -171,7 +233,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Loading saved weights...')
 	print('-'*30)
 	epochNo = len(history.history['loss'])-1
-	model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
+	#model_fn	= os.path.join(data_path, '{}_{:03d}.hdf5'.format(fn, epochNo))
 	model.load_weights(model_fn)
 
 	print('-'*30)
@@ -182,7 +244,10 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	#np.save(os.path.join(data_path, 'msks_pred.npy'), msks_pred)
 
 	print('Saving predictions to file')
-	np.save('msks_pred.npy', msks_pred)
+	if (args.use_upsampling):
+		np.save('msks_pred_upsampling.npy', msks_pred)
+	else:
+		np.save('msks_pred_transposed.npy', msks_pred)
 
 	print('Evaluating model')
 	scores = model.evaluate(imgs_test, msks_test, batch_size=batch_size, verbose = 2)

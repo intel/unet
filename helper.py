@@ -6,7 +6,7 @@ import os.path
 import tensorflow as tf
 
 from keras.layers import Input, Conv2D, Conv2DTranspose, MaxPooling2D, UpSampling2D, Dropout
-from keras.layers import Convolution3D, MaxPooling3D, UpSampling3D, concatenate
+from keras.layers import Convolution3D, MaxPooling3D, UpSampling3D, concatenate, AtrousConvolution2D
 from keras.layers import core
 from keras.models import Model
 from keras.optimizers import Adam
@@ -42,7 +42,7 @@ def f1(y_true, y_pred):
 		return precision
 	precision = precision(y_true, y_pred)
 	recall = recall(y_true, y_pred)
-	return 2*((precision*recall)/(precision+recall))
+	return ((precision*recall)/(precision+recall))
 
 
 def dice_coef(y_true, y_pred, smooth = 1. ):
@@ -82,13 +82,15 @@ def model5_MultiLayer(args=None, weights=False,
 	pool2 = MaxPooling2D(name='pool2', pool_size=(2, 2))(conv2)
 
 	conv3 = Conv2D(name='conv3a', filters=128, kernel_size=(3, 3), activation='relu', padding='same')(pool2)
-	#conv3 = Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
+	conv3 = Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
 	conv3 = Conv2D(name='conv3b', filters=128, kernel_size=(3, 3), activation='relu', padding='same')(conv3)
+	
 	pool3 = MaxPooling2D(name='pool3', pool_size=(2, 2))(conv3)
 
 	conv4 = Conv2D(name='conv4a', filters=256, kernel_size=(3, 3), activation='relu', padding='same')(pool3)
-	#conv4 = Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
+	conv4 = Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
 	conv4 = Conv2D(name='conv4b', filters=256, kernel_size=(3, 3), activation='relu', padding='same')(conv4)
+	
 	pool4 = MaxPooling2D(name='pool4', pool_size=(2, 2))(conv4)
 
 	conv5 = Conv2D(name='conv5a', filters=512, kernel_size=(3, 3), activation='relu', padding='same')(pool4)
@@ -100,7 +102,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv5 = Conv2D(name='conv5b', filters=512, kernel_size=(3, 3), activation='relu', padding='same')(conv5)
 		up6 = concatenate([Conv2DTranspose(name='transConv6', filters=256, kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=-1)
-
+		
 	conv6 = Conv2D(name='conv6a', filters=256, kernel_size=(3, 3), activation='relu', padding='same')(up6)
 	
 
@@ -123,8 +125,6 @@ def model5_MultiLayer(args=None, weights=False,
 
 	
 	conv8 = Conv2D(name='conv8a', filters=64, kernel_size=(3, 3), activation='relu', padding='same')(up8)
-	conv8 = Dropout(dropout)(conv8)
-	
 	
 	if args.use_upsampling:
 		conv8 = Conv2D(name='conv8b', filters=32, kernel_size=(3, 3), activation='relu', padding='same')(conv8)
@@ -135,7 +135,6 @@ def model5_MultiLayer(args=None, weights=False,
 
 
 	conv9 = Conv2D(name='conv9a', filters=32, kernel_size=(3, 3), activation='relu', padding='same')(up9)
-	conv9 = Dropout(dropout)(conv9)
 	conv9 = Conv2D(name='conv9b', filters=32, kernel_size=(3, 3), activation='relu', padding='same')(conv9)
 
 	conv10 = Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid')(conv9)
@@ -145,7 +144,7 @@ def model5_MultiLayer(args=None, weights=False,
 
 	model.compile(optimizer=Adam(lr=learning_rate),
 		loss=dice_coef_loss, #'binary_crossentropy', #dice_coef_loss,
-		metrics=['accuracy', dice_coef], run_options=run_options, run_metadata=run_metadata)
+		metrics=['accuracy', dice_coef])
 
 	if weights and os.path.isfile(filepath):
 		print('Loading model weights from file {}'.format(filepath))
