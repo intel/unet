@@ -77,10 +77,10 @@ import tensorflow as tf
 
 # configuration session
 # sess = tf.Session(config=tf.ConfigProto(
-# 	   intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads))
+# 	   intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_inter_op_threads))
 
 # config = tf.ConfigProto(device_count={"CPU": 16},
-#                         intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads)
+#                         intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_inter_op_threads)
 
 config = tf.ConfigProto(intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_inter_op_threads)
 
@@ -183,7 +183,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=True) 
 
-	directoryName = 'unet_block{}_inter{}_intra{}'.format(blocktime, num_threads, num_intra_op_threads)
+	directoryName = 'unet_block{}_inter{}_intra{}'.format(blocktime, num_threads, num_inter_op_threads)
 
 	if (args.use_upsampling):
 		tensorboard_checkpoint = TensorBoard(
