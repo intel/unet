@@ -13,13 +13,13 @@
 # # END - Limit Tensoflow to only use specific GPU
 # # '''
 
-# numactl -p 1 python train.py --num_threads=50 --num_intra_threads=5 --batch_size=256 --blocktime=0
+# numactl -p 1 python train.py --num_threads=50 --num_inter_threads=5 --batch_size=256 --blocktime=0
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_upsampling', help='use upsampling instead of transposed convolution',
 					action='store_true', default=False)
 parser.add_argument("--num_threads", type=int, default=50, help="the number of threads")
-parser.add_argument("--num_intra_threads", type=int, default=5, help="the number of intraop threads")
+parser.add_argument("--num_inter_threads", type=int, default=5, help="the number of intraop threads")
 parser.add_argument("--batch_size", type=int, default=256, help="the batch size for training")
 parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 
@@ -30,7 +30,7 @@ batch_size = args.batch_size
 import os
 
 num_threads = args.num_threads
-num_intra_op_threads = args.num_intra_threads
+num_inter_op_threads = args.num_inter_threads
 
 if (args.blocktime > 1000):
 	blocktime = 'infinite'
@@ -40,7 +40,10 @@ else:
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'  # Get rid of the AVX, SSE warnings
 
 os.environ["KMP_BLOCKTIME"] = blocktime
-os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
+os.environ["KMP_AFFINITY"]="compact,1,0,granularity=thread"
+#os.environ["KMP_AFFINITY"]="compact,1,0,granularity=fine"
+#os.environ['KMP_AFFINITY']='granularity=fine,proclist=[0-{}],explicit'.format(num_threads)
+
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
@@ -64,7 +67,7 @@ os.environ['KMP_SETTINGS'] = '0'  # Show the settins at runtime
 # starting Google Chrome browser and pointing the URI to chrome://trace
 # There should be a button at the top left of the graph where
 # you can load in this json file.
-timeline_filename = 'timeline_ge_unet_{}_{}_{}.json'.format(blocktime, num_threads, num_intra_op_threads)
+timeline_filename = 'timeline_ge_unet_{}_{}_{}.json'.format(blocktime, num_threads, num_inter_op_threads)
 
 import time
 
@@ -79,7 +82,7 @@ import tensorflow as tf
 # config = tf.ConfigProto(device_count={"CPU": 16},
 #                         intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads)
 
-config = tf.ConfigProto(intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_intra_op_threads)
+config = tf.ConfigProto(intra_op_parallelism_threads=num_threads, inter_op_parallelism_threads=num_inter_op_threads)
 
 config.graph_options.optimizer_options.opt_level = -1
 
@@ -180,10 +183,16 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=True) 
 
+	directoryName = 'unet_block{}_inter{}_intra{}'.format(blocktime, num_threads, num_intra_op_threads)
+
 	if (args.use_upsampling):
-		tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard_upsampling', write_graph=True, write_images=True)
+		tensorboard_checkpoint = TensorBoard(
+			log_dir='./keras_tensorboard_upsampling_batch{}/{}'.format(batch_size, directoryName), 
+			write_graph=True, write_images=True)
 	else:
-		tensorboard_checkpoint = TensorBoard(log_dir='./keras_tensorboard_transposed', write_graph=True, write_images=True)
+		tensorboard_checkpoint = TensorBoard(
+			log_dir='./keras_tensorboard_transposed_batch{}/{}'.format(batch_size, directoryName),
+			write_graph=True, write_images=True)
 	
 
 	print('-'*30)
