@@ -49,7 +49,8 @@ os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
 #os.environ['MKL_VERBOSE'] = '1'
 os.environ['MKL_DYNAMIC']='1'
-
+os.environ['INTRA_THREADS']=str(num_threads)
+os.environ['INTER_THREADS']=str(num_inter_op_threads)
 # os.environ['MIC_ENV_PREFIX'] = 'PHI'
 # os.environ['PHI_KMP_AFFINITY'] = 'compact'
 # os.environ['PHI_KMP_PLACE_THREADS'] = '60c,3t'
