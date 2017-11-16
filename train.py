@@ -18,8 +18,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_upsampling', help='use upsampling instead of transposed convolution',
 					action='store_true', default=False)
-parser.add_argument("--num_threads", type=int, default=50, help="the number of threads")
-parser.add_argument("--num_inter_threads", type=int, default=5, help="the number of intraop threads")
+parser.add_argument("--num_threads", type=int, default=34, help="the number of threads")
+parser.add_argument("--num_inter_threads", type=int, default=2, help="the number of intraop threads")
 parser.add_argument("--batch_size", type=int, default=256, help="the batch size for training")
 parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 
