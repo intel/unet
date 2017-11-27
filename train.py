@@ -94,7 +94,7 @@ run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 from keras import backend as K
 K.set_image_dim_ordering('tf')	
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
 from keras.callbacks import History 
 from keras.models import Model
 
@@ -203,9 +203,9 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	print('Batch size = {}'.format(batch_size))
 
-	# '''
-	# For image augmentation use model.fit_generator instead of model.fit
-	# '''
+	# # '''
+	# # For image augmentation use model.fit_generator instead of model.fit
+	# # '''
 	# train_generator = image_augmentation(imgs_train, msks_train)
 
 	# # fits the model on batches with real-time data augmentation:
@@ -214,7 +214,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	# 				callbacks=[model_checkpoint, tensorboard_checkpoint])
 
 	'''
-	Without image augmentation just use model.fit
+	 Without image augmentation just use model.fit
 	'''
 	history = model.fit(imgs_train, msks_train, 
 	 	batch_size=batch_size, 
@@ -222,6 +222,15 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	 	validation_data = (imgs_test, msks_test),
 	 	verbose=1, 
 	 	callbacks=[model_checkpoint, tensorboard_checkpoint])
+
+	# model = model5_MultiLayer(args, True, model_fn, img_rows, img_cols, input_no, output_no)
+
+	# history = model.fit(imgs_train, msks_train, 
+	#  	batch_size=batch_size, 
+	#  	epochs=n_epoch-2, 
+	#  	validation_data = (imgs_test, msks_test),
+	#  	verbose=1, 
+	#  	callbacks=[model_checkpoint, tensorboard_checkpoint])
 
 	json_fn = os.path.join(data_path, fn+'.json')
 	with open(json_fn,'w') as f:

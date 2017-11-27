@@ -9,7 +9,7 @@ from keras.layers import Input, Conv2D, Conv2DTranspose, MaxPooling2D, UpSamplin
 from keras.layers import Convolution3D, MaxPooling3D, UpSampling3D, concatenate, AtrousConvolution2D
 from keras.layers import core
 from keras.models import Model
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adadelta
 from keras.initializers import RandomUniform
 
 from keras import backend as K
@@ -63,7 +63,7 @@ def model5_MultiLayer(args=None, weights=False,
 	n_cl_in=3,
 	n_cl_out=3, 
 	dropout=0.2, 
-	learning_rate = 0.001,
+	learning_rate = 0.01,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
@@ -150,8 +150,15 @@ def model5_MultiLayer(args=None, weights=False,
 
 	model = Model(inputs=[inputs], outputs=[conv10])
 
-	model.compile(optimizer=SGD(lr=learning_rate, momentum=0.9, decay=0.01),
-		loss=dice_coef_loss, #'binary_crossentropy', 
+	# if weights:
+	# 	optimizer=Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
+	# else:
+	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
+
+	optimizer=Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+
+	model.compile(optimizer=optimizer,
+		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
 		metrics=['accuracy', dice_coef])
 
 	if weights and os.path.isfile(filepath):
