@@ -25,6 +25,16 @@ parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
 
+CHANNEL_LAST = False
+if CHANNEL_LAST:
+	concat_axis = -1
+	data_format = 'channels_last'
+	K.set_image_dim_ordering('tf')	
+else:
+	concat_axis = 1
+	data_format = 'channels_first'
+	K.set_image_dim_ordering('th')	
+
 args = parser.parse_args()
 
 batch_size = args.batch_size
@@ -130,10 +140,15 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		print('Using Transposed Deconvolution')
 
-	inputs = Input((img_rows, img_cols, n_cl_in), name='Image')
+	if CHANNEL_LAST:
+		inputs = Input((img_rows, img_cols, n_cl_in), name='Images')
+	else:
+		inputs = Input((n_cl_in, img_rows, img_cols), name='Images')
+
+
 
 	params = dict(kernel_size=(3, 3), activation='relu', 
-				  padding='same', 
+				  padding='same', data_format=data_format,
 				  kernel_initializer='he_uniform') #RandomUniform(minval=-0.01, maxval=0.01, seed=816))
 
 	conv1 = Conv2D(name='conv1a', filters=32, **params)(inputs)
@@ -161,50 +176,51 @@ def model5_MultiLayer(args=None, weights=False,
 
 	if args.use_upsampling:
 		conv5 = Conv2D(name='conv5b', filters=256, **params)(conv5)
-		up6 = concatenate([UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=-1)
+		up6 = concatenate([UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
 	else:
 		conv5 = Conv2D(name='conv5b', filters=512, **params)(conv5)
-		up6 = concatenate([Conv2DTranspose(name='transConv6', filters=256, 
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=-1)
+		up6 = concatenate([Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
 		
 	conv6 = Conv2D(name='conv6a', filters=256, **params)(up6)
 	
 
 	if args.use_upsampling:
 		conv6 = Conv2D(name='conv6b', filters=128, **params)(conv6)
-		up7 = concatenate([UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=-1)
+		up7 = concatenate([UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
 	else:
 		conv6 = Conv2D(name='conv6b', filters=256, **params)(conv6)
-		up7 = concatenate([Conv2DTranspose(name='transConv7', filters=128, 
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=-1)
+		up7 = concatenate([Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
 
 	conv7 = Conv2D(name='conv7a', filters=128, **params)(up7)
 	
 
 	if args.use_upsampling:
 		conv7 = Conv2D(name='conv7b', filters=64, **params)(conv7)
-		up8 = concatenate([UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=-1)
+		up8 = concatenate([UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
 	else:
 		conv7 = Conv2D(name='conv7b', filters=128, **params)(conv7)
-		up8 = concatenate([Conv2DTranspose(name='transConv8', filters=64, 
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=-1)
+		up8 = concatenate([Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
 
 	
 	conv8 = Conv2D(name='conv8a', filters=64, **params)(up8)
 	
 	if args.use_upsampling:
 		conv8 = Conv2D(name='conv8b', filters=32, **params)(conv8)
-		up9 = concatenate([UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=-1)
+		up9 = concatenate([UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
 	else:
 		conv8 = Conv2D(name='conv8b', filters=64, **params)(conv8)
-		up9 = concatenate([Conv2DTranspose(name='transConv9', filters=32, 
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=-1)
+		up9 = concatenate([Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
 
 
 	conv9 = Conv2D(name='conv9a', filters=32, **params)(up9)
 	conv9 = Conv2D(name='conv9b', filters=32, **params)(conv9)
 
-	conv10 = Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), activation='sigmoid')(conv9)
+	conv10 = Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), 
+					data_format=data_format, activation='sigmoid')(conv9)
 
 	model = Model(inputs=[inputs], outputs=[conv10])
 
@@ -282,6 +298,10 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	imgs_train, msks_train = load_data(data_path,"_train")
 	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
 		mode)
+
+	if not CHANNEL_LAST:
+		imgs_train = np.transpose(imgs_train, [0,3,1,2])
+		msks_train = np.transpose(msks_train, [0,3,1,2])
 	
 	print('-'*30)
 	print('Loading and preprocessing test data...')
@@ -289,6 +309,9 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	imgs_test, msks_test = load_data(data_path,"_test")
 	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
 
+	if not CHANNEL_LAST:
+		imgs_test = np.transpose(imgs_test, [0,3,1,2])
+		msks_test = np.transpose(msks_test, [0,3,1,2])
 
 	print('-'*30)
 	print('Creating and compiling model...')
