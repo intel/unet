@@ -20,7 +20,7 @@ parser.add_argument('--use_upsampling', help='use upsampling instead of transpos
 					action='store_true', default=False)
 parser.add_argument("--num_threads", type=int, default=50, help="the number of threads")
 parser.add_argument("--num_inter_threads", type=int, default=2, help="the number of intraop threads")
-parser.add_argument("--batch_size", type=int, default=2128, help="the batch size for training")
+parser.add_argument("--batch_size", type=int, default=128, help="the batch size for training")
 parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
@@ -53,7 +53,7 @@ os.environ["KMP_AFFINITY"]="compact,1,0,granularity=thread"
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
-os.environ['MKL_VERBOSE'] = '1'
+#os.environ['MKL_VERBOSE'] = '1'
 os.environ['MKL_DYNAMIC']='1'
 os.environ['INTRA_THREADS']=str(num_threads)
 os.environ['INTER_THREADS']=str(num_inter_op_threads)
@@ -99,7 +99,7 @@ run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 from keras import backend as K
-K.set_session(sess)
+#K.set_session(sess)
 
 from keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
 from keras.callbacks import History 
