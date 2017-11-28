@@ -25,15 +25,6 @@ parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
 
-CHANNEL_LAST = False
-if CHANNEL_LAST:
-	concat_axis = -1
-	data_format = 'channels_last'
-	K.set_image_dim_ordering('tf')	
-else:
-	concat_axis = 1
-	data_format = 'channels_first'
-	K.set_image_dim_ordering('th')	
 
 args = parser.parse_args()
 
@@ -110,6 +101,17 @@ run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 from keras import backend as K
 #K.set_session(sess)
+
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+	concat_axis = -1
+	data_format = 'channels_last'
+	K.set_image_dim_ordering('tf')	
+else:
+	concat_axis = 1
+	data_format = 'channels_first'
+	K.set_image_dim_ordering('th')	
+
 
 from keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
 from keras.callbacks import History 
