@@ -33,7 +33,7 @@ parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'wo
 parser.add_argument("--task_index",type=int, default=0,help="")
 args = parser.parse_args()
 batch_size = args.batch_size
-num_inter_op_threads = args.num_intra_threads
+num_inter_op_threads = args.num_inter_threads
 
 num_threads = args.num_threads
 num_intra_op_threads = num_threads
