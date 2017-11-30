@@ -393,6 +393,7 @@ def main(_):
 					print("Loading epoch")
 					epoch = get_epoch(batch_size,imgs_train,msks_train)
 					num_batches = len(epoch)
+					print('Loaded')
 					current_batch = 1
 
 					epoch_track = []
