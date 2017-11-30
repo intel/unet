@@ -215,18 +215,18 @@ def model5_MultiLayer(args=None, weights=False,
 	# else:
 	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
 
-	optimizer=Adam(lr=learning_rate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+	# optimizer=Adam(lr=learning_rate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
 
-	model.compile(optimizer=optimizer,
-		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
-		metrics=['accuracy', dice_coef])
+	# model.compile(optimizer=optimizer,
+	# 	loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
+	# 	metrics=['accuracy', dice_coef])
 
-	if weights and os.path.isfile(filepath):
-		print('Loading model weights from file {}'.format(filepath))
-		model.load_weights(filepath)
+	# if weights and os.path.isfile(filepath):
+	# 	print('Loading model weights from file {}'.format(filepath))
+	# 	model.load_weights(filepath)
 
-	if print_summary:
-		print (model.summary())	
+	# if print_summary:
+	# 	print (model.summary())	
 
 	return model
 
@@ -304,7 +304,7 @@ def main(_):
 
 	if args.job_name == "ps":
 
-		print("Parameter server started. To interupt use CTRL-\\")
+		print("Parameter server started. To interrupt use CTRL-\\")
 		server.join()
 		
 
