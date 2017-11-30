@@ -318,13 +318,13 @@ def main(_):
 
 			# Create model
 			model = model5_MultiLayer(args, False, False, img_rows, img_cols, settings.IN_CHANNEL_NO, settings.OUT_CHANNEL_NO)
-			# model_json = os.path.join(settings.OUT_PATH, fn+'.json')
-			# print ("Writing model to ", model_json)
-			# with open(model_json,'w') as f:
-			# 	f.write(model.to_json())
+			model_json = os.path.join(settings.OUT_PATH, fn+'.json')
+			print ("Writing model to ", model_json)
+			with open(model_json,'w') as f:
+				f.write(model.to_json())
 
-			# # Load keras model in json format
-			# model = get_model(settings.OUT_PATH+fn+'.json')
+			# Load keras model in json format
+			model = get_model(settings.OUT_PATH+fn+'.json')
 
 			# Create global_step tensor to count iterations
 			# In synchronous training, global step will synchronize after the first few batches in each epoch
