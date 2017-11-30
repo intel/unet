@@ -23,3 +23,7 @@ MODEL_FN = "brainWholeTumor" #Name for Mode=1
 #Use T1 Post to identify the active tumor: test reaches 0.65-0.75: MODE=2
 #Use T2 to identify the active core (necrosis, enhancing, non-enh): test reaches 0.5-0.55: MODE=3
 MODE=1
+
+# Important that these are ordered correctly: [0] = master, [1] = worker, etc.
+PS_HOSTS = ["10.100.68.245:2222"]
+WORKER_HOSTS = ["10.100.68.193:2222","10.100.68.183:2222","10.100.68.185:2222","10.100.68.187:2222"]
