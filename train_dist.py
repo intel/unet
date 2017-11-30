@@ -21,7 +21,7 @@ import shutil
 import timeit
 import time
 import os
-import tqdm
+from tdqm import tqdm   # For the fancy progress bar
 
 
 parser = argparse.ArgumentParser()
