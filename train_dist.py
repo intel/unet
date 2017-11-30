@@ -215,7 +215,7 @@ def model5_MultiLayer(args=None, weights=False,
 
 	model.compile(optimizer=optimizer,
 		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
-		metrics=['accuracy', dice_coef], options=run_options, run_metadata=run_metadata)
+		metrics=['accuracy', dice_coef])
 
 	if weights and os.path.isfile(filepath):
 		print('Loading model weights from file {}'.format(filepath))
