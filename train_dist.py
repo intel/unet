@@ -117,7 +117,7 @@ def model5_MultiLayer(args=None, weights=False,
 	n_cl_in=3,
 	n_cl_out=3, 
 	dropout=0.2, 
-	learning_rate = args.learning_rate,
+	learning_rate = args.learningrate,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
