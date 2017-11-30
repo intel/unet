@@ -13,6 +13,7 @@ NUM_INTRA_THREADS = 50
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
+
 EPOCHS = 10
 
 MODEL_FN = "brainWholeTumor" #Name for Mode=1
