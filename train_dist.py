@@ -1,6 +1,6 @@
 # To run, must indicate the job_name (worker or ps) and the job number (0=chief)\
 # in the command run on each server in the cluster
-# Example: numactl -p 1 python train_dist.py --num_threads=50 --num_intra_threads=5\
+# Example: numactl -p 1 python train_dist.py --num_threads=50 --num_inter_threads=2\
 #			 --batch_size=256 --blocktime=0 --job_name="ps" --task_index=0
 
 # TODO: how do we control intra/interop threads in a distributed environment?
