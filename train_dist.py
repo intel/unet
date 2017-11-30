@@ -32,6 +32,9 @@ parser.add_argument("--blocktime", type=int, default=settings.BLOCKTIME, help="b
 parser.add_argument("--batch_size", type=int, default=512, help="the batch size for training")
 parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
 parser.add_argument("--task_index",type=int, default=0,help="")
+parser.add_argument("--epochs", type=int, default=settings.EPOCHS, help="number of epochs to train")
+parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
+
 args = parser.parse_args()
 batch_size = args.batch_size
 num_inter_op_threads = args.num_inter_threads
@@ -81,13 +84,13 @@ if os.path.isdir(logdir):
 # TODO: put all these in Settings file
 ps_hosts = settings.PS_HOSTS
 worker_hosts = settings.WORKER_HOSTS
-learn_rate = 0.001
+
 model_trained_fn = settings.OUT_PATH+"model_trained.hdf5"
 trained_model_fn = "trained_model"
 fn = "model"
 img_rows = settings.IMG_ROWS/settings.RESCALE_FACTOR
 img_cols = settings.IMG_COLS/settings.RESCALE_FACTOR
-num_epochs = settings.EPOCHS
+num_epochs = args.epochs
 
 config = tf.ConfigProto(inter_op_parallelism_threads=num_inter_op_threads,intra_op_parallelism_threads=num_intra_op_threads)
 
@@ -114,7 +117,7 @@ def model5_MultiLayer(args=None, weights=False,
 	n_cl_in=3,
 	n_cl_out=3, 
 	dropout=0.2, 
-	learning_rate = 0.01,
+	learning_rate = args.learning_rate,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
@@ -212,7 +215,7 @@ def model5_MultiLayer(args=None, weights=False,
 	# else:
 	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
 
-	optimizer=Adam(lr=learn_rate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+	optimizer=Adam(lr=learning_rate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
 
 	model.compile(optimizer=optimizer,
 		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
@@ -338,7 +341,7 @@ def main(_):
 				barrier = tf.no_op(name='update_barrier')
 
 			# Synchronize optimizer
-			opt = tf.train.AdamOptimizer(learn_rate)
+			opt = tf.train.AdamOptimizer(args.learningrate)
 			#opt=tf.train.AdamOptimizer(learning_rate=0.0001, beta1=0.9, beta2=0.99, epsilon=1e-08)
 			optimizer = tf.train.SyncReplicasOptimizer(opt,replicas_to_aggregate = len(settings.WORKER_HOSTS),total_num_replicas = len(settings.WORKER_HOSTS))
 
