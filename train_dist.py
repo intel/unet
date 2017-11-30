@@ -96,6 +96,127 @@ from keras.callbacks import History
 from keras import backend as K
 import keras
 
+def model5_MultiLayer(args=None, weights=False, 
+	filepath="", 
+	img_rows = 224, 
+	img_cols = 224, 
+	n_cl_in=3,
+	n_cl_out=3, 
+	dropout=0.2, 
+	learning_rate = 0.01,
+	print_summary = False):
+	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
+	
+	if args.use_upsampling:
+		print ('Using UpSampling2D')
+	else:
+		print('Using Transposed Deconvolution')
+
+	if CHANNEL_LAST:
+		inputs = Input((img_rows, img_cols, n_cl_in), name='Images')
+	else:
+		inputs = Input((n_cl_in, img_rows, img_cols), name='Images')
+
+
+
+	params = dict(kernel_size=(3, 3), activation='relu', 
+				  padding='same', data_format=data_format,
+				  kernel_initializer='he_uniform') #RandomUniform(minval=-0.01, maxval=0.01, seed=816))
+
+	conv1 = Conv2D(name='conv1a', filters=32, **params)(inputs)
+	conv1 = Conv2D(name='conv1b', filters=32, **params)(conv1)
+	pool1 = MaxPooling2D(name='pool1', pool_size=(2, 2))(conv1)
+
+	conv2 = Conv2D(name='conv2a', filters=64, **params)(pool1)
+	conv2 = Conv2D(name='conv2b', filters=64, **params)(conv2)
+	pool2 = MaxPooling2D(name='pool2', pool_size=(2, 2))(conv2)
+
+	conv3 = Conv2D(name='conv3a', filters=128, **params)(pool2)
+	conv3 = Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
+	conv3 = Conv2D(name='conv3b', filters=128, **params)(conv3)
+	
+	pool3 = MaxPooling2D(name='pool3', pool_size=(2, 2))(conv3)
+
+	conv4 = Conv2D(name='conv4a', filters=256, **params)(pool3)
+	conv4 = Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
+	conv4 = Conv2D(name='conv4b', filters=256, **params)(conv4)
+	
+	pool4 = MaxPooling2D(name='pool4', pool_size=(2, 2))(conv4)
+
+	conv5 = Conv2D(name='conv5a', filters=512, **params)(pool4)
+	
+
+	if args.use_upsampling:
+		conv5 = Conv2D(name='conv5b', filters=256, **params)(conv5)
+		up6 = concatenate([UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
+	else:
+		conv5 = Conv2D(name='conv5b', filters=512, **params)(conv5)
+		up6 = concatenate([Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
+		
+	conv6 = Conv2D(name='conv6a', filters=256, **params)(up6)
+	
+
+	if args.use_upsampling:
+		conv6 = Conv2D(name='conv6b', filters=128, **params)(conv6)
+		up7 = concatenate([UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
+	else:
+		conv6 = Conv2D(name='conv6b', filters=256, **params)(conv6)
+		up7 = concatenate([Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
+
+	conv7 = Conv2D(name='conv7a', filters=128, **params)(up7)
+	
+
+	if args.use_upsampling:
+		conv7 = Conv2D(name='conv7b', filters=64, **params)(conv7)
+		up8 = concatenate([UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
+	else:
+		conv7 = Conv2D(name='conv7b', filters=128, **params)(conv7)
+		up8 = concatenate([Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
+
+	
+	conv8 = Conv2D(name='conv8a', filters=64, **params)(up8)
+	
+	if args.use_upsampling:
+		conv8 = Conv2D(name='conv8b', filters=32, **params)(conv8)
+		up9 = concatenate([UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
+	else:
+		conv8 = Conv2D(name='conv8b', filters=64, **params)(conv8)
+		up9 = concatenate([Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
+			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
+
+
+	conv9 = Conv2D(name='conv9a', filters=32, **params)(up9)
+	conv9 = Conv2D(name='conv9b', filters=32, **params)(conv9)
+
+	conv10 = Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), 
+					data_format=data_format, activation='sigmoid')(conv9)
+
+	model = Model(inputs=[inputs], outputs=[conv10])
+
+	# if weights:
+	# 	optimizer=Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
+	# else:
+	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
+
+	optimizer=Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+
+	model.compile(optimizer=optimizer,
+		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
+		metrics=['accuracy', dice_coef], options=run_options, run_metadata=run_metadata)
+
+	if weights and os.path.isfile(filepath):
+		print('Loading model weights from file {}'.format(filepath))
+		model.load_weights(filepath)
+
+	if print_summary:
+		print (model.summary())	
+
+	return model
+
+
 def get_model(path):
 	with open(path,'r') as f:
 		loaded_model_json = f.read()
