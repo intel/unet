@@ -96,6 +96,16 @@ from keras.callbacks import History
 from keras import backend as K
 import keras
 
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+	concat_axis = -1
+	data_format = 'channels_last'
+	K.set_image_dim_ordering('tf')	
+else:
+	concat_axis = 1
+	data_format = 'channels_first'
+	K.set_image_dim_ordering('th')	
+
 def model5_MultiLayer(args=None, weights=False, 
 	filepath="", 
 	img_rows = 224, 
