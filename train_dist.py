@@ -211,7 +211,7 @@ def model5_MultiLayer(args=None, weights=False,
 	# else:
 	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
 
-	optimizer=Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+	optimizer=Adam(lr=learn_rate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
 
 	model.compile(optimizer=optimizer,
 		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
