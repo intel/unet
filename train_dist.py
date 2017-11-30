@@ -21,6 +21,7 @@ import shutil
 import timeit
 import time
 import os
+import tqdm
 
 
 parser = argparse.ArgumentParser()
@@ -49,12 +50,12 @@ os.environ["KMP_AFFINITY"]="granularity=thread,compact,1,0"
 os.environ["OMP_NUM_THREADS"]= str(num_threads)
 os.environ["TF_ADJUST_HUE_FUSED"] = '1'
 os.environ['TF_ADJUST_SATURATION_FUSED'] = '1'
-os.environ['MKL_VERBOSE'] = '1'
+#os.environ['MKL_VERBOSE'] = '1'
 os.environ['MKL_DYNAMIC']='1'
 os.environ['TF_ENABLE_WINOGRAD_NONFUSED'] = '1'
 os.environ['TF_AUTOTUNE_THRESHOLD'] = '1'
 os.environ['MKL_NUM_THREADS'] = str(num_threads)
-os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
+#os.environ['KMP_SETTINGS'] = '1'  # Show the settins at runtime
 
 # Unset proxy env variable to avoid gRPC errors
 del os.environ['http_proxy']
@@ -273,7 +274,8 @@ def main(_):
 	cluster = tf.train.ClusterSpec({"ps":ps_hosts,"worker":worker_hosts})
 
 	# Create and start a server for the local task
-	server = tf.train.Server(cluster,job_name=args.job_name,task_index=args.task_index)
+	#server = tf.train.Server(cluster,job_name=args.job_name,task_index=args.task_index)
+	server = tf.train.Server(cluster,job_name='local',task_index=args.task_index)
 
 	# Load train data
 	print('-'*30)
