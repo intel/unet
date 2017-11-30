@@ -278,27 +278,6 @@ def main(_):
 
 	# Create and start a server for the local task
 	server = tf.train.Server(cluster,job_name=args.job_name,task_index=args.task_index)
-	
-	# Load train data
-	print('-'*30)
-	print('Loading and preprocessing train data...')
-	print('-'*30)
-	imgs_train, msks_train = load_data(settings.OUT_PATH,"_train")
-	imgs_train, msks_train = update_channels(imgs_train, msks_train, settings.IN_CHANNEL_NO, settings.OUT_CHANNEL_NO, settings.MODE)
-
-	# Load test data
-	print('-'*30)
-	print('Loading and preprocessing test data...')
-	print('-'*30)
-	imgs_test, msks_test = load_data(settings.OUT_PATH,"_test")
-	imgs_test, msks_test = update_channels(imgs_test, msks_test, settings.IN_CHANNEL_NO, settings.OUT_CHANNEL_NO, settings.MODE)
-
-	print("Training images shape: {}".format(imgs_train[0].shape))
-	print("Training masks shape: {}".format(msks_train[0].shape))
-
-	print('-'*30)
-	print('Creating and compiling model...')
-	print('-'*30)
 
 	run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
@@ -310,6 +289,28 @@ def main(_):
 
 	# Train if under worker
 	elif args.job_name == "worker":
+
+
+		# Load train data
+		print('-'*30)
+		print('Loading and preprocessing train data...')
+		print('-'*30)
+		imgs_train, msks_train = load_data(settings.OUT_PATH,"_train")
+		imgs_train, msks_train = update_channels(imgs_train, msks_train, settings.IN_CHANNEL_NO, settings.OUT_CHANNEL_NO, settings.MODE)
+
+		# Load test data
+		print('-'*30)
+		print('Loading and preprocessing test data...')
+		print('-'*30)
+		imgs_test, msks_test = load_data(settings.OUT_PATH,"_test")
+		imgs_test, msks_test = update_channels(imgs_test, msks_test, settings.IN_CHANNEL_NO, settings.OUT_CHANNEL_NO, settings.MODE)
+
+		print("Training images shape: {}".format(imgs_train[0].shape))
+		print("Training masks shape: {}".format(msks_train[0].shape))
+
+		print('-'*30)
+		print('Creating and compiling model...')
+		print('-'*30)
 
 		# Assign ops to the local worker by default
 		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:{0}".format(args.task_index), cluster=cluster)):
@@ -413,8 +414,8 @@ def main(_):
 						loss_show = "{0:.3f}".format(loss_value)
 						batch_time = timeit.default_timer()-batch_start
 						ETE = str(round(num_batches*(float(batch_time))))[:-2] # Estimated Time per Epoch
-						print("\rEpoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}".
-							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE)),
+						print("Epoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}".
+							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE))
 						current_batch += 1
 
 					epoch_time = timeit.default_timer() - epoch_start
