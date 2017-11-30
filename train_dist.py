@@ -304,8 +304,9 @@ def main(_):
 
 	if args.job_name == "ps":
 
-		print("Joining server")
+		print("Joining server.")
 		server.join()
+		print("Parameter server started. To interupt use CTRL-\\")
 
 	# Train if under worker
 	elif args.job_name == "worker":
