@@ -399,7 +399,7 @@ def main(_):
 					epoch_track = []
 					epoch_start = timeit.default_timer()
 
-					for batch in epoch:
+					for batch in tqdm(epoch):
 						batch_start = timeit.default_timer()
 						data = batch[0]
 						labels = batch[1]
@@ -412,7 +412,9 @@ def main(_):
 						loss_show = "{0:.3f}".format(loss_value)
 						batch_time = timeit.default_timer()-batch_start
 						ETE = str(round(num_batches*(float(batch_time))))[:-2] # Estimated Time per Epoch
-						print("Epoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}".format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE))
+						# print("\rEpoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}".
+						# 	format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE),
+						# 	end="")
 						current_batch += 1
 
 					epoch_time = timeit.default_timer() - epoch_start
