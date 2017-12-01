@@ -99,23 +99,18 @@ sess = tf.Session(config=config)
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-from keras import backend as K
-#K.set_session(sess)
+#tf.keras.backend.set_session(sess)
 
 CHANNEL_LAST = True
 if CHANNEL_LAST:
 	concat_axis = -1
 	data_format = 'channels_last'
-	K.set_image_dim_ordering('tf')	
+	
 else:
 	concat_axis = 1
 	data_format = 'channels_first'
-	K.set_image_dim_ordering('th')	
-
-
-from keras.callbacks import ModelCheckpoint, TensorBoard, LearningRateScheduler
-from keras.callbacks import History 
-from keras.models import Model
+	
+tf.keras.backend.set_image_data_format(data_format)	
 
 import numpy as np
 import os
@@ -124,7 +119,6 @@ from preprocess import *
 from helper import *
 import settings
 
-from keras.preprocessing.image import ImageDataGenerator
 
 def model5_MultiLayer(args=None, weights=False, 
 	filepath="", 
@@ -143,9 +137,9 @@ def model5_MultiLayer(args=None, weights=False,
 		print('Using Transposed Deconvolution')
 
 	if CHANNEL_LAST:
-		inputs = Input((img_rows, img_cols, n_cl_in), name='Images')
+		inputs = tf.keras.layers.Input((img_rows, img_cols, n_cl_in), name='Images')
 	else:
-		inputs = Input((n_cl_in, img_rows, img_cols), name='Images')
+		inputs = tf.keras.layers.Input((n_cl_in, img_rows, img_cols), name='Images')
 
 
 
@@ -153,85 +147,85 @@ def model5_MultiLayer(args=None, weights=False,
 				  padding='same', data_format=data_format,
 				  kernel_initializer='he_uniform') #RandomUniform(minval=-0.01, maxval=0.01, seed=816))
 
-	conv1 = Conv2D(name='conv1a', filters=32, **params)(inputs)
-	conv1 = Conv2D(name='conv1b', filters=32, **params)(conv1)
-	pool1 = MaxPooling2D(name='pool1', pool_size=(2, 2))(conv1)
+	conv1 = tf.keras.layers.Conv2D(name='conv1a', filters=32, **params)(inputs)
+	conv1 = tf.keras.layers.Conv2D(name='conv1b', filters=32, **params)(conv1)
+	pool1 = tf.keras.layers.MaxPooling2D(name='pool1', pool_size=(2, 2))(conv1)
 
-	conv2 = Conv2D(name='conv2a', filters=64, **params)(pool1)
-	conv2 = Conv2D(name='conv2b', filters=64, **params)(conv2)
-	pool2 = MaxPooling2D(name='pool2', pool_size=(2, 2))(conv2)
+	conv2 = tf.keras.layers.Conv2D(name='conv2a', filters=64, **params)(pool1)
+	conv2 = tf.keras.layers.Conv2D(name='conv2b', filters=64, **params)(conv2)
+	pool2 = tf.keras.layers.MaxPooling2D(name='pool2', pool_size=(2, 2))(conv2)
 
-	conv3 = Conv2D(name='conv3a', filters=128, **params)(pool2)
-	conv3 = Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
-	conv3 = Conv2D(name='conv3b', filters=128, **params)(conv3)
+	conv3 = tf.keras.layers.Conv2D(name='conv3a', filters=128, **params)(pool2)
+	conv3 = tf.keras.layers.Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
+	conv3 = tf.keras.layers.Conv2D(name='conv3b', filters=128, **params)(conv3)
 	
-	pool3 = MaxPooling2D(name='pool3', pool_size=(2, 2))(conv3)
+	pool3 = tf.keras.layers.MaxPooling2D(name='pool3', pool_size=(2, 2))(conv3)
 
-	conv4 = Conv2D(name='conv4a', filters=256, **params)(pool3)
-	conv4 = Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
-	conv4 = Conv2D(name='conv4b', filters=256, **params)(conv4)
+	conv4 = tf.keras.layers.Conv2D(name='conv4a', filters=256, **params)(pool3)
+	conv4 = tf.keras.layers.Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
+	conv4 = tf.keras.layers.Conv2D(name='conv4b', filters=256, **params)(conv4)
 	
-	pool4 = MaxPooling2D(name='pool4', pool_size=(2, 2))(conv4)
+	pool4 = tf.keras.layers.MaxPooling2D(name='pool4', pool_size=(2, 2))(conv4)
 
-	conv5 = Conv2D(name='conv5a', filters=512, **params)(pool4)
+	conv5 = tf.keras.layers.Conv2D(name='conv5a', filters=512, **params)(pool4)
 	
 
 	if args.use_upsampling:
-		conv5 = Conv2D(name='conv5b', filters=256, **params)(conv5)
-		up6 = concatenate([UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
+		conv5 = tf.keras.layers.Conv2D(name='conv5b', filters=256, **params)(conv5)
+		up6 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
 	else:
-		conv5 = Conv2D(name='conv5b', filters=512, **params)(conv5)
-		up6 = concatenate([Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
+		conv5 = tf.keras.layers.Conv2D(name='conv5b', filters=512, **params)(conv5)
+		up6 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
 			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
 		
-	conv6 = Conv2D(name='conv6a', filters=256, **params)(up6)
+	conv6 = tf.keras.layers.Conv2D(name='conv6a', filters=256, **params)(up6)
 	
 
 	if args.use_upsampling:
-		conv6 = Conv2D(name='conv6b', filters=128, **params)(conv6)
-		up7 = concatenate([UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
+		conv6 = tf.keras.layers.Conv2D(name='conv6b', filters=128, **params)(conv6)
+		up7 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
 	else:
-		conv6 = Conv2D(name='conv6b', filters=256, **params)(conv6)
-		up7 = concatenate([Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
+		conv6 = tf.keras.layers.Conv2D(name='conv6b', filters=256, **params)(conv6)
+		up7 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
 			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
 
-	conv7 = Conv2D(name='conv7a', filters=128, **params)(up7)
+	conv7 = tf.keras.layers.Conv2D(name='conv7a', filters=128, **params)(up7)
 	
 
 	if args.use_upsampling:
-		conv7 = Conv2D(name='conv7b', filters=64, **params)(conv7)
-		up8 = concatenate([UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
+		conv7 = tf.keras.layers.Conv2D(name='conv7b', filters=64, **params)(conv7)
+		up8 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
 	else:
-		conv7 = Conv2D(name='conv7b', filters=128, **params)(conv7)
-		up8 = concatenate([Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
+		conv7 = tf.keras.layers.Conv2D(name='conv7b', filters=128, **params)(conv7)
+		up8 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
 			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
 
 	
-	conv8 = Conv2D(name='conv8a', filters=64, **params)(up8)
+	conv8 = tf.keras.layers.Conv2D(name='conv8a', filters=64, **params)(up8)
 	
 	if args.use_upsampling:
-		conv8 = Conv2D(name='conv8b', filters=32, **params)(conv8)
-		up9 = concatenate([UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
+		conv8 = tf.keras.layers.Conv2D(name='conv8b', filters=32, **params)(conv8)
+		up9 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
 	else:
-		conv8 = Conv2D(name='conv8b', filters=64, **params)(conv8)
-		up9 = concatenate([Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
+		conv8 = tf.keras.layers.Conv2D(name='conv8b', filters=64, **params)(conv8)
+		up9 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
 			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
 
 
-	conv9 = Conv2D(name='conv9a', filters=32, **params)(up9)
-	conv9 = Conv2D(name='conv9b', filters=32, **params)(conv9)
+	conv9 = tf.keras.layers.Conv2D(name='conv9a', filters=32, **params)(up9)
+	conv9 = tf.keras.layers.Conv2D(name='conv9b', filters=32, **params)(conv9)
 
-	conv10 = Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), 
+	conv10 = tf.keras.layers.Conv2D(name='Mask', filters=n_cl_out, kernel_size=(1, 1), 
 					data_format=data_format, activation='sigmoid')(conv9)
 
-	model = Model(inputs=[inputs], outputs=[conv10])
+	model = tf.keras.models.Model(inputs=[inputs], outputs=[conv10])
 
 	# if weights:
-	# 	optimizer=Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
+	# 	optimizer=tf.keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
 	# else:
-	# 	optimizer = SGD(lr=learning_rate, momentum=0.9, decay=0.05)
+	# 	optimizer = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.05)
 
-	optimizer=Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
+	optimizer=tf.keras.optimizers.Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
 
 	model.compile(optimizer=optimizer,
 		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
@@ -261,8 +255,8 @@ def image_augmentation(imgs, masks):
 						 horizontal_flip=True,
 						 vertical_flip = True)
 
-	image_datagen = ImageDataGenerator(**data_gen_args)
-	mask_datagen = ImageDataGenerator(**data_gen_args)
+	image_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
+	mask_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
 
 	# Provide the same seed and keyword arguments to the fit and flow methods
 	# This should ensure that the same augmentations are done for the image and the mask.
@@ -328,16 +322,16 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	print ("Writing model to ", model_fn)
 
-	model_checkpoint = ModelCheckpoint(model_fn, monitor='loss', save_best_only=True) 
+	model_checkpoint = tf.keras.callbacks.ModelCheckpoint(model_fn, monitor='loss', save_best_only=True) 
 
 	directoryName = 'unet_block{}_inter{}_intra{}'.format(blocktime, num_threads, num_inter_op_threads)
 
 	if (args.use_upsampling):
-		tensorboard_checkpoint = TensorBoard(
+		tensorboard_checkpoint = tf.keras.callbacks.TensorBoard(
 			log_dir='./keras_tensorboard_upsampling_batch{}/{}'.format(batch_size, directoryName), 
 			write_graph=True, write_images=True)
 	else:
-		tensorboard_checkpoint = TensorBoard(
+		tensorboard_checkpoint = tf.keras.callbacks.TensorBoard(
 			log_dir='./keras_tensorboard_transposed_batch{}/{}'.format(batch_size, directoryName),
 			write_graph=True, write_images=True)
 	
@@ -345,7 +339,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('-'*30)
 	print('Fitting model...')
 	print('-'*30)
-	history = History()
+	history = tf.keras.callbacks.History()
 
 	print('Batch size = {}'.format(batch_size))
 
