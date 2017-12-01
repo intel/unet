@@ -101,7 +101,7 @@ run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 #tf.keras.backend.set_session(sess)
 
-CHANNEL_LAST = False
+CHANNEL_LAST = True
 if CHANNEL_LAST:
 	concat_axis = -1
 	data_format = 'channels_last'
