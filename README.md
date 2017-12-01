@@ -6,7 +6,7 @@ UNet architecture for Multimodal Brain Tumor Segmentation, built with TensorFlow
 
 This repo contains code for single and multi-node execution:
 
-	train.py: Single node operation on Intel KNL or Skylake servers
+	train.py: Single node operation on Intel KNL or Skylake servers.
 
 	train_dist.py: Multi-node implementation for synchronous weight updates, optimized for use on Intel KNL servers.
 
@@ -26,6 +26,4 @@ tqdm
 
 ## TODO
 
-Add notes about running with numactl
-Add notes about keeping intra_op_threads low enough
-Add notes about communicating over OPA
+Add notes about running with numactl, keeping intra_op_threads low enough, communicating over OPA, etc.
