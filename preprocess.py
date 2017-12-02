@@ -284,7 +284,7 @@ def load_data(data_path, prefix = "_train"):
 
 	return imgs_train, msks_train
 
-def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
+def update_channels(imgs, msks, input_no=3, output_no=3, mode=1, CHANNEL_LAST=True):
 	"""
 	changes the order or which channels are used to allow full testing. Uses both
 	Imgs and msks as input since different things may be done to both
@@ -295,27 +295,57 @@ def update_channels(imgs, msks, input_no=3, output_no=3, mode=1):
 	imgs = imgs.astype('float32')
 	msks = msks.astype('float32')
 
-	shp = imgs.shape
-	new_imgs = np.zeros((shp[0],shp[1],shp[2],input_no))
-	new_msks = np.zeros((shp[0],shp[1],shp[2],output_no))
+	if CHANNEL_LAST:
 
-	if mode==1:
-		new_imgs[:,:,:,0] = imgs[:,:,:,2] # flair
-		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
-		#print('-'*10,' Whole tumor', '-'*10)
-	elif mode == 2:
-		#core (non enhancing)
-		new_imgs[:,:,:,0] = imgs[:,:,:,0] # t1 post
-		new_msks[:,:,:,0] = msks[:,:,:,3]
-		#print('-'*10,' Predicing enhancing tumor', '-'*10)
-	elif mode == 3:
-		#core (non enhancing)
-		new_imgs[:,:,:,0] = imgs[:,:,:,1]# t2 post
-		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,2]+msks[:,:,:,3]# active core
-		#print('-'*10,' Predicing active Core', '-'*10)
+		shp = imgs.shape
+		new_imgs = np.zeros((shp[0],shp[1],shp[2],input_no))
+		new_msks = np.zeros((shp[0],shp[1],shp[2],output_no))
+
+
+		if mode==1:
+			new_imgs[:,:,:,0] = imgs[:,:,:,2] # flair
+			new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
+			#print('-'*10,' Whole tumor', '-'*10)
+		elif mode == 2:
+			#core (non enhancing)
+			new_imgs[:,:,:,0] = imgs[:,:,:,0] # t1 post
+			new_msks[:,:,:,0] = msks[:,:,:,3]
+			#print('-'*10,' Predicing enhancing tumor', '-'*10)
+		elif mode == 3:
+			#core (non enhancing)
+			new_imgs[:,:,:,0] = imgs[:,:,:,1]# t2 post
+			new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,2]+msks[:,:,:,3]# active core
+			#print('-'*10,' Predicing active Core', '-'*10)
+
+		else:
+			new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
 
 	else:
-		new_msks[:,:,:,0] = msks[:,:,:,0]+msks[:,:,:,1]+msks[:,:,:,2]+msks[:,:,:,3]
+
+		shp = imgs.shape
+		new_imgs = np.zeros((shp[0],input_no, shp[2],shp[3]))
+		new_msks = np.zeros((shp[0],output_no, shp[2],shp[3]))
+
+		if mode==1:
+			new_imgs[:,0,:,:] = imgs[:,2,:,:] # flair
+			new_msks[:,0,:,:] = msks[:,0,:,:]+msks[:,1,:,:]+msks[:,2,:,:]+msks[:,3,:,:]
+			#print('-'*10,' Whole tumor', '-'*10)
+		elif mode == 2:
+			#core (non enhancing)
+			new_imgs[:,0,:,:] = imgs[:,0,:,:] # t1 post
+			new_msks[:,0,:,:] = msks[:,3,:,:]
+			#print('-'*10,' Predicing enhancing tumor', '-'*10)
+		elif mode == 3:
+			#core (non enhancing)
+			new_imgs[:,0,:,:] = imgs[:,1,:,:]# t2 post
+			new_msks[:,0,:,:] = msks[:,0,:,:]+msks[:,2,:,:]+msks[:,3,:,:]# active core
+			#print('-'*10,' Predicing active Core', '-'*10)
+
+		else:
+			new_msks[:,0,:,:] = msks[:,0,:,:]+msks[:,1,:,:]+msks[:,2,:,:]+msks[:,3,:,:]
+
+
+		
 
 	return new_imgs, new_msks
 

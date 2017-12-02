@@ -291,24 +291,23 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('-'*30)
 	print('Loading and preprocessing train data...')
 	print('-'*30)
-	imgs_train, msks_train = load_data(data_path,"_train")
-	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
-		mode)
 
-	if not CHANNEL_LAST:
-		imgs_train = np.transpose(imgs_train, [0,3,1,2])
-		msks_train = np.transpose(msks_train, [0,3,1,2])
-	
+	if CHANNEL_LAST:
+		suffix = ""
+	else:
+		suffix = "_cf"
+
+	imgs_train, msks_train = load_data(data_path,"_train"+suffix)
+	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no, 
+		mode, CHANNEL_LAST)
+
 	print('-'*30)
 	print('Loading and preprocessing test data...')
 	print('-'*30)
-	imgs_test, msks_test = load_data(data_path,"_test")
-	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
+	imgs_test, msks_test = load_data(data_path,"_test"+suffix)
+	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode, CHANNEL_LAST)
 
-	if not CHANNEL_LAST:
-		imgs_test = np.transpose(imgs_test, [0,3,1,2])
-		msks_test = np.transpose(msks_test, [0,3,1,2])
-
+	
 	print('-'*30)
 	print('Creating and compiling model...')
 	print('-'*30)
