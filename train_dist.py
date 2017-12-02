@@ -3,12 +3,7 @@
 # Example: numactl -p 1 python train_dist.py --num_threads=50 --num_inter_threads=2\
 #			 --batch_size=256 --blocktime=0 --job_name="ps" --task_index=0
 
-# TODO: how do we control intra/interop threads in a distributed environment?
-# TODO: experiment with load balancing between servers
-# TODO: experiment with residual blocks
-# TODO: try the 'waiting on all nodes' parameter to synchronize right off the bat
 # TODO: try dilation rate in convolution layers (cannot do for deconv)
-# TODO: figure out how to force prepare_or_wait_for_session to make sessions start together
 
 from tensorflow.python.ops.control_flow_ops import with_dependencies
 from preprocess import * 
@@ -33,15 +28,17 @@ parser.add_argument("--batch_size", type=int, default=512, help="the batch size 
 parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
 parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
-parser.add_argument("--learningrate", type=float, default=0.00025, help="learningrate")
+parser.add_argument("--learningrate", type=float, default=0.0003, help="learningrate")
 
 args = parser.parse_args()
-#batch_size = args.batch_size
 batch_size = settings_dist.BATCH_SIZE
 num_inter_op_threads = args.num_inter_threads
 
 num_threads = args.num_threads
 num_intra_op_threads = num_threads
+
+# Split the test set into test_break batches
+test_break = 62
 
 if (args.blocktime > 1000):
 	blocktime = 'infinite'
@@ -93,19 +90,10 @@ img_rows = settings_dist.IMG_ROWS/settings_dist.RESCALE_FACTOR
 img_cols = settings_dist.IMG_COLS/settings_dist.RESCALE_FACTOR
 num_epochs = args.epochs
 
-test_break = 62
-
 config = tf.ConfigProto(inter_op_parallelism_threads=num_inter_op_threads,intra_op_parallelism_threads=num_intra_op_threads)
 
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
-
-#from keras.models import Model,model_from_json,load_model
-#from keras.callbacks import ModelCheckpoint, TensorBoard
-#from keras.callbacks import History 
-#from keras import backend as K
-#from keras.layers import Input
-#import keras
 
 CHANNEL_LAST = True
 if CHANNEL_LAST:
@@ -124,8 +112,7 @@ def model5_MultiLayer(args=None, weights=False,
 	img_cols = 224, 
 	n_cl_in=3,
 	n_cl_out=3, 
-	dropout=0.2, 
-	learning_rate = 0.01,
+	dropout=0.2,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
@@ -217,17 +204,6 @@ def model5_MultiLayer(args=None, weights=False,
 					data_format=data_format, activation='sigmoid')(conv9)
 
 	model = tf.keras.models.Model(inputs=[inputs], outputs=[conv10])
-
-	# if weights:
-	# 	optimizer=tf.keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
-	# else:
-	# 	optimizer = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.05)
-
-	optimizer=tf.keras.optimizers.Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
-
-	model.compile(optimizer=optimizer,
-		loss=dice_coef_loss, #dice_coef_loss, #'binary_crossentropy', 
-		metrics=['accuracy', dice_coef], options=run_options, run_metadata=run_metadata)
 
 	if weights and os.path.isfile(filepath):
 		print('Loading model weights from file {}'.format(filepath))
@@ -335,9 +311,15 @@ def main(_):
 			with tf.control_dependencies(model.updates):
 				barrier = tf.no_op(name='update_barrier')
 
+			# Decay learning rate from initial_learn_rate to initial_learn_rate*fraction in decay_steps global steps
+			initial_learn_rate = args.learningrate
+			decay_steps = 150
+			fraction = 0.3
+			learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
+
 			# Synchronize optimizer
-			opt = tf.train.AdamOptimizer(args.learningrate)
-			#opt=tf.train.AdamOptimizer(learning_rate=0.0001, beta1=0.9, beta2=0.99, epsilon=1e-08)
+			opt = tf.train.AdamOptimizer(learning_rate)
+			#opt=tf.train.AdamOptimizer(learning_rate=args.learning, beta1=0.95, beta2=0.99, epsilon=1e-08)
 			optimizer = tf.train.SyncReplicasOptimizer(opt,replicas_to_aggregate = len(settings_dist.WORKER_HOSTS),total_num_replicas = len(settings_dist.WORKER_HOSTS))
 
 			# Initialize placeholder objects for the loss function
@@ -399,7 +381,7 @@ def main(_):
 					epoch_track = []
 					epoch_start = timeit.default_timer()
 
-					for batch in epoch: #tqdm(epoch):
+					for batch in epoch:#tqdm(epoch):
 						batch_start = timeit.default_timer()
 						data = batch[0]
 						labels = batch[1]
@@ -411,31 +393,27 @@ def main(_):
 						end = start + data_range
 
 						feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
-						loss_value,step_value = sess.run([train_op,global_step],feed_dict = feed_dict)
+						loss_value,step_value,learn_rate = sess.run([train_op,global_step,learning_rate],feed_dict = feed_dict)
 						sess.run(increment_global_step_op)
 
 						# Report progress
 						dice = "{0:.3f}".format(np.exp(-loss_value))
 						loss_show = "{0:.3f}".format(loss_value)
+						learn_rate_show = "{0:.6f}".format(learn_rate)
 						batch_time = timeit.default_timer()-batch_start
 						ETE = str(round(num_batches*(float(batch_time))))[:-2] # Estimated Time per Epoch
-						print("Epoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}".
-							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE))
+						print("Epoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}, Learn rate:{8}".
+							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE,learn_rate_show))
 						current_batch += 1
 
 					epoch_time = timeit.default_timer() - epoch_start
-					print("Epoch time = {} s\n".format(int(epoch_time)))
+					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
-
-					# Using these savers triggers a "Graph is finalized and cannot be modified" error
-					#saver.save(sess,"./{}".format(trained_model_fn)) # POR tensorflow saver
-					#model_checkpoint = model.save(model_trained_fn) # hdf5 saver
 
 					step += 1
 
-				# Break up the test set into smaller sections to avoid segmentation faults
 				# Evaluate test accuracy
-
+				# Break up the test set into smaller sections to avoid segmentation faults
 				# Reduce OMP_NUM_THREADS for inference to 'Resource temporarily unavailable errors'
 				os.environ["OMP_NUM_THREADS"]= ""
 				test_batch_size = len(imgs_test)/test_break
