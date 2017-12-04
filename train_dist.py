@@ -28,7 +28,7 @@ parser.add_argument("--batch_size", type=int, default=512, help="the batch size 
 parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
 parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
-parser.add_argument("--learningrate", type=float, default=0.0003, help="learningrate")
+parser.add_argument("--learningrate", type=float, default=0.0004, help="learningrate")
 
 args = parser.parse_args()
 batch_size = settings_dist.BATCH_SIZE
@@ -314,7 +314,7 @@ def main(_):
 			# Decay learning rate from initial_learn_rate to initial_learn_rate*fraction in decay_steps global steps
 			initial_learn_rate = args.learningrate
 			decay_steps = 150
-			fraction = 0.3
+			fraction = 0.25
 			learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
 
 			# Synchronize optimizer
@@ -370,6 +370,9 @@ def main(_):
 
 				# Run synchronous training
 				step = 1
+
+				epoch_track = []
+
 				while step <= num_epochs:
 
 					print("Loading epoch")
@@ -378,7 +381,7 @@ def main(_):
 					print('Loaded')
 					current_batch = 1
 
-					epoch_track = []
+
 					epoch_start = timeit.default_timer()
 
 					for batch in epoch:#tqdm(epoch):
@@ -394,7 +397,7 @@ def main(_):
 
 						feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
 						loss_value,step_value,learn_rate = sess.run([train_op,global_step,learning_rate],feed_dict = feed_dict)
-						sess.run(increment_global_step_op)
+						#sess.run(increment_global_step_op)
 
 						# Report progress
 						dice = "{0:.3f}".format(np.exp(-loss_value))
