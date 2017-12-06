@@ -416,7 +416,7 @@ def main(_):
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
 
-					train_writer.add_summary(summary, step) # Write summary to TensorBoard
+					train_writer.add_summary(summary_op, step) # Write summary to TensorBoard
 
 					step += 1
 
