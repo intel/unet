@@ -46,7 +46,7 @@ Put these files in `/home/bduser/ge_tensorflow/data/slices/Results/`. For distri
 
 Once an environment is constructed which meets the above requirements, clone this repo anywhere on the host machine. For distributed execution, all nodes must have a copy of this repo (both workers and parameter servers). 
 
-For single-node execution, no changes are needed to settings.py.
+For single-node execution, no changes are needed to `settings.py`.
 
 For multi-node execution, within the cloned directory 'unet', open `settings_dist.py` and replace the current addresses:ports in the `ps_hosts` and `worker_hosts` lists with the appropriate addresses:ports for your cluster.
 
@@ -74,7 +74,7 @@ Default settings can be overridden by appending the above command with:
 --learningrate      # Float, Learning rate (default: 0.0001)
 ```
 
-`numactl -p 1` is used to control how our script will utilize the onboard MCDRAM. The `-p` flag specifies that we prefer using the MCDRAM but, if necessary, are OK expanding into DRAM as needed. Replacing the `-p` with `-m` will force the script to use only MCDRAM. If using the `-m` option, be careful to keep the batch size low enough that all training data and network activations will fit in the MCDRAM. If the storage required exceeds that available in MCDRAM the script will be killed.
+`numactl -p 1` is used to control how our script will utilize the onboard MCDRAM. The `-p` flag specifies that we prefer using the MCDRAM but, if necessary, are OK expanding into DRAM as needed. Replacing the `-p` with `-m` will force the script to use only MCDRAM. If using the `-m` option, take care to keep the batch size low enough that all training data and network activations will fit in the MCDRAM. If the storage required exceeds that available in MCDRAM, the script will be killed.
 
 ## Multi-Node Execution
 
@@ -84,7 +84,7 @@ Similarly to the Single-Node case, we use numactl to execute the distributed pyt
 numactl -p 1 python train_dist.py --job_name="worker" --task_index=0
 ```
 
-For parameter servers, `--jobname` must be set to `"ps"`. If there are multiple workers or multiple parameter servers, the `--task_index` arg must be set to their corresponding worker or parameter server number. For example, on a system with 1 parameter server and 4 worker nodes, the following commands would be executed on each machine:
+For parameter servers, `--jobname` must be set to `"ps"`. If there are multiple workers or multiple parameter servers, the `--task_index` argument must be set to the corresponding worker or parameter server number. For example, on a system with 1 parameter server and 4 worker nodes, the following commands would be executed on each machine:
 
 ```
 Parameter Server: numactl -p 1 python train_dist.py --job_name="ps" --task_index=0
@@ -94,15 +94,15 @@ Worker 2:         numactl -p 1 python train_dist.py --job_name="worker" --task_i
 Worker 3:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=3
 ```
 
-A natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight-updates per epoch. So, in addition to the manually overridable settings in Single-Node execution, we provide the following additional variables for switching on/off and modulating learningrate decay Multi-Node execution: 
+A natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch. To decrease overall training time, we default to a larger initial learning rate and decay it as the model trains. 
+
+In addition to the manually overridable settings in Single-Node execution, we provide the following variables for switching on/off and modulating learning rate decay in Multi-Node execution: 
 
 ```
 --const_learningrate # Bool, Pass this flag alone if a constant learningrate is desired (default: False)
 --decay_steps # Int, Steps taken to decay learningrate by lr_fraction% (default: 150)
 --lr_fraction # Float, learningrate's fraction of its original value after decay_steps global steps (default: 0.25)
 ```
-
-To decrease overall training time, we default to a larger learning rate and decay it as the model trains. 
 
 ## Important hyperparameters
 
