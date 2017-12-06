@@ -12,7 +12,11 @@ BATCH_SIZE = 2046
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
-EPOCHS = 6 # 10
+EPOCHS = 10 # 10
+
+LEARNINGRATE = 0.0002
+DECAY_STEPS = 96
+LR_FRACTION = 0.5
 
 MODEL_FN = "brainWholeTumor" #Name for Mode=1
 #MODEL_FN = "brainActiveTumor" #Name for Mode=2

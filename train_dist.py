@@ -28,10 +28,10 @@ parser.add_argument("--batch_size", type=int, default=512, help="the batch size 
 parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
 parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
-parser.add_argument("--learningrate", type=float, default=0.0004, help="learningrate")
+parser.add_argument("--learningrate", type=float, default=settings_dist.LEARNINGRATE, help="learningrate")
 parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
-parser.add_argument("--decay_steps", type=int, default=150, help="steps taken to decay learningrate by lr_fraction%")
-parser.add_argument("--lr_fraction", type=float, default=0.25, help="learningrate's fraction of its original value after decay_steps steps")
+parser.add_argument("--decay_steps", type=int, default=settings_dist.DECAY_STEPS, help="steps taken to decay learningrate by lr_fraction%")
+parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTION, help="learningrate's fraction of its original value after decay_steps steps")
 
 args = parser.parse_args()
 
