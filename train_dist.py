@@ -399,7 +399,7 @@ def main(_):
 						end = start + data_range
 
 						feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
-						summary1, loss_value,step_value,learn_rate = sess.run([summary_op, train_op,global_step,learning_rate],feed_dict = feed_dict)
+						loss_value,step_value,learn_rate = sess.run([train_op,global_step,learning_rate],feed_dict = feed_dict)
 						#sess.run(increment_global_step_op)
 
 						# Report progress
@@ -416,7 +416,7 @@ def main(_):
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
 
-					train_writer.add_summary(summary1, step) # Write summary to TensorBoard
+					#train_writer.add_summary(summary, step) # Write summary to TensorBoard
 
 					step += 1
 
