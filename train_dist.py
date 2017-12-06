@@ -29,8 +29,15 @@ parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'wo
 parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=0.0004, help="learningrate")
+parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
+parser.add_argument("--decay_steps", type=int, default=150, help="steps taken to decay learningrate by lr_fraction%")
+parser.add_argument("--lr_fraction", type=float, default=0.25, help="learningrate's fraction of its original value after decay_steps steps")
 
 args = parser.parse_args()
+
+print("Upsampling = ",args.use_upsampling)
+print("const_learningrate = ",args.const_learningrate)
+
 batch_size = settings_dist.BATCH_SIZE
 num_inter_op_threads = args.num_inter_threads
 
@@ -312,10 +319,13 @@ def main(_):
 				barrier = tf.no_op(name='update_barrier')
 
 			# Decay learning rate from initial_learn_rate to initial_learn_rate*fraction in decay_steps global steps
-			initial_learn_rate = args.learningrate
-			decay_steps = 150
-			fraction = 0.25
-			learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
+			if args.const_learningrate:
+				learning_rate = tf.convert_to_tensor(args.learningrate, dtype=tf.float32)
+			else:
+				initial_learn_rate = args.learningrate
+				decay_steps = args.decay_steps
+				fraction = args.lr_fraction
+				learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
 
 			# Synchronize optimizer
 			opt = tf.train.AdamOptimizer(learning_rate)
