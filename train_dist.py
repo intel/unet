@@ -356,6 +356,9 @@ def main(_):
 			#with sv.prepare_or_wait_for_session(server.target) as sess:
 			with sv.managed_session(server.target,config=config) as sess:
 
+				# Write to TensorBoard
+				train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
+
 				# Bind keras session to the TF session
 				tf.keras.backend.set_session(sess)
 
@@ -431,6 +434,8 @@ def main(_):
 					test_dict = {model.inputs[0]:test_image_batch,test_label_placeholder:test_label_batch}
 					test_dice_coef = sess.run([test_dice],feed_dict=test_dict)
 					dice_sum += test_dice_coef[0]
+
+					train_writer.add_summary(summary, i) # Write summary to TensorBoard
 
 					i += 1
 
