@@ -416,6 +416,8 @@ def main(_):
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
 
+					train_writer.add_summary(summary, step) # Write summary to TensorBoard
+
 					step += 1
 
 				# Evaluate test accuracy
@@ -434,8 +436,6 @@ def main(_):
 					test_dict = {model.inputs[0]:test_image_batch,test_label_placeholder:test_label_batch}
 					test_dice_coef = sess.run([test_dice],feed_dict=test_dict)
 					dice_sum += test_dice_coef[0]
-
-					train_writer.add_summary(summary, i) # Write summary to TensorBoard
 
 					i += 1
 
