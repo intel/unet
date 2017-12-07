@@ -24,7 +24,7 @@ parser.add_argument('--use_upsampling', help='use upsampling instead of transpos
 parser.add_argument("--num_threads", type=int, default=settings_dist.NUM_INTRA_THREADS, help="the number of threads")
 parser.add_argument("--num_inter_threads", type=int, default=settings_dist.NUM_INTER_THREADS, help="the number of interop threads")
 parser.add_argument("--blocktime", type=int, default=settings_dist.BLOCKTIME, help="blocktime")
-parser.add_argument("--batch_size", type=int, default=512, help="the batch size for training")
+parser.add_argument("--batch_size", type=int, default=settings_dist.BATCH_SIZE, help="the batch size for training")
 parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
 parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
@@ -34,13 +34,9 @@ parser.add_argument("--decay_steps", type=int, default=settings_dist.DECAY_STEPS
 parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTION, help="learningrate's fraction of its original value after decay_steps steps")
 
 args = parser.parse_args()
-
-print("Upsampling = ",args.use_upsampling)
-print("const_learningrate = ",args.const_learningrate)
-
-batch_size = settings_dist.BATCH_SIZE
+#global batch_size
+batch_size = args.batch_size
 num_inter_op_threads = args.num_inter_threads
-
 num_threads = args.num_threads
 num_intra_op_threads = num_threads
 
@@ -386,6 +382,8 @@ def main(_):
 
 				epoch_track = []
 
+				total_start = timeit.default_timer()
+
 				while step <= num_epochs:
 
 					print("Loading epoch")
@@ -429,6 +427,9 @@ def main(_):
 					#train_writer.add_summary(summary, step) # Write summary to TensorBoard
 
 					step += 1
+					#batch_size += 50
+
+				total_end = timeit.default_timer()
 
 				# Evaluate test accuracy
 				# Break up the test set into smaller sections to avoid segmentation faults
@@ -453,6 +454,7 @@ def main(_):
 				print("Test Dice Coef = {0:.3f}".format(avg_dice))
 
 				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
+				print("Total time to train: {} s".format(round(total_end-total_start)))
 			sv.stop()
 
 if __name__ == "__main__":
