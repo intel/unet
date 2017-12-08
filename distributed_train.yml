@@ -1,0 +1,6 @@
+---
+- name: Distributed Training
+  hosts: all
+  tasks:
+    - name: Run test script
+      command: "sh /home/bduser/mattson/GE/unet/test_bash.sh"
