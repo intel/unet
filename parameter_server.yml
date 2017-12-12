@@ -1,4 +1,3 @@
-#!/bin/sh
 # ----------------------------------------------------------------------------
 # Copyright 2017 Intel
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +13,21 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-# Run the Ansible playbook to start the distribute tensorflow workers
-# The playbook will first start the parameter server on the local machine.
-# Then it will sync the files from the worker directories to this directory.
-# It will then start the train_dist.py
-# You can keep track of the training progress for each worker by
-# logging into that server and looking at training.log file.
-ansible-playbook -i inv.yml -e dir_in="/home/bduser/mattson/GE/unet/" distributed_train.yml
+# Requires you to pass in the "dir_in" variable with the 
+# absolute path of the directory.
+# e.g. ansible-playbook -i inv.yml -e dir_in="/home/bduser/mattson/GE/unet/" parameter_server.yml
 
+- name: Distributed Tensorflow Training - Starts the parameter server
+  hosts: ps
+  
+  pre_tasks:  
+    - debug: 
+        msg: "Parameter server (ps) #{{ play_hosts.index(inventory_hostname) }}: IP is {{inventory_hostname}}"
+        
+  tasks:
 
+      - name: Start the parameter server
+        command: "sh {{ dir_in }}Distributed.sh {{ dir_in }} ps 0 "
+        async: 10   # Wait 10 seconds then continue to other tasks
+        poll: 0   # Fire and forget
+  
