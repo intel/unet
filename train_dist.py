@@ -392,7 +392,6 @@ def main(_):
 					print('Loaded')
 					current_batch = 1
 
-
 					epoch_start = timeit.default_timer()
 
 					for batch in epoch:#tqdm(epoch):
@@ -427,7 +426,7 @@ def main(_):
 					#train_writer.add_summary(summary, step) # Write summary to TensorBoard
 
 					step += 1
-					#batch_size += 50
+					#batch_size -= 20
 
 				total_end = timeit.default_timer()
 

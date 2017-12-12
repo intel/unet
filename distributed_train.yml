@@ -1,6 +1,21 @@
----
-- name: Distributed Training
+--- 
+- name: Distributed Tensorflow Training
   hosts: all
+  vars:
+    dir1: "/home/bduser/mattson/GE/unet/"
+
+  pre_tasks:  
+    - debug: 
+        msg: "Worker #{{ play_hosts.index(inventory_hostname) }}: IP is {{inventory_hostname}}"
+
+    # Copy the files (rsync) from this host to the workers.
+    - synchronize:
+        src:  "{{ dir1 }}"
+        dest: "{{ dir1 }}"
+        
   tasks:
-    - name: Run test script
-      command: "sh /home/bduser/mattson/GE/unet/test_bash.sh"
+
+      - name: Run distributed training on all workers. Check the local training.log files for progress.
+        command: "sh {{ dir1 }}Distributed.sh {{ dir1 }} worker {{ play_hosts.index(inventory_hostname) }} "
+
+       
