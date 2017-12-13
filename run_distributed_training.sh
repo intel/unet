@@ -20,6 +20,6 @@
 # It will then start the train_dist.py
 # You can keep track of the training progress for each worker by
 # logging into that server and looking at training.log file.
-ansible-playbook -i inv.yml -e dir_in="/home/bduser/mattson/GE/unet/" distributed_train.yml
+ansible-playbook -i inv.yml -e dir_in="/home/bduser/mattson/unet/" distributed_train.yml
 
 
