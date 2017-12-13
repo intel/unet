@@ -16,7 +16,15 @@ Note: If running multi-node training, the following instructions must be complet
 
 Intel optimized TensorFlow 1.4.0 for Python 2.7. Install instructions can be found at https://software.intel.com/en-us/articles/intel-optimized-tensorflow-wheel-now-available.
 
-Additional packages required:
+Note: if running distributed training, the following must be completed on all worker and ps nodes.
+
+Use conda to setup a virtual environment called 'tf' with the following command:
+
+```
+conda create -n tf -c intel python=2 pip numpy
+```
+
+This will default the conda environment to use the Intel Python distribution. Use `source activate tf` to enter the virtual environment, and install the following packages:
 
 ```
 SimpleITK
@@ -43,7 +51,7 @@ msks_train.npy
 
 Put these files in `/home/bduser/ge_tensorflow/data/slices/Results/`. For distributed execution, data must be in that same location on all worker nodes. The parameter server does not need a copy of the data.
 
-## Modifications - settings.py
+## Modifications - Settings
 
 Once an environment is constructed which meets the above requirements, clone this repo anywhere on the host machine. For distributed execution, all nodes must have a copy of this repo (both workers and parameter servers). 
 
