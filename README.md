@@ -25,6 +25,7 @@ h5py
 shutil
 tqdm
 numactl
+ansible
 ```
 
 ## Required Data
@@ -78,21 +79,27 @@ Default settings can be overridden by appending the above command with:
 
 ## Multi-Node Execution
 
-Similarly to the Single-Node case, we use numactl to execute the distributed python script. A version of the following example command must be run on each machine to initiate distributed training:
+We use an Ansible's playbook function to automate Multi-Node execution. This playbook will be run from the parameter server but, before running, two files must be edited:
+
+1. The inventory file, `inv.yml`, must be edited to reflect the current cluster spec. Replace the IP's listed under `[worker]` with your worker node IP's. Do not change the IP under `[ps]` as this is the default localhost IP and will be used to initiate training on the parameter server.
+
+2. Update the `dir_in` variable in `run_distributed_training.sh` to point to your cloned `unet` repo. Note: the `unet` repo must be cloned to the same location on all workers and parameter servers.
+
+Once these modifications have been made, run the command `sh run_distributed_training.sh` to initiate training.
+
+This command will run the `distributed_train.yml` playbook and initiate the following:
+
+1. Synchronize all files from the `unet` directory on the parameter server to the `unet` directories on the workers. 
+2. Run the `Distributed.sh` bash script on all the workers. This script runs a version of the following example commands on each worker:
 
 ```
-numactl -p 1 python train_dist.py --job_name="worker" --task_index=0
-```
-
-For parameter servers, `--jobname` must be set to `"ps"`. If there are multiple workers or multiple parameter servers, the `--task_index` argument must be set to the corresponding worker or parameter server number. For example, on a system with 1 parameter server and 4 worker nodes, the following commands would be executed on each machine:
-
-```
-Parameter Server: numactl -p 1 python train_dist.py --job_name="ps" --task_index=0
 Worker 0:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=0
 Worker 1:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=1
 Worker 2:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=2
 Worker 3:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=3
 ```
+
+3. While these commands are running, ansible registers their outputs (global step, training loss, dice score, etc.) and saves that to a file called `training.log`. 
 
 A natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch. To decrease overall training time, we default to a larger initial learning rate and decay it as the model trains. 
 
