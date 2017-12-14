@@ -469,9 +469,8 @@ def main(_):
 
 				
 
-			sv.stop()
+			#sv.stop()
 				
-			del sess
 
 if __name__ == "__main__":
 
