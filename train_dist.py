@@ -32,7 +32,6 @@ parser.add_argument("--learningrate", type=float, default=settings_dist.LEARNING
 parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
 parser.add_argument("--decay_steps", type=int, default=settings_dist.DECAY_STEPS, help="steps taken to decay learningrate by lr_fraction%")
 parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTION, help="learningrate's fraction of its original value after decay_steps steps")
-
 args = parser.parse_args()
 #global batch_size
 batch_size = args.batch_size
@@ -303,6 +302,7 @@ def main(_):
 			# Create model
 			model = model5_MultiLayer(args, False, False, img_rows, img_cols, settings_dist.IN_CHANNEL_NO, settings_dist.OUT_CHANNEL_NO)
 
+			
 			# Create global_step tensor to count iterations
 			# In synchronous training, global step will synchronize after the first few batches in each epoch
 			global_step = tf.Variable(0,name='global_step', trainable=False)
@@ -357,6 +357,8 @@ def main(_):
 
 			# Create a "supervisor", which oversees the training process.
 			# Cannot modify the graph after this point (it is marked as Final by the Supervisor)
+			print('Am I the chief worker: {}'.format(args.task_index == 0))
+
 			sv = tf.train.Supervisor(is_chief=(args.task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
 
 			#with sv.prepare_or_wait_for_session(server.target) as sess:
@@ -457,7 +459,13 @@ def main(_):
 			sv.stop()
 
 if __name__ == "__main__":
+
+	from datetime import datetime
+	print('Starting at {}'.format(datetime.now()))
+
 	tf.app.run()
+
+	print('Ending at {}'.format(datetime.now()))
 
 
 

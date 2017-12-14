@@ -20,11 +20,18 @@
 # source activate tf
 # pip install https://anaconda.org/intel/tensorflow/1.4.0/download/tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
 # pip install keras
-# You'll also need whatever other packages your script relies on (e.g. opencv, simpleITK, pandas)
+# You'll also need whatever other packages your script relies on (e.g. opencv, simpleITK, h5py)
+# pip install h5py opencv-python simpleITK tqdm
 
 # Activate the correct Tensorflow environment (conda)
 source activate tf
 # Run the distributed tensorflow
 # We flush messages immediately rather than buffering them.
 # All messages go to the local training.log file
-stdbuf -oL numactl -p 1 python $1train_dist.py --job_name=$2 --task_index=$3 > $1training.log
+if [ $2 = "localhost" ]; then
+	stdbuf -oL numactl -p 1 python $1train_dist.py --job_name="ps" --task_index=0 > $1training.log
+else
+	stdbuf -oL numactl -p 1 python $1train_dist.py --job_name="worker" --task_index=$3 > $1training.log
+fi
+
+

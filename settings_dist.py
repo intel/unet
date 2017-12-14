@@ -1,4 +1,4 @@
-BASE = "/home/bduser/ge_tensorflow/data/"
+BASE = "/home/bduser/unet/data/"
 DATA_PATH = BASE+"/slices"
 OUT_PATH  = BASE+"slices/Results/"
 IMG_ROWS = 128

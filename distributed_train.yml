@@ -19,12 +19,11 @@
 # e.g. ansible-playbook -i inv.yml -e dir_in="/home/bduser/mattson/GE/unet/" distributed_train.yml
 
 # Start the parameter server by running its playbook
-- import_playbook: parameter_server.yml
+#- import_playbook: parameter_server.yml
 
-- name: Distributed Tensorflow Training
-  hosts: worker
+- name: Distributed Tensorflow Training 
+  hosts: nodes
   
-
   pre_tasks:  
     - debug: 
         msg: "Worker #{{ play_hosts.index(inventory_hostname) }}: IP is {{inventory_hostname}}"
@@ -33,19 +32,13 @@
     - synchronize:
         src:  "{{ dir_in }}"
         dest: "{{ dir_in }}"
+        #rsync_path: "mkdir -p {{ dir_in }}" # Create the directory and its parents if they don't already exist
         
   tasks:
 
       - name: Run distributed training on all workers. Check the local training.log files for progress.
-        command: "sh {{ dir_in }}Distributed.sh {{ dir_in }} {{ play_hosts }} {{ play_hosts.index(inventory_hostname)}} "
-        async: 30   # Wait 60 seconds then continue to other tasks
-        poll: 0   # Fire and forget
-        register: worker_training
-
-      - name: 'Waiting for training to finish on all workers'
-        async_status: jid={{ worker_training.ansible_job_id }}
-        register: job_result
-        until: job_result.finished
+        command: "sh {{ dir_in }}Distributed.sh {{ dir_in }} {{inventory_hostname}} {{ play_hosts.index(inventory_hostname) }} "
+        
       
 
 

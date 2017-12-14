@@ -1,10 +1,8 @@
-# This is the node that will gather the gradients and make the updates to the weights.
-[ps]
-127.0.0.1    # Local host
-
 # These are the nodes that will perform the training
-[worker]
-10.54.68.193
+# The last in the list should be the parameter server which is always called localhost
+[nodes]
+10.100.68.193
 10.54.68.183
 10.54.68.185
 10.54.68.187
+localhost
