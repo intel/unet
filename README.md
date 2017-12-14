@@ -10,11 +10,7 @@ This repo contains code for single and multi-node execution:
 
 	train_dist.py: Multi-node implementation for synchronous weight updates, optimized for use on Intel KNL servers.
 
-Note: If running multi-node training, the following instructions must be completed identically on all nodes in the network. Or, more accurately, the final state of each machine's 'unet' directory must be identical and the virtual environments must all contain the dependencies listed below.
-
-## Required Packages
-
-Intel optimized TensorFlow 1.4.0 for Python 2.7. Install instructions can be found at https://software.intel.com/en-us/articles/intel-optimized-tensorflow-wheel-now-available.
+## Setup
 
 Note: if running distributed training, the following must be completed on all worker and ps nodes.
 
@@ -24,9 +20,10 @@ Use conda to setup a virtual environment called 'tf' with the following command:
 conda create -n tf -c intel python=2 pip numpy
 ```
 
-This will default the conda environment to use the Intel Python distribution. Use `source activate tf` to enter the virtual environment, and install the following packages:
+This will default the conda environment to use the Intel Python distribution. Use `source activate tf` to enter the virtual environment, then install the following packages:
 
 ```
+Tensorflow 1.4.0
 SimpleITK
 opencv-python
 h5py
@@ -35,6 +32,8 @@ tqdm
 numactl
 ansible
 ```
+
+We use Intel optimized TensorFlow 1.4.0 for Python 2.7. Install instructions can be found at https://software.intel.com/en-us/articles/intel-optimized-tensorflow-wheel-now-available.
 
 ## Required Data
 
@@ -49,11 +48,11 @@ msks_test.npy
 msks_train.npy
 ```
 
-Put these files in `/home/bduser/ge_tensorflow/data/slices/Results/`. For distributed execution, data must be in that same location on all worker nodes. The parameter server does not need a copy of the data.
+Put these files in `/home/unet/data/slices/Results/`. For distributed execution, data must be in that same location on all worker nodes. The parameter server does not need a copy of the data.
 
 ## Modifications - Settings
 
-Once an environment is constructed which meets the above requirements, clone this repo anywhere on the host machine. For distributed execution, all nodes must have a copy of this repo (both workers and parameter servers). 
+Once an environment is constructed which meets the above requirements, clone this repo anywhere on the host machine. For distributed execution, all nodes must have a copy of this repo (both workers and parameter servers).
 
 For single-node execution, no changes are needed to `settings.py`.
 
@@ -63,7 +62,7 @@ Depending on your hardware, you may need to modify the NUM_INTRA_THREADS value. 
 
 ## Single-Node Execution
 
-We use numactl to execute the python script. In the 'unet' directory, execute the following command:
+We use numactl to execute the python script. In the 'unet' directory, enter the 'tf' virtual environment and execute the following command:
 
 ```
 numactl -p 1 python train.py
@@ -71,7 +70,7 @@ numactl -p 1 python train.py
 
 Updates on training progress will be printed to stdout. This script saves the model to a checkpoint every 60 seconds. The saved model will also be located in the local 'unet' directory.
 
-Default settings can be overridden by appending the above command with:
+Default settings can be overridden by appending the above command with the following flags:
 
 ```
 --use_upsampling    # Boolean, Use the UpSampling2D method in place of Conv2DTranspose (default: False)
@@ -91,25 +90,31 @@ We use an Ansible's playbook function to automate Multi-Node execution. This pla
 
 1. The inventory file, `inv.yml`, must be edited to reflect the current cluster spec. Replace the IP's listed under `[worker]` with your worker node IP's. Do not change the IP under `[ps]` as this is the default localhost IP and will be used to initiate training on the parameter server.
 
-2. Update the `dir_in` variable in `run_distributed_training.sh` to point to your cloned `unet` repo. Note: the `unet` repo must be cloned to the same location on all workers and parameter servers.
+2. Update the `dir_in` variable in `run_distributed_training.sh` to the full path to your cloned `unet` repo on all workers. Note: the `unet` repo must be cloned to the same location on all workers and parameter servers.
 
 Once these modifications have been made, run the command `sh run_distributed_training.sh` to initiate training.
 
 This command will run the `distributed_train.yml` playbook and initiate the following:
 
-1. Synchronize all files from the `unet` directory on the parameter server to the `unet` directories on the workers. 
-2. Run the `Distributed.sh` bash script on all the workers. This script runs a version of the following example commands on each worker:
+1. Synchronize all files from the `unet` directory on the parameter server to the `unet` directories on the workers.
+2. Start the parameter server with the following command:
 
 ```
-Worker 0:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=0
-Worker 1:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=1
-Worker 2:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=2
-Worker 3:         numactl -p 1 python train_dist.py --job_name="worker" --task_index=3
+Parameter Server:	numactl -p 1 python train_dist.py --job_name="ps" --task_index=0
 ```
 
-3. While these commands are running, ansible registers their outputs (global step, training loss, dice score, etc.) and saves that to a file called `training.log`. 
+3. Run the `Distributed.sh` bash script on all the workers, which executes a run command on each worker:
 
-A natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch. To decrease overall training time, we default to a larger initial learning rate and decay it as the model trains. 
+```
+Worker 0:	numactl -p 1 python train_dist.py --job_name="worker" --task_index=0
+Worker 1:	numactl -p 1 python train_dist.py --job_name="worker" --task_index=1
+Worker 2:	numactl -p 1 python train_dist.py --job_name="worker" --task_index=2
+Worker 3:	numactl -p 1 python train_dist.py --job_name="worker" --task_index=3
+```
+
+4. While these commands are running, ansible registers their outputs (global step, training loss, dice score, etc.) and saves that to `training.log`. 
+
+Note that a natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch and slower convergence. To reduce the training time in multi-node execution, we default to a large initial learning rate which decays as the model trains.
 
 In addition to the manually overridable settings in Single-Node execution, we provide the following variables for switching on/off and modulating learning rate decay in Multi-Node execution: 
 
@@ -118,8 +123,6 @@ In addition to the manually overridable settings in Single-Node execution, we pr
 --decay_steps # Int, Steps taken to decay learningrate by lr_fraction% (default: 150)
 --lr_fraction # Float, learningrate's fraction of its original value after decay_steps global steps (default: 0.25)
 ```
-
-## Important hyperparameters
 
 
 
