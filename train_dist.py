@@ -32,6 +32,10 @@ parser.add_argument("--learningrate", type=float, default=settings_dist.LEARNING
 parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
 parser.add_argument("--decay_steps", type=int, default=settings_dist.DECAY_STEPS, help="steps taken to decay learningrate by lr_fraction%")
 parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTION, help="learningrate's fraction of its original value after decay_steps steps")
+
+parser.add_argument("--worker_nodes",type=str, default=settings_dist.WORKER_HOSTS,help="list of the worker node IP addresses")
+parser.add_argument("--ps_nodes",type=str, default=settings_dist.PS_HOSTS,help="list of the parameter server node IP addresses")
+
 args = parser.parse_args()
 #global batch_size
 batch_size = args.batch_size
@@ -82,8 +86,11 @@ if os.path.isdir(logdir):
 	shutil.rmtree(logdir)
 
 # TODO: put all these in Settings file
-ps_hosts = settings_dist.PS_HOSTS
-worker_hosts = settings_dist.WORKER_HOSTS
+# ps_hosts = settings_dist.PS_HOSTS
+# worker_hosts = settings_dist.WORKER_HOSTS
+
+ps_hosts = args.ps_nodes
+worker_hosts = args.worker_nodes
 
 model_trained_fn = settings_dist.OUT_PATH+"model_trained.hdf5"
 trained_model_fn = "trained_model"
@@ -367,9 +374,6 @@ def main(_):
 				# Write to TensorBoard
 				train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
 
-				# Bind keras session to the TF session
-				tf.keras.backend.set_session(sess)
-
 				print('-'*30)
 				print("Fitting Model")
 				print('-'*30)
@@ -386,7 +390,7 @@ def main(_):
 
 				total_start = timeit.default_timer()
 
-				while step <= num_epochs:
+				while (step <= num_epochs) and not sv.should_stop():
 
 					print("Loading epoch")
 					epoch = get_epoch(batch_size,imgs_train,msks_train)
@@ -397,6 +401,10 @@ def main(_):
 					epoch_start = timeit.default_timer()
 
 					for batch in epoch:#tqdm(epoch):
+					
+						if sv.should_stop():
+							break   # Exit early since the Supervisor node has requested a stop.
+
 						batch_start = timeit.default_timer()
 						data = batch[0]
 						labels = batch[1]
@@ -420,6 +428,8 @@ def main(_):
 						print("Epoch {5}/{6}, ETE: {7} s, Batch: {0}/{1}, Loss:{2}, Dice: {3}, Global Step:{4}, Learn rate:{8}".
 							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE,learn_rate_show))
 						current_batch += 1
+
+						
 
 					epoch_time = timeit.default_timer() - epoch_start
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
@@ -456,7 +466,12 @@ def main(_):
 
 				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
 				print("Total time to train: {} s".format(round(total_end-total_start)))
+
+				
+
 			sv.stop()
+				
+			del sess
 
 if __name__ == "__main__":
 

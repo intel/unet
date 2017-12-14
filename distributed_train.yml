@@ -36,8 +36,8 @@
         
   tasks:
 
-      - name: Run distributed training on all workers. Check the local training.log files for progress.
-        command: "sh {{ dir_in }}Distributed.sh {{ dir_in }} {{inventory_hostname}} {{ play_hosts.index(inventory_hostname) }} "
+      - name: Run distributed training on the workers and ps. Check the local training.log files for progress.
+        command: "sh {{ dir_in }}Distributed.sh {{ dir_in }} {{ inventory_hostname }} {{ play_hosts.index(inventory_hostname) }} "
         
       
 

@@ -2,7 +2,7 @@
 # The last in the list should be the parameter server which is always called localhost
 [nodes]
 10.100.68.193
-10.54.68.183
-10.54.68.185
-10.54.68.187
-localhost
+10.100.68.183
+10.100.68.185
+10.100.68.187
+localhost  # Parameter server - always make this the last entry
