@@ -170,7 +170,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv5 = tf.keras.layers.Conv2D(name='conv5b', filters=512, **params)(conv5)
 		up6 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
 		
 	conv6 = tf.keras.layers.Conv2D(name='conv6a', filters=256, **params)(up6)
 	
@@ -181,7 +181,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv6 = tf.keras.layers.Conv2D(name='conv6b', filters=256, **params)(conv6)
 		up7 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
 
 	conv7 = tf.keras.layers.Conv2D(name='conv7a', filters=128, **params)(up7)
 	
@@ -192,7 +192,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv7 = tf.keras.layers.Conv2D(name='conv7b', filters=128, **params)(conv7)
 		up8 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
 
 	
 	conv8 = tf.keras.layers.Conv2D(name='conv8a', filters=64, **params)(up8)
@@ -203,7 +203,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv8 = tf.keras.layers.Conv2D(name='conv8b', filters=64, **params)(conv8)
 		up9 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
 
 
 	conv9 = tf.keras.layers.Conv2D(name='conv9a', filters=32, **params)(up9)
@@ -241,11 +241,10 @@ def get_epoch(batch_size,imgs_train,msks_train):
 	batch_count = epoch_length/batch_size
 
 	# Shuffle and truncate arrays to equal 1 epoch
-	zipped = zip(imgs_train,msks_train)
-	np.random.shuffle(zipped)
-	data,labels = zip(*zipped)
-	data = np.asarray(data)[:epoch_length]
-	labels = np.asarray(labels)[:epoch_length]
+
+	random_sample = np.sort(np.random.permutation(train_size)[:epoch_length])
+	data = np.asarray(imgs_train)[random_sample]
+	labels = np.asarray(msks_train)[random_sample]
 
 	# Reshape arrays into batch_count batches of length batch_size
 	data = data.reshape((batch_count,batch_size,image_width,image_height,image_channels))
@@ -255,6 +254,17 @@ def get_epoch(batch_size,imgs_train,msks_train):
 	epoch_of_batches = zip(data,labels)
 
 	return epoch_of_batches
+
+def create_done_queue(i):
+  """Queue used to signal death for i'th ps shard. Intended to have 
+  all workers enqueue an item onto it to signal doneness."""
+  
+  with tf.device("/job:ps/task:%d" % (i)):
+	return tf.FIFOQueue(len(worker_hosts), tf.int32, shared_name="done_queue"+
+						str(i))
+  
+def create_done_queues():
+  return [create_done_queue(i) for i in range(len(ps_hosts))]
 
 def main(_):
 
@@ -268,8 +278,18 @@ def main(_):
 
 	if args.job_name == "ps":
 
-		print("Parameter server started. To interrupt use CTRL-\\")
-		server.join()
+		sess = tf.Session(server.target)
+		queue = create_done_queue(args.task_index)
+  
+		# wait until all workers are done
+		for i in range(len(worker_hosts)):
+			print("\n\nParameter server #{} started with task #{} on this machine.\n\n" \
+				"Waiting on workers to finish.\n\nPress CTRL-\\ to terminate early." .format(args.task_index, i))
+		  	sess.run(queue.dequeue())
+		  	print("Worker #{} reports done at task #{}" .format(i, args.task_index))
+		 
+		print("Parameter server {} is quitting".format(args.task_index))
+		print('Training complete.')
 		
 
 	# Train if under worker
@@ -329,7 +349,6 @@ def main(_):
 				decay_steps = args.decay_steps
 				fraction = args.lr_fraction
 				learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
-
 			# Synchronize optimizer
 			opt = tf.train.AdamOptimizer(learning_rate)
 			#opt=tf.train.AdamOptimizer(learning_rate=args.learning, beta1=0.95, beta2=0.99, epsilon=1e-08)
@@ -365,6 +384,11 @@ def main(_):
 			# Create a "supervisor", which oversees the training process.
 			# Cannot modify the graph after this point (it is marked as Final by the Supervisor)
 			print('Am I the chief worker: {}'.format(args.task_index == 0))
+
+			enq_ops = []
+			for q in create_done_queues():
+				qop = q.enqueue(1)
+				enq_ops.append(qop)
 
 			sv = tf.train.Supervisor(is_chief=(args.task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
 
@@ -468,12 +492,15 @@ def main(_):
 				print("Total time to train: {} s".format(round(total_end-total_start)))
 
 				#tf.reset_default_graph()
+				for op in enq_ops:
+					sess.run(op)
+				
 
 				
 			#sv.request_stop()
 
-			if (args.task_index == 0):  # Chief node stops
-				sv.request_stop()
+			#if (args.task_index == 0):  # Chief node stops
+			#	sv.request_stop()
 				
 
 if __name__ == "__main__":
