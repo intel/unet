@@ -368,8 +368,8 @@ def main(_):
 
 			sv = tf.train.Supervisor(is_chief=(args.task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
 
-			#with sv.prepare_or_wait_for_session(server.target) as sess:
-			with sv.managed_session(server.target,config=config) as sess:
+			with sv.prepare_or_wait_for_session(server.target) as sess:
+			#with sv.managed_session(server.target,config=config) as sess:
 
 				# Write to TensorBoard
 				train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
@@ -467,9 +467,13 @@ def main(_):
 				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
 				print("Total time to train: {} s".format(round(total_end-total_start)))
 
-				
+				#tf.reset_default_graph()
 
-			#sv.stop()
+				
+			#sv.request_stop()
+
+			if (args.task_index == 0):  # Chief node stops
+				sv.request_stop()
 				
 
 if __name__ == "__main__":
