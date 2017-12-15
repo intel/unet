@@ -242,9 +242,16 @@ def get_epoch(batch_size,imgs_train,msks_train):
 
 	# Shuffle and truncate arrays to equal 1 epoch
 
-	random_sample = np.sort(np.random.permutation(train_size)[:epoch_length])
-	data = np.asarray(imgs_train)[random_sample]
-	labels = np.asarray(msks_train)[random_sample]
+	# random_sample = np.sort(np.random.permutation(train_size)[:epoch_length])
+	# data = np.asarray(imgs_train)[random_sample]
+	# labels = np.asarray(msks_train)[random_sample]
+
+	# Shuffle and truncate arrays to equal 1 epoch
+	zipped = zip(imgs_train,msks_train)
+	np.random.shuffle(zipped)
+	data,labels = zip(*zipped)
+	data = np.asarray(data)[:epoch_length]
+	labels = np.asarray(labels)[:epoch_length]
 
 	# Reshape arrays into batch_count batches of length batch_size
 	data = data.reshape((batch_count,batch_size,image_width,image_height,image_channels))
@@ -283,13 +290,18 @@ def main(_):
   
 		# wait until all workers are done
 		for i in range(len(worker_hosts)):
+			print('*'*30)
 			print("\n\nParameter server #{} started with task #{} on this machine.\n\n" \
 				"Waiting on workers to finish.\n\nPress CTRL-\\ to terminate early." .format(args.task_index, i))
+			print('*'*30)
 		  	sess.run(queue.dequeue())
 		  	print("Worker #{} reports done at task #{}" .format(i, args.task_index))
 		 
 		print("Parameter server {} is quitting".format(args.task_index))
 		print('Training complete.')
+
+		# print("Parameter server started. To interrupt use CTRL-\\")
+		# server.join()
 		
 
 	# Train if under worker
@@ -497,7 +509,7 @@ def main(_):
 				
 
 				
-			#sv.request_stop()
+		sv.request_stop()
 
 			#if (args.task_index == 0):  # Chief node stops
 			#	sv.request_stop()
