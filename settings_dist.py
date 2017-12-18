@@ -12,7 +12,7 @@ BATCH_SIZE = 512
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
-EPOCHS = 10
+EPOCHS = 2
 
 LEARNINGRATE = 0.0005
 DECAY_STEPS = 350
@@ -27,6 +27,7 @@ MODEL_FN = "brainWholeTumor" #Name for Mode=1
 #Use T2 to identify the active core (necrosis, enhancing, non-enh): test reaches 0.5-0.55: MODE=3
 MODE=1
 
-# Important that these are ordered correctly: [0] = master, [1] = worker, etc.
-PS_HOSTS = ["10.100.68.245:2222"]
-WORKER_HOSTS = ["10.100.68.193:2222","10.100.68.183:2222","10.100.68.185:2222","10.100.68.187:2222"]
+# Important that these are ordered correctly: [0] = chief node, [1] = worker node, etc.
+PORT = "2222"
+PS_HOSTS = ["10.100.68.245"]
+WORKER_HOSTS = ["10.100.68.193","10.100.68.183","10.100.68.185","10.100.68.187"]

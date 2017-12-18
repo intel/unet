@@ -28,10 +28,7 @@ source activate tf
 # Run the distributed tensorflow
 # We flush messages immediately rather than buffering them.
 # All messages go to the local training.log file
-if [ $2 = "localhost" ]; then
-	stdbuf -oL numactl -p 1 python $1train_dist.py --job_name="ps" --task_index=0 > $1training.log
-else
-	stdbuf -oL numactl -p 1 python $1train_dist.py --job_name="worker" --task_index=$3 > $1training.log
-fi
+stdbuf -oL numactl -p 1 python $1train_dist.py --ip=$2 > $1training.log
+
 
 

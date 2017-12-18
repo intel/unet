@@ -1,7 +1,7 @@
 # To run, must indicate the job_name (worker or ps) and the job number (0=chief)\
 # in the command run on each server in the cluster
 # Example: numactl -p 1 python train_dist.py --num_threads=50 --num_inter_threads=2\
-#			 --batch_size=256 --blocktime=0 --job_name="ps" --task_index=0
+#			 --batch_size=256 --blocktime=0 
 
 # TODO: try dilation rate in convolution layers (cannot do for deconv)
 
@@ -16,6 +16,7 @@ import shutil
 import timeit
 import time
 import os
+import socket 
 from tqdm import tqdm   # For the fancy progress bar
 
 
@@ -25,8 +26,6 @@ parser.add_argument("--num_threads", type=int, default=settings_dist.NUM_INTRA_T
 parser.add_argument("--num_inter_threads", type=int, default=settings_dist.NUM_INTER_THREADS, help="the number of interop threads")
 parser.add_argument("--blocktime", type=int, default=settings_dist.BLOCKTIME, help="blocktime")
 parser.add_argument("--batch_size", type=int, default=settings_dist.BATCH_SIZE, help="the batch size for training")
-parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
-parser.add_argument("--task_index",type=int, default=0,help="")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=settings_dist.LEARNINGRATE, help="learningrate")
 parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
@@ -35,6 +34,9 @@ parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTI
 
 parser.add_argument("--worker_nodes",type=str, default=settings_dist.WORKER_HOSTS,help="list of the worker node IP addresses")
 parser.add_argument("--ps_nodes",type=str, default=settings_dist.PS_HOSTS,help="list of the parameter server node IP addresses")
+parser.add_argument("--port",type=str, default=settings_dist.PORT,help="the PORT to use for distriuted TensorFlow")
+
+parser.add_argument("--ip",type=str, default=socket.gethostbyname(socket.gethostname()), help="the IP address of this machine")
 
 args = parser.parse_args()
 #global batch_size
@@ -42,6 +44,7 @@ batch_size = args.batch_size
 num_inter_op_threads = args.num_inter_threads
 num_threads = args.num_threads
 num_intra_op_threads = num_threads
+
 
 # Split the test set into test_break batches
 test_break = 62
@@ -85,12 +88,20 @@ logdir = "/tmp/train_logs"
 if os.path.isdir(logdir):
 	shutil.rmtree(logdir)
 
-# TODO: put all these in Settings file
-# ps_hosts = settings_dist.PS_HOSTS
-# worker_hosts = settings_dist.WORKER_HOSTS
 
-ps_hosts = args.ps_nodes
-worker_hosts = args.worker_nodes
+if (args.ip in args.ps_nodes):
+	job_name = 'ps'
+	task_index = args.ps_nodes.index(args.ip)
+elif (args.ip in args.worker_nodes):
+	job_name = 'worker'
+	task_index = args.worker_nodes.index(args.ip)
+else:
+	print('Error: IP {} not found in the worker or ps node list.'.format(args.ip))
+	exit()
+
+# Add the port to the IP address
+ps_hosts = ['{}:{}'.format(x, args.port) for x in args.ps_nodes]
+worker_hosts = ['{}:{}'.format(x, args.port) for x in args.worker_nodes]
 
 model_trained_fn = settings_dist.OUT_PATH+"model_trained.hdf5"
 trained_model_fn = "trained_model"
@@ -241,12 +252,6 @@ def get_epoch(batch_size,imgs_train,msks_train):
 	batch_count = epoch_length/batch_size
 
 	# Shuffle and truncate arrays to equal 1 epoch
-
-	# random_sample = np.sort(np.random.permutation(train_size)[:epoch_length])
-	# data = np.asarray(imgs_train)[random_sample]
-	# labels = np.asarray(msks_train)[random_sample]
-
-	# Shuffle and truncate arrays to equal 1 epoch
 	zipped = zip(imgs_train,msks_train)
 	np.random.shuffle(zipped)
 	data,labels = zip(*zipped)
@@ -275,29 +280,33 @@ def create_done_queues():
 
 def main(_):
 
+	from datetime import datetime
+	print('Starting at {}'.format(datetime.now()))
+
 	# Create cluster spec from parameter server and worker hosts
 	cluster = tf.train.ClusterSpec({"ps":ps_hosts,"worker":worker_hosts})
 
 	# Create and start a server for the local task
-	server = tf.train.Server(cluster,job_name=args.job_name,task_index=args.task_index)
+	server = tf.train.Server(cluster,job_name=job_name,task_index=task_index)
 
 	run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-	if args.job_name == "ps":
+	if job_name == "ps":
 
 		sess = tf.Session(server.target)
-		queue = create_done_queue(args.task_index)
+		queue = create_done_queue(task_index)
   
 		# wait until all workers are done
 		for i in range(len(worker_hosts)):
+			print('\n')
 			print('*'*30)
-			print("\n\nParameter server #{} started with task #{} on this machine.\n\n" \
-				"Waiting on workers to finish.\n\nPress CTRL-\\ to terminate early." .format(args.task_index, i))
+			print("\nParameter server #{} started with task #{} on this machine.\n\n" \
+				"Waiting on workers to finish.\n\nPress CTRL-\\ to terminate early." .format(task_index, i))
 			print('*'*30)
 		  	sess.run(queue.dequeue())
-		  	print("Worker #{} reports done at task #{}" .format(i, args.task_index))
+		  	print("Worker #{} reports job finished." .format(i))
 		 
-		print("Parameter server {} is quitting".format(args.task_index))
+		print("Parameter server {} is quitting".format(task_index))
 		print('Training complete.')
 
 		# print("Parameter server started. To interrupt use CTRL-\\")
@@ -305,7 +314,7 @@ def main(_):
 		
 
 	# Train if under worker
-	elif args.job_name == "worker":
+	elif job_name == "worker":
 
 
 		# Load train data
@@ -330,7 +339,7 @@ def main(_):
 		print('-'*30)
 
 		# Assign ops to the local worker by default
-		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:{0}".format(args.task_index), cluster=cluster)):
+		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:{0}".format(task_index), cluster=cluster)):
 			
 			# Set keras learning phase to train
 			tf.keras.backend.set_learning_phase(True)
@@ -395,16 +404,16 @@ def main(_):
 
 			# Create a "supervisor", which oversees the training process.
 			# Cannot modify the graph after this point (it is marked as Final by the Supervisor)
-			print('Am I the chief worker: {}'.format(args.task_index == 0))
+			print('Am I the chief worker: {}'.format(task_index == 0))
 
 			enq_ops = []
 			for q in create_done_queues():
 				qop = q.enqueue(1)
 				enq_ops.append(qop)
 
-			sv = tf.train.Supervisor(is_chief=(args.task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
+			sv = tf.train.Supervisor(is_chief=(task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
 
-			with sv.prepare_or_wait_for_session(server.target) as sess:
+			with sv.prepare_or_wait_for_session(server.target, config=config) as sess:
 			#with sv.managed_session(server.target,config=config) as sess:
 
 				# Write to TensorBoard
@@ -416,7 +425,7 @@ def main(_):
 
 				# Start chief queue runner
 				# This must be present to coordinate synchronous training
-				if args.task_index == 0:
+				if task_index == 0:
 					sv.start_queue_runners(sess, [chief_queue_runner])
 
 				# Run synchronous training
@@ -448,7 +457,7 @@ def main(_):
 						# For n workers, break up the batch into n sections
 						# Send each worker a different section of the batch
 						data_range = int(batch_size/len(worker_hosts))
-						start = data_range*args.task_index
+						start = data_range*task_index
 						end = start + data_range
 
 						feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
@@ -503,26 +512,22 @@ def main(_):
 				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
 				print("Total time to train: {} s".format(round(total_end-total_start)))
 
-				#tf.reset_default_graph()
+				
 				for op in enq_ops:
-					sess.run(op)
+					sess.run(op)   # Send the "work completed" signal to the parameter server
 				
 
 				
 		sv.request_stop()
 
-			#if (args.task_index == 0):  # Chief node stops
-			#	sv.request_stop()
-				
+	print('Ending at {}'.format(datetime.now()))
+					
 
 if __name__ == "__main__":
 
-	from datetime import datetime
-	print('Starting at {}'.format(datetime.now()))
-
 	tf.app.run()
 
-	print('Ending at {}'.format(datetime.now()))
+	
 
 
 
