@@ -114,7 +114,7 @@ Worker 3:	numactl -p 1 python train_dist.py --job_name="worker" --task_index=3
 
 4. While these commands are running, ansible registers their outputs (global step, training loss, dice score, etc.) and saves that to `training.log`. 
 
-Note that a natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch and slower convergence. To reduce the training time in multi-node execution, we default to a large initial learning rate which decays as the model trains.
+Note that a natural consequence of synchronizing updates across several workers is a proportional decrease in the number of weight updates per epoch and slower convergence. To combat this slowdown and reduce the training time in multi-node execution, we default to a large initial learning rate which decays as the model trains.
 
 In addition to the manually overridable settings in Single-Node execution, we provide the following variables for switching on/off and modulating learning rate decay in Multi-Node execution: 
 
