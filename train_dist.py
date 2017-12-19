@@ -413,7 +413,7 @@ def main(_):
 
 			sv = tf.train.Supervisor(is_chief=(task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
 
-			with sv.prepare_or_wait_for_session(server.target, config=config) as sess:
+			with sv.prepare_or_wait_for_session(server.target) as sess:
 			#with sv.managed_session(server.target,config=config) as sess:
 
 				# Write to TensorBoard

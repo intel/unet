@@ -25,9 +25,7 @@
   hosts: nodes
   
   pre_tasks:  
-    - debug: 
-        msg: "Worker #{{ play_hosts.index(inventory_hostname) }}: IP is {{inventory_hostname}}"
-
+    
     # Copy the files (rsync) from this host to the workers.
     - synchronize:
         src:  "{{ dir_in }}"
