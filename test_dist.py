@@ -2,6 +2,15 @@
 # These are the only things you need to change.
 # Just replace the IP addresses with whatever machines you want to distribute over
 # Then run this script on each of those machines.
+
+'''
+Usage:  python test_dist.py --ip=10.100.68.245 --issync=0
+        for asychronous TF
+        python test_dist.py --ip=10.100.68.245 --issync=1
+        for synchronous updates
+        The IP address must match one of the ones in the list below. If not passed,
+        then we'll default to the current machine's IP (which is usually correct unless you use OPA)
+'''
 ps_hosts = ["10.100.68.245"]
 ps_ports = ["2222"]
 worker_hosts = ["10.100.68.193","10.100.68.183"] #,"10.100.68.185","10.100.68.187"]
