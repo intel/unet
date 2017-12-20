@@ -127,9 +127,9 @@ def main(_):
 	  if issync == 1:
 		
 		rep_op = tf.train.SyncReplicasOptimizer(optimizer,
-												replicas_to_aggregate=len(worker_hosts),
-												total_num_replicas=len(worker_hosts),
-												use_locking=True)
+			replicas_to_aggregate=len(worker_hosts),
+			total_num_replicas=len(worker_hosts),
+			use_locking=True)
 
 		train_op = rep_op.apply_gradients(grads_and_vars, global_step=global_step)
 
@@ -164,12 +164,12 @@ def main(_):
 
 
 	sv = tf.train.Supervisor(is_chief=(task_index == 0),
-							logdir=CHECKPOINT_DIRECTORY,
-							init_op=init_op,
-							summary_op=summary_op,
-							saver=saver,
-							global_step=global_step,
-							save_model_secs=60)
+		logdir=CHECKPOINT_DIRECTORY,
+		init_op=init_op,
+		summary_op=summary_op,
+		saver=saver,
+		global_step=global_step,
+		save_model_secs=60)
 
 
 	with sv.prepare_or_wait_for_session(server.target) as sess:
