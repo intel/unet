@@ -22,6 +22,7 @@ print ("Distributed TensorFlow training")
 print("Parameter server nodes are: {}".format(ps_list))
 print("Worker nodes are {}".format(worker_list))
 
+import settings_dist
 
 CHECKPOINT_DIRECTORY = "checkpoints"
 NUM_STEPS = 10000
@@ -41,8 +42,6 @@ import os
 import socket
 
 from preprocess import * 
-import settings_dist
-
 
 import multiprocessing
 
