@@ -401,7 +401,13 @@ def main(_):
 
 		step = 0
 
-		while (not sv.should_stop()) and (step < NUM_STEPS):
+		while (step <= num_epochs) and (not sv.should_stop()):
+
+			print("Loading epoch")
+			epoch = get_epoch(batch_size,imgs_train,msks_train)
+			num_batches = len(epoch)
+			print('Loaded')
+			current_batch = 1
 
 			data = batch[0]
 			labels = batch[1]
