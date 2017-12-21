@@ -60,6 +60,8 @@ tf.app.flags.DEFINE_integer("steps_to_validate", 1000,
 tf.app.flags.DEFINE_integer("is_sync", 0, "Synchronous updates?")
 tf.app.flags.DEFINE_string("ip", socket.gethostbyname(socket.gethostname()), "IP address of this machine")
 
+tf.app.flags.DEFINE_boolean("use_upsampling", False, "True=Use upsampling, False=Use Tranposed Convolution")
+
 # Hyperparameters
 learning_rate = FLAGS.learning_rate
 steps_to_validate = FLAGS.steps_to_validate
@@ -101,7 +103,7 @@ else:
 	
 tf.keras.backend.set_image_data_format(data_format)
 
-def model5_MultiLayer(args=None, weights=False, 
+def model5_MultiLayer(weights=False, 
 	filepath="", 
 	img_rows = 224, 
 	img_cols = 224, 
@@ -111,7 +113,7 @@ def model5_MultiLayer(args=None, weights=False,
 	print_summary = False):
 	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 	
-	if args.use_upsampling:
+	if FLAGS.use_upsampling:
 		print ('Using UpSampling2D')
 	else:
 		print('Using Transposed Deconvolution')
@@ -150,7 +152,7 @@ def model5_MultiLayer(args=None, weights=False,
 	conv5 = tf.keras.layers.Conv2D(name='conv5a', filters=512, **params)(pool4)
 	
 
-	if args.use_upsampling:
+	if FLAGS.use_upsampling:
 		conv5 = tf.keras.layers.Conv2D(name='conv5b', filters=256, **params)(conv5)
 		up6 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up6', size=(2, 2))(conv5), conv4], axis=concat_axis)
 	else:
@@ -161,7 +163,7 @@ def model5_MultiLayer(args=None, weights=False,
 	conv6 = tf.keras.layers.Conv2D(name='conv6a', filters=256, **params)(up6)
 	
 
-	if args.use_upsampling:
+	if FLAGS.use_upsampling:
 		conv6 = tf.keras.layers.Conv2D(name='conv6b', filters=128, **params)(conv6)
 		up7 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up7', size=(2, 2))(conv6), conv3], axis=concat_axis)
 	else:
@@ -172,7 +174,7 @@ def model5_MultiLayer(args=None, weights=False,
 	conv7 = tf.keras.layers.Conv2D(name='conv7a', filters=128, **params)(up7)
 	
 
-	if args.use_upsampling:
+	if FLAGS.use_upsampling:
 		conv7 = tf.keras.layers.Conv2D(name='conv7b', filters=64, **params)(conv7)
 		up8 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up8', size=(2, 2))(conv7), conv2], axis=concat_axis)
 	else:
@@ -183,7 +185,7 @@ def model5_MultiLayer(args=None, weights=False,
 	
 	conv8 = tf.keras.layers.Conv2D(name='conv8a', filters=64, **params)(up8)
 	
-	if args.use_upsampling:
+	if FLAGS.use_upsampling:
 		conv8 = tf.keras.layers.Conv2D(name='conv8b', filters=32, **params)(conv8)
 		up9 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name='up9', size=(2, 2))(conv8), conv1], axis=concat_axis)
 	else:
@@ -308,7 +310,7 @@ def main(_):
 	  BEGIN: Define our model
 	  """
 	  # Create model
-	  model = model5_MultiLayer(args, False, False, img_rows, img_cols, settings_dist.IN_CHANNEL_NO, settings_dist.OUT_CHANNEL_NO)
+	  model = model5_MultiLayer(False, False, img_rows, img_cols, settings_dist.IN_CHANNEL_NO, settings_dist.OUT_CHANNEL_NO)
 	  # Initialize placeholder objects for the loss function
 	  targ = tf.placeholder(tf.float32, shape=((batch_size/len(worker_hosts)),msks_train[0].shape[0],msks_train[0].shape[1],msks_train[0].shape[2]))
 	  preds = model.output
