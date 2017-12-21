@@ -33,6 +33,8 @@ fn = "model"
 img_rows = settings_dist.IMG_ROWS/settings_dist.RESCALE_FACTOR
 img_cols = settings_dist.IMG_COLS/settings_dist.RESCALE_FACTOR
 num_epochs = 5
+batch_size=128
+
 
 ####################################################################
 
