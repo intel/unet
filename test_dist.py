@@ -323,7 +323,7 @@ def main(_):
 	  # Initialize placeholder objects for the loss function
 	  targ = tf.placeholder(tf.float32, shape=((batch_size/len(worker_hosts)),msks_train[0].shape[0],msks_train[0].shape[1],msks_train[0].shape[2]))
 	  preds = model.output
-	  loss = dice_coef_loss(targ, preds)
+	  loss_value = dice_coef_loss(targ, preds)
 	  """
 	  END: Define our model
 	  """
