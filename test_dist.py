@@ -32,7 +32,7 @@ trained_model_fn = "trained_model"
 fn = "model"
 img_rows = settings_dist.IMG_ROWS/settings_dist.RESCALE_FACTOR
 img_cols = settings_dist.IMG_COLS/settings_dist.RESCALE_FACTOR
-num_epochs = args.epochs
+num_epochs = 5
 
 ####################################################################
 
