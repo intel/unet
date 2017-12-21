@@ -409,24 +409,28 @@ def main(_):
 			print('Loaded')
 			current_batch = 1
 
-			data = batch[0]
-			labels = batch[1]
+			for batch in epoch:
 
-			# For n workers, break up the batch into n sections
-			# Send each worker a different section of the batch
-			data_range = int(batch_size/len(worker_hosts))
-			start = data_range*task_index
-			end = start + data_range
+				print('here')
+				data = batch[0]
+				labels = batch[1]
 
-			feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
-			loss_value,step_value,learn_rate = sess.run([train_op,global_step,learning_rate],feed_dict = feed_dict)
-			
-			if (step % steps_to_validate == 0):
+				# For n workers, break up the batch into n sections
+				# Send each worker a different section of the batch
+				data_range = int(batch_size/len(worker_hosts))
+				start = data_range*task_index
+				end = start + data_range
 
-			  if (is_chief):
+				feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
+				loss_value,step_value,learn_rate = sess.run([train_op,global_step,learning_rate],feed_dict = feed_dict)
+				
 
-				  summary = sess.run(summary_op, feed_dict=feed_dict)
-				  sv.summary_computed(sess, summary)  # Update the summary
+				if (step % steps_to_validate == 0):
+
+				  if (is_chief):
+
+					  summary = sess.run(summary_op, feed_dict=feed_dict)
+					  sv.summary_computed(sess, summary)  # Update the summary
 
 	  
 		 # Send a signal to the ps when done by simply updating a queue in the shared graph
