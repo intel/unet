@@ -392,6 +392,7 @@ def main(_):
 			# Define training operation
 			train_op = with_dependencies([grad_updates],loss,name='train')
 
+			
 			# Evaluate test accuracy
 			test_label_placeholder = tf.placeholder(tf.float32, shape=(len(msks_test)/test_break,msks_test[0].shape[0],msks_test[0].shape[1],msks_test[0].shape[2]))
 			#test_preds = model.output
@@ -417,7 +418,10 @@ def main(_):
 			#with sv.managed_session(server.target,config=config) as sess:
 
 				# Write to TensorBoard
-				train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
+				if (task_index == 0):
+					import shutil
+					shutil.rmtree('./tensorboard_logs', ignore_errors=True)
+					train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
 
 				print('-'*30)
 				print("Fitting Model")
@@ -480,7 +484,8 @@ def main(_):
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
 
-					#train_writer.add_summary(summary, step) # Write summary to TensorBoard
+					if (task_index == 0):
+						train_writer.add_summary(summary, step) # Write summary to TensorBoard
 
 					step += 1
 					#batch_size -= 20
@@ -490,7 +495,7 @@ def main(_):
 				# Evaluate test accuracy
 				# Break up the test set into smaller sections to avoid segmentation faults
 				# Reduce OMP_NUM_THREADS for inference to 'Resource temporarily unavailable errors'
-				os.environ["OMP_NUM_THREADS"]= ""
+				os.environ["OMP_NUM_THREADS"]= "10"
 				test_batch_size = len(imgs_test)/test_break
 				i = 0
 				dice_sum = 0
@@ -506,10 +511,13 @@ def main(_):
 
 					i += 1
 
+				os.environ["OMP_NUM_THREADS"]= str(num_threads)
+
+			
 				avg_dice = dice_sum/test_break
 				print("Test Dice Coef = {0:.3f}".format(avg_dice))
 
-				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
+				print("Average time/epoch = {:.0f} s\n".format(np.asarray(epoch_track).mean()))
 				print("Total time to train: {} s".format(round(total_end-total_start)))
 
 				
