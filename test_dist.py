@@ -26,6 +26,13 @@ print("Worker nodes are {}".format(worker_list))
 CHECKPOINT_DIRECTORY = "checkpoints"
 NUM_STEPS = 10000
 
+model_trained_fn = settings_dist.OUT_PATH+"model_trained.hdf5"
+trained_model_fn = "trained_model"
+fn = "model"
+img_rows = settings_dist.IMG_ROWS/settings_dist.RESCALE_FACTOR
+img_cols = settings_dist.IMG_COLS/settings_dist.RESCALE_FACTOR
+num_epochs = args.epochs
+
 ####################################################################
 
 import numpy as np
