@@ -35,9 +35,7 @@ Once an environment is constructed which meets the above requirements, clone thi
 
 ## Required Data
 
-Data files are not included in this public repo but can be provided upon request. We use the 2017 BRaTS dataset.
-
-Data is stored in the following numpy files: 
+Data files are not included in this public repo but can accessed by registering (using your institutional email address) at the following link: https://www.smir.ch/BRATS/Start2016. Once access has been granted, you may download the raw data. To convert those datasets into numpy arrays having shape [num_images, x_dimension (128), y_dimension (128), num_channels] run `python converter.py` after changing its `root_dir` variable to point to the location your MICCAI_BraTS... folder (processing will take a few minutes). Once complete, the following four files will be saved to /home/unet/data/slices/Results/. 
 
 ```
 imgs_test.npy
@@ -45,8 +43,6 @@ imgs_train.npy
 msks_test.npy
 msks_train.npy
 ```
-
-In single-node execution, put these files in `/home/unet/data/slices/Results/`. 
 
 ## Single-Node Execution
 
@@ -74,6 +70,11 @@ Default settings can be overridden by appending the above command with the follo
 
 `numactl -p 1` is used to control how our script will utilize the onboard MCDRAM. The `-p` flag specifies that we prefer using the MCDRAM but, if necessary, are OK expanding into DRAM as needed. Replacing the `-p` with `-m` will force the script to use only MCDRAM. If using the `-m` option, take care to keep the batch size low enough that all training data and network activations will fit in the MCDRAM. If the storage required exceeds that available in MCDRAM, the script will be killed.
 
+## Citations
 
+Whenever using and/or refering to the BraTS datasets in your publications, please make sure to cite the following papers.
+
+1. https://www.ncbi.nlm.nih.gov/pubmed/25494501
+2. https://www.ncbi.nlm.nih.gov/pubmed/28872634
 
 
