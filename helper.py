@@ -5,6 +5,11 @@ import os.path
 
 import tensorflow as tf
 
+USE_OLD_KERAS = False
+if USE_OLD_KERAS:
+	import keras
+
+
 def f1(y_true, y_pred):
 	def recall(y_true, y_pred):
 		"""Recall metric.
@@ -37,20 +42,42 @@ def f1(y_true, y_pred):
 
 
 def dice_coef(y_true, y_pred, smooth = 1. ):
-	y_true_f = tf.keras.backend.flatten(y_true)
-	y_pred_f = tf.keras.backend.flatten(y_pred)
-	intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
-	coef = (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
+
+	if USE_OLD_KERAS:
+
+		y_true_f = keras.backend.flatten(y_true)
+		y_pred_f = keras.backend.flatten(y_pred)
+		intersection = keras.backend.sum(y_true_f * y_pred_f)
+		coef = (2. * intersection + smooth) / (keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth)
+	
+	else:
+		y_true_f = tf.keras.backend.flatten(y_true)
+		y_pred_f = tf.keras.backend.flatten(y_pred)
+		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+		coef = (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
 	return coef
 
 def dice_coef_loss(y_true, y_pred):
 
-	smooth = 1.
-	y_true_f = tf.keras.backend.flatten(y_true)
-	y_pred_f = tf.keras.backend.flatten(y_pred)
-	intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
-	loss = -tf.keras.backend.log(2. * intersection + smooth) + \
-		tf.keras.backend.log((tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth))
+	if USE_OLD_KERAS:
+
+		smooth = 1.
+		y_true_f = keras.backend.flatten(y_true)
+		y_pred_f = keras.backend.flatten(y_pred)
+		intersection = keras.backend.sum(y_true_f * y_pred_f)
+		loss = -keras.backend.log(2.0*intersection + smooth) + \
+			keras.backend.log((keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth))
+
+	else:
+
+		smooth = 1.
+		y_true_f = tf.keras.backend.flatten(y_true)
+		y_pred_f = tf.keras.backend.flatten(y_pred)
+		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+		loss = -tf.keras.backend.log(2.0*intersection + smooth) + \
+			tf.keras.backend.log((tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth))
+
+
 	return loss
 
 
