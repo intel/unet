@@ -1,7 +1,7 @@
 # To run, must indicate the job_name (worker or ps) and the job number (0=chief)\
 # in the command run on each server in the cluster
 # Example: numactl -p 1 python train_dist.py --num_threads=50 --num_inter_threads=2\
-#			 --batch_size=256 --blocktime=0 --job_name="ps" --task_index=0
+#			 --batch_size=256 --blocktime=0 
 
 # TODO: try dilation rate in convolution layers (cannot do for deconv)
 
@@ -16,6 +16,7 @@ import shutil
 import timeit
 import time
 import os
+import socket 
 from tqdm import tqdm   # For the fancy progress bar
 
 
@@ -24,18 +25,26 @@ parser.add_argument('--use_upsampling', help='use upsampling instead of transpos
 parser.add_argument("--num_threads", type=int, default=settings_dist.NUM_INTRA_THREADS, help="the number of threads")
 parser.add_argument("--num_inter_threads", type=int, default=settings_dist.NUM_INTER_THREADS, help="the number of interop threads")
 parser.add_argument("--blocktime", type=int, default=settings_dist.BLOCKTIME, help="blocktime")
-parser.add_argument("--batch_size", type=int, default=512, help="the batch size for training")
-parser.add_argument("--job_name",type=str, default="ps",help="either 'ps' or 'worker'")
-parser.add_argument("--task_index",type=int, default=0,help="")
+parser.add_argument("--batch_size", type=int, default=settings_dist.BATCH_SIZE, help="the batch size for training")
 parser.add_argument("--epochs", type=int, default=settings_dist.EPOCHS, help="number of epochs to train")
-parser.add_argument("--learningrate", type=float, default=0.0004, help="learningrate")
+parser.add_argument("--learningrate", type=float, default=settings_dist.LEARNINGRATE, help="learningrate")
+parser.add_argument("--const_learningrate", help='decay learning rate',action='store_true',default=False)
+parser.add_argument("--decay_steps", type=int, default=settings_dist.DECAY_STEPS, help="steps taken to decay learningrate by lr_fraction%")
+parser.add_argument("--lr_fraction", type=float, default=settings_dist.LR_FRACTION, help="learningrate's fraction of its original value after decay_steps steps")
+
+parser.add_argument("--worker_nodes",type=str, default=settings_dist.WORKER_HOSTS,help="list of the worker node IP addresses")
+parser.add_argument("--ps_nodes",type=str, default=settings_dist.PS_HOSTS,help="list of the parameter server node IP addresses")
+parser.add_argument("--port",type=str, default=settings_dist.PORT,help="the PORT to use for distriuted TensorFlow")
+
+parser.add_argument("--ip",type=str, default=socket.gethostbyname(socket.gethostname()), help="the IP address of this machine")
 
 args = parser.parse_args()
-batch_size = settings_dist.BATCH_SIZE
+#global batch_size
+batch_size = args.batch_size
 num_inter_op_threads = args.num_inter_threads
-
 num_threads = args.num_threads
 num_intra_op_threads = num_threads
+
 
 # Split the test set into test_break batches
 test_break = 62
@@ -79,9 +88,20 @@ logdir = "/tmp/train_logs"
 if os.path.isdir(logdir):
 	shutil.rmtree(logdir)
 
-# TODO: put all these in Settings file
-ps_hosts = settings_dist.PS_HOSTS
-worker_hosts = settings_dist.WORKER_HOSTS
+
+if (args.ip in args.ps_nodes):
+	job_name = 'ps'
+	task_index = args.ps_nodes.index(args.ip)
+elif (args.ip in args.worker_nodes):
+	job_name = 'worker'
+	task_index = args.worker_nodes.index(args.ip)
+else:
+	print('Error: IP {} not found in the worker or ps node list.'.format(args.ip))
+	exit()
+
+# Add the port to the IP address
+ps_hosts = ['{}:{}'.format(x, args.port) for x in args.ps_nodes]
+worker_hosts = ['{}:{}'.format(x, args.port) for x in args.worker_nodes]
 
 model_trained_fn = settings_dist.OUT_PATH+"model_trained.hdf5"
 trained_model_fn = "trained_model"
@@ -161,7 +181,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv5 = tf.keras.layers.Conv2D(name='conv5b', filters=512, **params)(conv5)
 		up6 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv6', filters=256, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv5), conv4], axis=concat_axis)
 		
 	conv6 = tf.keras.layers.Conv2D(name='conv6a', filters=256, **params)(up6)
 	
@@ -172,7 +192,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv6 = tf.keras.layers.Conv2D(name='conv6b', filters=256, **params)(conv6)
 		up7 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv7', filters=128, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv6), conv3], axis=concat_axis)
 
 	conv7 = tf.keras.layers.Conv2D(name='conv7a', filters=128, **params)(up7)
 	
@@ -183,7 +203,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv7 = tf.keras.layers.Conv2D(name='conv7b', filters=128, **params)(conv7)
 		up8 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv8', filters=64, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv7), conv2], axis=concat_axis)
 
 	
 	conv8 = tf.keras.layers.Conv2D(name='conv8a', filters=64, **params)(up8)
@@ -194,7 +214,7 @@ def model5_MultiLayer(args=None, weights=False,
 	else:
 		conv8 = tf.keras.layers.Conv2D(name='conv8b', filters=64, **params)(conv8)
 		up9 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name='transConv9', filters=32, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
+						   kernel_size=(2, 2), strides=(2, 2), padding='same')(conv8), conv1], axis=concat_axis)
 
 
 	conv9 = tf.keras.layers.Conv2D(name='conv9a', filters=32, **params)(up9)
@@ -247,24 +267,54 @@ def get_epoch(batch_size,imgs_train,msks_train):
 
 	return epoch_of_batches
 
+def create_done_queue(i):
+  """Queue used to signal death for i'th ps shard. Intended to have 
+  all workers enqueue an item onto it to signal doneness."""
+  
+  with tf.device("/job:ps/task:%d" % (i)):
+	return tf.FIFOQueue(len(worker_hosts), tf.int32, shared_name="done_queue"+
+						str(i))
+  
+def create_done_queues():
+  return [create_done_queue(i) for i in range(len(ps_hosts))]
+
 def main(_):
+
+	from datetime import datetime
+	print('Starting at {}'.format(datetime.now()))
 
 	# Create cluster spec from parameter server and worker hosts
 	cluster = tf.train.ClusterSpec({"ps":ps_hosts,"worker":worker_hosts})
 
 	# Create and start a server for the local task
-	server = tf.train.Server(cluster,job_name=args.job_name,task_index=args.task_index)
+	server = tf.train.Server(cluster,job_name=job_name,task_index=task_index)
 
 	run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-	if args.job_name == "ps":
+	if job_name == "ps":
 
-		print("Parameter server started. To interrupt use CTRL-\\")
-		server.join()
+		sess = tf.Session(server.target)
+		queue = create_done_queue(task_index)
+  
+		# wait until all workers are done
+		for i in range(len(worker_hosts)):
+			print('\n')
+			print('*'*30)
+			print("\nParameter server #{} started with task #{} on this machine.\n\n" \
+				"Waiting on workers to finish.\n\nPress CTRL-\\ to terminate early." .format(task_index, i))
+			print('*'*30)
+		  	sess.run(queue.dequeue())
+		  	print("Worker #{} reports job finished." .format(i))
+		 
+		print("Parameter server {} is quitting".format(task_index))
+		print('Training complete.')
+
+		# print("Parameter server started. To interrupt use CTRL-\\")
+		# server.join()
 		
 
 	# Train if under worker
-	elif args.job_name == "worker":
+	elif job_name == "worker":
 
 
 		# Load train data
@@ -289,7 +339,7 @@ def main(_):
 		print('-'*30)
 
 		# Assign ops to the local worker by default
-		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:{0}".format(args.task_index), cluster=cluster)):
+		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:{0}".format(task_index), cluster=cluster)):
 			
 			# Set keras learning phase to train
 			tf.keras.backend.set_learning_phase(True)
@@ -300,6 +350,7 @@ def main(_):
 			# Create model
 			model = model5_MultiLayer(args, False, False, img_rows, img_cols, settings_dist.IN_CHANNEL_NO, settings_dist.OUT_CHANNEL_NO)
 
+			
 			# Create global_step tensor to count iterations
 			# In synchronous training, global step will synchronize after the first few batches in each epoch
 			global_step = tf.Variable(0,name='global_step', trainable=False)
@@ -312,11 +363,13 @@ def main(_):
 				barrier = tf.no_op(name='update_barrier')
 
 			# Decay learning rate from initial_learn_rate to initial_learn_rate*fraction in decay_steps global steps
-			initial_learn_rate = args.learningrate
-			decay_steps = 150
-			fraction = 0.25
-			learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
-
+			if args.const_learningrate:
+				learning_rate = tf.convert_to_tensor(args.learningrate, dtype=tf.float32)
+			else:
+				initial_learn_rate = args.learningrate
+				decay_steps = args.decay_steps
+				fraction = args.lr_fraction
+				learning_rate = tf.train.exponential_decay(initial_learn_rate, global_step, decay_steps, fraction, staircase=False)
 			# Synchronize optimizer
 			opt = tf.train.AdamOptimizer(learning_rate)
 			#opt=tf.train.AdamOptimizer(learning_rate=args.learning, beta1=0.95, beta2=0.99, epsilon=1e-08)
@@ -339,6 +392,7 @@ def main(_):
 			# Define training operation
 			train_op = with_dependencies([grad_updates],loss,name='train')
 
+			
 			# Evaluate test accuracy
 			test_label_placeholder = tf.placeholder(tf.float32, shape=(len(msks_test)/test_break,msks_test[0].shape[0],msks_test[0].shape[1],msks_test[0].shape[2]))
 			#test_preds = model.output
@@ -351,16 +405,23 @@ def main(_):
 
 			# Create a "supervisor", which oversees the training process.
 			# Cannot modify the graph after this point (it is marked as Final by the Supervisor)
-			sv = tf.train.Supervisor(is_chief=(args.task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
+			print('Am I the chief worker: {}'.format(task_index == 0))
 
-			#with sv.prepare_or_wait_for_session(server.target) as sess:
-			with sv.managed_session(server.target,config=config) as sess:
+			enq_ops = []
+			for q in create_done_queues():
+				qop = q.enqueue(1)
+				enq_ops.append(qop)
+
+			sv = tf.train.Supervisor(is_chief=(task_index == 0),logdir=logdir,init_op=init_op,summary_op=summary_op,saver=saver,global_step=global_step,save_model_secs=60)
+
+			with sv.prepare_or_wait_for_session(server.target) as sess:
+			#with sv.managed_session(server.target,config=config) as sess:
 
 				# Write to TensorBoard
-				train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
-
-				# Bind keras session to the TF session
-				tf.keras.backend.set_session(sess)
+				if (task_index == 0):
+					import shutil
+					shutil.rmtree('./tensorboard_logs', ignore_errors=True)
+					train_writer = tf.summary.FileWriter('./tensorboard_logs', sess.graph)
 
 				print('-'*30)
 				print("Fitting Model")
@@ -368,7 +429,7 @@ def main(_):
 
 				# Start chief queue runner
 				# This must be present to coordinate synchronous training
-				if args.task_index == 0:
+				if task_index == 0:
 					sv.start_queue_runners(sess, [chief_queue_runner])
 
 				# Run synchronous training
@@ -376,7 +437,9 @@ def main(_):
 
 				epoch_track = []
 
-				while step <= num_epochs:
+				total_start = timeit.default_timer()
+
+				while (step <= num_epochs) and not sv.should_stop():
 
 					print("Loading epoch")
 					epoch = get_epoch(batch_size,imgs_train,msks_train)
@@ -384,10 +447,13 @@ def main(_):
 					print('Loaded')
 					current_batch = 1
 
-
 					epoch_start = timeit.default_timer()
 
 					for batch in epoch:#tqdm(epoch):
+					
+						if sv.should_stop():
+							break   # Exit early since the Supervisor node has requested a stop.
+
 						batch_start = timeit.default_timer()
 						data = batch[0]
 						labels = batch[1]
@@ -395,7 +461,7 @@ def main(_):
 						# For n workers, break up the batch into n sections
 						# Send each worker a different section of the batch
 						data_range = int(batch_size/len(worker_hosts))
-						start = data_range*args.task_index
+						start = data_range*task_index
 						end = start + data_range
 
 						feed_dict = {model.inputs[0]:data[start:end],targ:labels[start:end]}
@@ -412,18 +478,24 @@ def main(_):
 							format(current_batch,num_batches,loss_show,dice,sess.run(global_step),step,num_epochs,ETE,learn_rate_show))
 						current_batch += 1
 
+						
+
 					epoch_time = timeit.default_timer() - epoch_start
 					print("Epoch time = {0} s\nTraining Dice = {1}".format(int(epoch_time),dice))
 					epoch_track.append(epoch_time)
 
-					#train_writer.add_summary(summary, step) # Write summary to TensorBoard
+					if (task_index == 0):
+						train_writer.add_summary(summary, step) # Write summary to TensorBoard
 
 					step += 1
+					#batch_size -= 20
+
+				total_end = timeit.default_timer()
 
 				# Evaluate test accuracy
 				# Break up the test set into smaller sections to avoid segmentation faults
 				# Reduce OMP_NUM_THREADS for inference to 'Resource temporarily unavailable errors'
-				os.environ["OMP_NUM_THREADS"]= ""
+				os.environ["OMP_NUM_THREADS"]= "10"
 				test_batch_size = len(imgs_test)/test_break
 				i = 0
 				dice_sum = 0
@@ -439,14 +511,31 @@ def main(_):
 
 					i += 1
 
+				os.environ["OMP_NUM_THREADS"]= str(num_threads)
+
+			
 				avg_dice = dice_sum/test_break
 				print("Test Dice Coef = {0:.3f}".format(avg_dice))
 
-				print("Average time/epoch = {0} s\n".format(int(np.asarray(epoch_track).mean())))
-			sv.stop()
+				print("Average time/epoch = {:.0f} s\n".format(np.asarray(epoch_track).mean()))
+				print("Total time to train: {} s".format(round(total_end-total_start)))
+
+				
+				for op in enq_ops:
+					sess.run(op)   # Send the "work completed" signal to the parameter server
+				
+
+				
+		sv.request_stop()
+
+	print('Ending at {}'.format(datetime.now()))
+					
 
 if __name__ == "__main__":
+
 	tf.app.run()
+
+	
 
 
 
