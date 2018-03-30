@@ -475,7 +475,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Creating and compiling model...')
 	print('-'*30)
 
-	if tf.keras_api:
+	if args.keras_api:
 		model = model5_MultiLayer_old_keras(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
 	else:
 		model = model5_MultiLayer(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
