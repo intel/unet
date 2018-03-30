@@ -24,6 +24,8 @@ parser.add_argument("--batch_size", type=int, default=128, help="the batch size 
 parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
 parser.add_argument("--epochs", type=int, default=10, help="number of epochs to train")
 parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
+parser.add_argument('--keras_api', help='use keras instead of tf.keras',
+					action='store_true', default=False)
 
 
 args = parser.parse_args()
@@ -110,9 +112,7 @@ else:
 	concat_axis = 1
 	data_format = 'channels_first'
 
-USE_OLD_KERAS = False
-
-if USE_OLD_KERAS:
+if args.keras_api:
 	import keras
 	keras.backend.set_image_data_format(data_format)
 else:
@@ -122,9 +122,47 @@ import numpy as np
 import os
 
 from preprocess import *
-from helper import *
 import settings
 
+
+def dice_coef(y_true, y_pred, smooth = 1. ):
+
+	if args.keras_api:
+
+		y_true_f = keras.backend.flatten(y_true)
+		y_pred_f = keras.backend.flatten(y_pred)
+		intersection = keras.backend.sum(y_true_f * y_pred_f)
+		coef = (2. * intersection + smooth) / (keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth)
+
+	else:
+		y_true_f = tf.keras.backend.flatten(y_true)
+		y_pred_f = tf.keras.backend.flatten(y_pred)
+		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+		coef = (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
+	return coef
+
+def dice_coef_loss(y_true, y_pred):
+
+	if args.keras_api:
+
+		smooth = 1.
+		y_true_f = keras.backend.flatten(y_true)
+		y_pred_f = keras.backend.flatten(y_pred)
+		intersection = keras.backend.sum(y_true_f * y_pred_f)
+		loss = -keras.backend.log(2.0*intersection + smooth) + \
+			keras.backend.log((keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth))
+
+	else:
+
+		smooth = 1.
+		y_true_f = tf.keras.backend.flatten(y_true)
+		y_pred_f = tf.keras.backend.flatten(y_pred)
+		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+		loss = -tf.keras.backend.log(2.0*intersection + smooth) + \
+			tf.keras.backend.log((tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth))
+
+
+	return loss
 
 def model5_MultiLayer(args=None, weights=False,
 	filepath="",
@@ -376,7 +414,7 @@ def image_augmentation(imgs, masks):
 						 horizontal_flip=True,
 						 vertical_flip = True)
 
-	if USE_OLD_KERAS:
+	if args.keras_api:
 		image_datagen = keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
 		mask_datagen = keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
 	else:
@@ -437,7 +475,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Creating and compiling model...')
 	print('-'*30)
 
-	if USE_OLD_KERAS:
+	if tf.keras_api:
 		model = model5_MultiLayer_old_keras(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
 	else:
 		model = model5_MultiLayer(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
@@ -450,7 +488,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	print ("Writing model to ", model_fn)
 
-	if USE_OLD_KERAS:
+	if args.keras_api:
 		model_checkpoint = keras.callbacks.ModelCheckpoint(model_fn, monitor='loss', save_best_only=True)
 	else:
 		model_checkpoint = tf.keras.callbacks.ModelCheckpoint(model_fn, monitor='loss', save_best_only=True)
@@ -459,7 +497,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	if (args.use_upsampling):
 
-		if USE_OLD_KERAS:
+		if args.keras_api:
 			tensorboard_checkpoint = keras.callbacks.TensorBoard(
 			log_dir='./keras_tensorboard_upsampling_batch{}/{}'.format(batch_size, directoryName),
 			write_graph=True, write_images=True)
@@ -468,7 +506,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 				log_dir='./keras_tensorboard_upsampling_batch{}/{}'.format(batch_size, directoryName),
 				write_graph=True, write_images=True)
 	else:
-		if USE_OLD_KERAS:
+		if args.keras_api:
 			tensorboard_checkpoint = keras.callbacks.TensorBoard(
 				log_dir='./keras_tensorboard_transposed_batch{}/{}'.format(batch_size, directoryName),
 				write_graph=True, write_images=True)
@@ -482,7 +520,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print('Fitting model...')
 	print('-'*30)
 
-	if USE_OLD_KERAS:
+	if args.keras_api:
 		history = keras.callbacks.History()
 	else:
 		history = tf.keras.callbacks.History()
