@@ -260,10 +260,6 @@ def unet_model(args=None, weights=False,
 		loss=dice_coef_loss, #dice_coef_loss, #"binary_crossentropy",
 		metrics=["accuracy", dice_coef], options=run_options, run_metadata=run_metadata)
 
-	if weights and os.path.isfile(filepath):
-		print("Loading model weights from file {}".format(filepath))
-		model.load_weights(filepath)
-
 	if print_summary:
 		print (model.summary())
 
@@ -380,10 +376,6 @@ def unet_keras_api(args=None, weights=False,
 		loss=dice_coef_loss, #dice_coef_loss, #"binary_crossentropy",
 		metrics=["accuracy", dice_coef], options=run_options, run_metadata=run_metadata)
 
-	if weights and os.path.isfile(filepath):
-		print("Loading model weights from file {}".format(filepath))
-		model.load_weights(filepath)
-
 	if print_summary:
 		print (model.summary())
 
@@ -447,19 +439,15 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print("Loading and preprocessing train data...")
 	print("-"*30)
 
-	if CHANNEL_LAST:
-		suffix = ""
-	else:
-		suffix = "_cf"
 
-	imgs_train, msks_train = load_data(data_path,"_train"+suffix)
+	imgs_train, msks_train = load_data(data_path,"_train")
 	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no,
 		mode, CHANNEL_LAST)
 
 	print("-"*30)
 	print("Loading and preprocessing test data...")
 	print("-"*30)
-	imgs_test, msks_test = load_data(data_path,"_test"+suffix)
+	imgs_test, msks_test = load_data(data_path,"_test")
 	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode, CHANNEL_LAST)
 
 
