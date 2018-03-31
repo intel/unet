@@ -507,6 +507,7 @@ if __name__ == "__main__":
 	import datetime
 	print(datetime.datetime.now())
 
+	print("args = {}".format(args))
 	start_time = time.time()
 
 	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS,
