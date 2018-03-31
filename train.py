@@ -95,7 +95,7 @@ sess = tf.Session(config=config)
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-CHANNEL_LAST = args.channels_last
+CHANNEL_LAST = args.channels_first
 if CHANNEL_LAST:
 	concat_axis = -1
 	data_format = "channels_last"
