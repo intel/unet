@@ -158,8 +158,7 @@ def dice_coef_loss(y_true, y_pred):
 
 	return loss
 
-def unet_model(args=None, weights=False,
-	filepath="",
+def unet_model(args=None,
 	img_rows = 224,
 	img_cols = 224,
 	n_cl_in=3,
@@ -167,7 +166,6 @@ def unet_model(args=None, weights=False,
 	dropout=0.2,
 	learning_rate = 0.01,
 	print_summary = False):
-	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 
 	if args.use_upsampling:
 		print ("Using UpSampling2D")
@@ -265,8 +263,7 @@ def unet_model(args=None, weights=False,
 
 	return model
 
-def unet_keras_api(args=None, weights=False,
-	filepath="",
+def unet_keras_api(args=None,
 	img_rows = 224,
 	img_cols = 224,
 	n_cl_in=3,
@@ -274,7 +271,6 @@ def unet_keras_api(args=None, weights=False,
 	dropout=0.2,
 	learning_rate = 0.01,
 	print_summary = False):
-	""" difference from model: img_rows and cols, order of axis, and concat_axis"""
 
 	if args.use_upsampling:
 		print ("Using UpSampling2D")
@@ -382,56 +378,6 @@ def unet_keras_api(args=None, weights=False,
 
 	return model
 
-
-def image_augmentation(imgs, masks):
-	"""
-	This will perform image augmentation on BOTH the
-	image and mask. It returns a generator so that
-	every time it is called it will grab a new batch
-	and perform a random augmentation.
-	"""
-	data_gen_args = dict(shear_range=0.5,  #radians
-						 rotation_range=90., # degrees
-						 width_shift_range=0.1,
-						 height_shift_range=0.1,
-						 zoom_range=0.2, # +/- 20%
-						 horizontal_flip=True,
-						 vertical_flip = True)
-
-	if args.keras_api:
-		image_datagen = keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
-		mask_datagen = keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
-	else:
-		image_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
-		mask_datagen = tf.keras.preprocessing.image.ImageDataGenerator(**data_gen_args)
-
-	# Provide the same seed and keyword arguments to the fit and flow methods
-	# This should ensure that the same augmentations are done for the image and the mask.
-	seed = 816
-	image_datagen.fit(imgs, augment=True, seed=seed)
-	mask_datagen.fit(masks, augment=True, seed=seed)
-
-	# Create a batch generator for the images
-	image_generator = image_datagen.flow(
-		imgs,
-		batch_size=batch_size,
-		shuffle=True,
-		seed=seed)
-
-	# Create a batch generator for the masks
-	mask_generator = mask_datagen.flow(
-		masks,
-		batch_size=batch_size,
-		shuffle=True,
-		seed=seed)
-
-	# The generator needs to be an infinite loop that
-	# yields after each batch (next). Otherwise, it will
-	# try to perform augmentation on the entire dataset and (probably) crash.
-	while True:
-		yield (image_generator.next(), mask_generator.next())
-
-
 def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, output_no = 3,
 	fn= "model", mode = 1, args=None):
 
@@ -442,13 +388,13 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 
 	imgs_train, msks_train = load_data(data_path,"_train")
 	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no,
-		mode, CHANNEL_LAST)
+		mode)
 
 	print("-"*30)
 	print("Loading and preprocessing test data...")
 	print("-"*30)
 	imgs_test, msks_test = load_data(data_path,"_test")
-	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode, CHANNEL_LAST)
+	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
 
 
 	print("-"*30)
@@ -456,9 +402,9 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print("-"*30)
 
 	if args.keras_api:
-		model = unet_keras_api(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
+		model = unet_keras_api(args, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
 	else:
-		model = unet_model(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
+		model = unet_model(args, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
 
 
 	if (args.use_upsampling):
@@ -506,21 +452,6 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 		history = tf.keras.callbacks.History()
 
 	print("Batch size = {}".format(batch_size))
-
-	# # """
-	# # For image augmentation use model.fit_generator instead of model.fit
-	# # """
-	# train_generator = image_augmentation(imgs_train, msks_train)
-
-	# # fits the model on batches with real-time data augmentation:
-	# history = model.fit_generator(train_generator,
-	# 				steps_per_epoch=len(imgs_train) // batch_size, epochs=n_epoch, validation_data = (imgs_test, msks_test),
-	# 				callbacks=[model_checkpoint, tensorboard_checkpoint])
-
-	"""
-	 Without image augmentation just use model.fit
-	"""
-
 	if not CHANNEL_LAST:  # Swap first and last axes on data
 		imgs_train = np.swapaxes(imgs_train,1,-1)
 		msks_train = np.swapaxes(msks_train,1,-1)
@@ -533,16 +464,6 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	 	validation_data = (imgs_test, msks_test),
 	 	verbose=1,
 	 	callbacks=[model_checkpoint, tensorboard_checkpoint])
-
-	# model = model5_MultiLayer(args, True, model_fn, img_rows, img_cols, input_no, output_no)
-
-	# history = model.fit(imgs_train, msks_train,
-	#  	batch_size=batch_size,
-	#  	epochs=n_epoch-2,
-	#  	validation_data = (imgs_test, msks_test),
-	#  	verbose=1,
-	#  	callbacks=[model_checkpoint, tensorboard_checkpoint])
-
 	json_fn = os.path.join(data_path, fn+".json")
 	with open(json_fn,"w") as f:
 		f.write(model.to_json())
@@ -563,15 +484,12 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print("Loading saved weights...")
 	print("-"*30)
 	epochNo = len(history.history["loss"])-1
-	#model_fn	= os.path.join(data_path, "{}_{:03d}.hdf5".format(fn, epochNo))
 	model.load_weights(model_fn)
 
 	print("-"*30)
 	print("Predicting masks on test data...")
 	print("-"*30)
 	msks_pred = model.predict(imgs_test, verbose=1)
-
-	#np.save(os.path.join(data_path, "msks_pred.npy"), msks_pred)
 
 	print("Saving predictions to file")
 	if (args.use_upsampling):
