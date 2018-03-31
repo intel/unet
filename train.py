@@ -27,7 +27,7 @@ parser.add_argument("--epochs", type=int, default=10, help="number of epochs to 
 parser.add_argument("--learningrate", type=float, default=0.0001, help="learningrate")
 parser.add_argument("--keras_api", help="use keras instead of tf.keras",
 					action="store_true", default=False)
-parser.add_argument("--channels_last", help="use channels last data format",
+parser.add_argument("--channels_first", help="use channels first data format",
 					action="store_true", default=False)
 parser.add_argument("--print_model", help="print the model",
 					action="store_true", default=False)
@@ -97,7 +97,7 @@ sess = tf.Session(config=config)
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-CHANNEL_LAST = args.channels_last
+CHANNEL_LAST = not args.channels_first
 if CHANNEL_LAST:
 	concat_axis = -1
 	data_format = "channels_last"
