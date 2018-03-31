@@ -28,7 +28,9 @@ parser.add_argument("--learningrate", type=float, default=0.0001, help="learning
 parser.add_argument("--keras_api", help="use keras instead of tf.keras",
 					action="store_true", default=False)
 parser.add_argument("--channels_first", help="use channels first data format",
-					action="store_true", default=True)
+					action="store_true", default=False)
+parser.add_argument("--print_model", help="print the model",
+					action="store_true", default=False)
 
 
 args = parser.parse_args()
@@ -466,9 +468,9 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch, input_no  = 3, out
 	print("-"*30)
 
 	if args.keras_api:
-		model = unet_keras_api(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
+		model = unet_keras_api(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
 	else:
-		model = unet_model(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=True)
+		model = unet_model(args, False, False, img_rows, img_cols, input_no, output_no, print_summary=args.print_model)
 
 
 	if (args.use_upsampling):
