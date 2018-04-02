@@ -12,14 +12,14 @@
 # # """
 
 # numactl -p 1 python train.py --num_threads=50 --num_inter_threads=5 --batch_size=256 --blocktime=0
-import multiprocessing
+import psutil
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--use_upsampling",
 					help="use upsampling instead of transposed convolution",
 					action="store_true", default=False)
 parser.add_argument("--num_threads", type=int,
-					default=multiprocessing.cpu_count()-2,
+					default=psutil.cpu_count(logical=False)-2,
 					help="the number of threads")
 parser.add_argument("--num_inter_threads", type=int, default=2,
 					help="the number of intraop threads")
