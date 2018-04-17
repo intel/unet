@@ -11,31 +11,46 @@
 # # END - Limit Tensoflow to only use specific GPU
 # # """
 
-# numactl -p 1 python train.py --num_threads=50 --num_inter_threads=5 --batch_size=256 --blocktime=0
+# numactl -p 1 python train.py --num_threads=50 --num_inter_threads=1
+# --batch_size=128 --blocktime=0
 import psutil
+import settings    # Use the custom settings.py file for default parameters
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--use_upsampling",
-					help="use upsampling instead of transposed convolution",
-					action="store_true", default=False)
+                    help="use upsampling instead of transposed convolution",
+                    action="store_true", default=settings.USE_UPSAMPLING)
 parser.add_argument("--num_threads", type=int,
-					default=psutil.cpu_count(logical=False)-2,
-					help="the number of threads")
-parser.add_argument("--num_inter_threads", type=int, default=2,
-					help="the number of intraop threads")
-parser.add_argument("--batch_size", type=int, default=128,
-					help="the batch size for training")
-parser.add_argument("--blocktime", type=int, default=0, help="blocktime")
-parser.add_argument("--epochs", type=int, default=10,
-					help="number of epochs to train")
-parser.add_argument("--learningrate", type=float, default=0.0001,
-					help="learningrate")
-parser.add_argument("--keras_api", help="use keras instead of tf.keras",
-					action="store_true", default=False)
+                    default=settings.NUM_INTRA_THREADS,
+                    help="the number of threads")
+parser.add_argument(
+    "--num_inter_threads",
+    type=int,
+    default=settings.NUM_INTER_THREADS,
+    help="the number of intraop threads")
+parser.add_argument("--batch_size", type=int, default=settings.BATCH_SIZE,
+                    help="the batch size for training")
+parser.add_argument(
+    "--blocktime",
+    type=int,
+    default=settings.BLOCKTIME,
+    help="blocktime")
+parser.add_argument("--epochs", type=int, default=settings.EPOCHS,
+                    help="number of epochs to train")
+parser.add_argument(
+    "--learningrate",
+    type=float,
+    default=settings.LEARNING_RATE,
+    help="learningrate")
+parser.add_argument(
+    "--keras_api",
+    help="use keras instead of tf.keras",
+    action="store_true",
+    default=settings.USE_KERAS_API)
 parser.add_argument("--channels_first", help="use channels first data format",
-					action="store_true", default=False)
+                    action="store_true", default=settings.CHANNELS_FIRST)
 parser.add_argument("--print_model", help="print the model",
-					action="store_true", default=False)
+                    action="store_true", default=settings.PRINT_MODEL)
 
 args = parser.parse_args()
 
@@ -47,55 +62,38 @@ num_threads = args.num_threads
 num_inter_op_threads = args.num_inter_threads
 
 if (args.blocktime > 1000):
-	blocktime = "infinite"
+    blocktime = "infinite"
 else:
-	blocktime = str(args.blocktime)
+    blocktime = str(args.blocktime)
 
 EPOCHS = args.epochs
 learningrate = args.learningrate
 
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"]="2"  # Get rid of the AVX, SSE warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 os.environ["KMP_BLOCKTIME"] = blocktime
-os.environ["KMP_AFFINITY"]="compact,1,0,granularity=thread"
-#os.environ["KMP_AFFINITY"]="compact,1,0,granularity=fine"
-#os.environ["KMP_AFFINITY"]="granularity=fine,proclist=[0-{}],explicit".format(num_threads)
+os.environ["KMP_AFFINITY"] = "compact,1,0,granularity=fine"
 
-os.environ["OMP_NUM_THREADS"]= str(num_threads)
-os.environ["TF_ADJUST_HUE_FUSED"] = "1"
-os.environ["TF_ADJUST_SATURATION_FUSED"] = "1"
-#os.environ["MKL_VERBOSE"] = "1"
-os.environ["MKL_DYNAMIC"]="1"
-os.environ["INTRA_THREADS"]=str(num_threads)
-os.environ["INTER_THREADS"]=str(num_inter_op_threads)
-# os.environ["MIC_ENV_PREFIX"] = "PHI"
-# os.environ["PHI_KMP_AFFINITY"] = "compact"
-# os.environ["PHI_KMP_PLACE_THREADS"] = "60c,3t"
-# os.environ["PHI_OMP_NUM_THREADS"] = str(num_threads)
-
-os.environ["TF_ENABLE_WINOGRAD_NONFUSED"] = "1"
-os.environ["TF_AUTOTUNE_THRESHOLD"] = "1"
-
-os.environ["MKL_NUM_THREADS"] =str(num_threads)
-
-os.environ["KMP_SETTINGS"] = "0"  # Show the settins at runtime
+os.environ["OMP_NUM_THREADS"] = str(num_threads)
+os.environ["INTRA_THREADS"] = str(num_threads)
+os.environ["INTER_THREADS"] = str(num_inter_op_threads)
+os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
 # The timeline trace for TF is saved to this file.
 # To view it, run this python script, then load the json file by
 # starting Google Chrome browser and pointing the URI to chrome://trace
 # There should be a button at the top left of the graph where
 # you can load in this json file.
-timeline_filename = "timeline_ge_unet_{}_{}_{}.json".format(blocktime, num_threads, num_inter_op_threads)
+timeline_filename = "timeline_ge_unet_{}_{}_{}.json".format(
+    blocktime, num_threads, num_inter_op_threads)
 
 import time
 
 import tensorflow as tf
 
 config = tf.ConfigProto(intra_op_parallelism_threads=num_threads,
-						inter_op_parallelism_threads=num_inter_op_threads)
-
-config.graph_options.optimizer_options.opt_level = -1
+                        inter_op_parallelism_threads=num_inter_op_threads)
 
 sess = tf.Session(config=config)
 
@@ -104,19 +102,20 @@ run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
 CHANNEL_LAST = not args.channels_first
 if CHANNEL_LAST:
-	concat_axis = -1
-	data_format = "channels_last"
+    concat_axis = -1
+    data_format = "channels_last"
 
 else:
-	concat_axis = 1
-	data_format = "channels_first"
+    concat_axis = 1
+    data_format = "channels_first"
 
 print("Data format = " + data_format)
 if args.keras_api:
-	import keras
-	keras.backend.set_image_data_format(data_format)
+    import keras as K
 else:
-	tf.keras.backend.set_image_data_format(data_format)
+    from tensorflow import keras as K
+
+K.backend.set_image_data_format(data_format)
 
 import numpy as np
 import os
@@ -124,396 +123,265 @@ import os
 from preprocess import *
 import settings
 
-def dice_coef(y_true, y_pred, smooth = 1. ):
-
-	if args.keras_api:
-
-		y_true_f = keras.backend.flatten(y_true)
-		y_pred_f = keras.backend.flatten(y_pred)
-		intersection = keras.backend.sum(y_true_f * y_pred_f)
-		coef = (2. * intersection + smooth) / \
-			(keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth)
-
-	else:
-		y_true_f = tf.keras.backend.flatten(y_true)
-		y_pred_f = tf.keras.backend.flatten(y_pred)
-		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
-		coef = (2. * intersection + smooth) / \
-			(tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
-	return coef
-
-def dice_coef_loss(y_true, y_pred):
-
-	if args.keras_api:
-
-		smooth = 1.
-		y_true_f = keras.backend.flatten(y_true)
-		y_pred_f = keras.backend.flatten(y_pred)
-		intersection = keras.backend.sum(y_true_f * y_pred_f)
-		loss = -keras.backend.log(2.0*intersection + smooth) + \
-			keras.backend.log((keras.backend.sum(y_true_f) + keras.backend.sum(y_pred_f) + smooth))
 
-	else:
+def dice_coef(y_true, y_pred, smooth=1.):
+
+    y_true_f = K.backend.flatten(y_true)
+    y_pred_f = K.backend.flatten(y_pred)
+    intersection = K.backend.sum(y_true_f * y_pred_f)
+    coef = (2. * intersection + smooth) / \
+        (K.backend.sum(y_true_f) + K.backend.sum(y_pred_f) + smooth)
+
+    return coef
+
+
+def dice_coef_loss(y_true, y_pred, smooth=1.):
+
+    y_true_f = K.backend.flatten(y_true)
+    y_pred_f = K.backend.flatten(y_pred)
+    intersection = K.backend.sum(y_true_f * y_pred_f)
+    loss = -K.backend.log(2.0 * intersection + smooth) + \
+        K.backend.log((K.backend.sum(y_true_f) +
+                       K.backend.sum(y_pred_f) + smooth))
+
+    return loss
+
+
+def unet_model(img_rows=224,
+               img_cols=224,
+               n_cl_in=3,
+               n_cl_out=3,
+               dropout=0.2,
+               learning_rate=0.01):
+
+    if args.use_upsampling:
+        print("Using UpSampling2D")
+    else:
+        print("Using Transposed Deconvolution")
+
+    if CHANNEL_LAST:
+        inputs = K.layers.Input((img_rows, img_cols, n_cl_in), name="Images")
+    else:
+        inputs = K.layers.Input((n_cl_in, img_rows, img_cols), name="Images")
+
+    params = dict(kernel_size=(3, 3), activation="relu",
+                  padding="same", data_format=data_format,
+                  kernel_initializer="he_uniform")
+
+    conv1 = K.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
+    conv1 = K.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
+    pool1 = K.layers.MaxPooling2D(name="pool1", pool_size=(2, 2))(conv1)
+
+    conv2 = K.layers.Conv2D(name="conv2a", filters=64, **params)(pool1)
+    conv2 = K.layers.Conv2D(name="conv2b", filters=64, **params)(conv2)
+    pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
+
+    conv3 = K.layers.Conv2D(name="conv3a", filters=128, **params)(pool2)
+    conv3 = K.layers.Dropout(dropout)(conv3)
+    conv3 = K.layers.Conv2D(name="conv3b", filters=128, **params)(conv3)
+
+    pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
+
+    conv4 = K.layers.Conv2D(name="conv4a", filters=256, **params)(pool3)
+    conv4 = K.layers.Dropout(dropout)(conv4)
+    conv4 = K.layers.Conv2D(name="conv4b", filters=256, **params)(conv4)
+
+    pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
+
+    conv5 = K.layers.Conv2D(name="conv5a", filters=512, **params)(pool4)
+    conv5 = K.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
+
+    if args.use_upsampling:
+        up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
+    else:
+        up = K.layers.Conv2DTranspose(name="transConv6", filters=256,
+                                      data_format=data_format,
+                                      kernel_size=(2, 2), strides=(2, 2),
+                                      padding="same")(conv5)
+    up6 = K.layers.concatenate([up, conv4], axis=concat_axis)
+
+    conv6 = K.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
+    conv6 = K.layers.Conv2D(name="conv6b", filters=256, **params)(conv6)
+
+    if args.use_upsampling:
+        up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
+    else:
+        up = K.layers.Conv2DTranspose(name="transConv7", filters=128,
+                                      data_format=data_format,
+                                      kernel_size=(2, 2), strides=(2, 2),
+                                      padding="same")(conv6)
+    up7 = K.layers.concatenate([up, conv3], axis=concat_axis)
+
+    conv7 = K.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
+    conv7 = K.layers.Conv2D(name="conv7b", filters=128, **params)(conv7)
+
+    if args.use_upsampling:
+        up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
+    else:
+        up = K.layers.Conv2DTranspose(name="transConv8", filters=64,
+                                      data_format=data_format,
+                                      kernel_size=(2, 2),
+                                      strides=(2, 2),
+                                      padding="same")(conv7)
+    up8 = K.layers.concatenate([up, conv2], axis=concat_axis)
+
+    conv8 = K.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
+    conv8 = K.layers.Conv2D(name="conv8b", filters=64, **params)(conv8)
+
+    if args.use_upsampling:
+        up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
+    else:
+        up = K.layers.Conv2DTranspose(name="transConv9", filters=32,
+                                      data_format=data_format,
+                                      kernel_size=(2, 2), strides=(2, 2),
+                                      padding="same")(conv8)
+    up9 = K.layers.concatenate([up, conv1], axis=concat_axis)
+
+    conv9 = K.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
+    conv9 = K.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
+
+    prediction = K.layers.Conv2D(name="PredictionMask",
+                                 filters=n_cl_out, kernel_size=(1, 1),
+                                 data_format=data_format,
+                                 activation="sigmoid")(conv9)
+
+    model = K.models.Model(inputs=[inputs], outputs=[prediction])
+
+    optimizer = K.optimizers.Adam(lr=args.learningrate)
+
+    if settings.CREATE_TRACE_TIMELINE:
+        model.compile(optimizer=optimizer,
+                      loss=dice_coef_loss,
+                      metrics=["accuracy", dice_coef],
+                      options=run_options, run_metadata=run_metadata)
+    else:
+        model.compile(optimizer=optimizer,
+                      loss=dice_coef_loss,
+                      metrics=["accuracy", dice_coef])
+
+    return model
 
-		smooth = 1.
-		y_true_f = tf.keras.backend.flatten(y_true)
-		y_pred_f = tf.keras.backend.flatten(y_pred)
-		intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
-		loss = -tf.keras.backend.log(2.0*intersection + smooth) + \
-			tf.keras.backend.log((tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth))
-
-
-	return loss
-
-def unet_model(args=None,
-	img_rows = 224,
-	img_cols = 224,
-	n_cl_in=3,
-	n_cl_out=3,
-	dropout=0.2,
-	learning_rate = 0.01,
-	print_summary = False):
-
-	if args.use_upsampling:
-		print ("Using UpSampling2D")
-	else:
-		print("Using Transposed Deconvolution")
-
-	if CHANNEL_LAST:
-		inputs = tf.keras.layers.Input((img_rows, img_cols, n_cl_in), name="Images")
-	else:
-		inputs = tf.keras.layers.Input((n_cl_in, img_rows, img_cols), name="Images")
-
-	params = dict(kernel_size=(3, 3), activation="relu",
-				  padding="same", data_format=data_format,
-				  kernel_initializer="he_uniform")
-
-	conv1 = tf.keras.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
-	conv1 = tf.keras.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
-	pool1 = tf.keras.layers.MaxPooling2D(name="pool1", pool_size=(2, 2))(conv1)
-
-	conv2 = tf.keras.layers.Conv2D(name="conv2a", filters=64, **params)(pool1)
-	conv2 = tf.keras.layers.Conv2D(name="conv2b", filters=64, **params)(conv2)
-	pool2 = tf.keras.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
-
-	conv3 = tf.keras.layers.Conv2D(name="conv3a", filters=128, **params)(pool2)
-	conv3 = tf.keras.layers.Dropout(dropout)(conv3)
-	conv3 = tf.keras.layers.Conv2D(name="conv3b", filters=128, **params)(conv3)
-
-	pool3 = tf.keras.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
-
-	conv4 = tf.keras.layers.Conv2D(name="conv4a", filters=256, **params)(pool3)
-	conv4 = tf.keras.layers.Dropout(dropout)(conv4)
-	conv4 = tf.keras.layers.Conv2D(name="conv4b", filters=256, **params)(conv4)
-
-	pool4 = tf.keras.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
-
-	conv5 = tf.keras.layers.Conv2D(name="conv5a", filters=512, **params)(pool4)
-	conv5 = tf.keras.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
-
-	if args.use_upsampling:
-		up6 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name="up6", size=(2, 2))(conv5), conv4], axis=concat_axis)
-	else:
-		up6 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name="transConv6", filters=256, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv5), conv4], axis=concat_axis)
-
-	conv6 = tf.keras.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
-	conv6 = tf.keras.layers.Conv2D(name="conv6b", filters=256, **params)(conv6)
-
-	if args.use_upsampling:
-		up7 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name="up7", size=(2, 2))(conv6), conv3], axis=concat_axis)
-	else:
-		up7 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name="transConv7", filters=128, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv6), conv3], axis=concat_axis)
-
-	conv7 = tf.keras.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
-	conv7 = tf.keras.layers.Conv2D(name="conv7b", filters=128, **params)(conv7)
-
-	if args.use_upsampling:
-		up8 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name="up8", size=(2, 2))(conv7), conv2], axis=concat_axis)
-	else:
-		up8 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name="transConv8", filters=64, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv7), conv2], axis=concat_axis)
-
-
-	conv8 = tf.keras.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
-	conv8 = tf.keras.layers.Conv2D(name="conv8b", filters=64, **params)(conv8)
-
-	if args.use_upsampling:
-		up9 = tf.keras.layers.concatenate([tf.keras.layers.UpSampling2D(name="up9", size=(2, 2))(conv8), conv1], axis=concat_axis)
-	else:
-		up9 = tf.keras.layers.concatenate([tf.keras.layers.Conv2DTranspose(name="transConv9", filters=32, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv8), conv1], axis=concat_axis)
-
-
-	conv9 = tf.keras.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
-	conv9 = tf.keras.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
-
-	conv10 = tf.keras.layers.Conv2D(name="Mask", filters=n_cl_out, kernel_size=(1, 1),
-					data_format=data_format, activation="sigmoid")(conv9)
-
-	model = tf.keras.models.Model(inputs=[inputs], outputs=[conv10])
-
-	# if weights:
-	# 	optimizer=tf.keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.01)
-	# else:
-	# 	optimizer = tf.keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.05)
-
-	optimizer=tf.keras.optimizers.Adam(lr=args.learningrate, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.00001)
-
-	model.compile(optimizer=optimizer,
-		loss=dice_coef_loss,
-		metrics=["accuracy", dice_coef], options=run_options, run_metadata=run_metadata)
-
-	if print_summary:
-		print (model.summary())
-
-	return model
-
-def unet_keras_api(args=None,
-	img_rows = 224,
-	img_cols = 224,
-	n_cl_in=3,
-	n_cl_out=3,
-	dropout=0.2,
-	learning_rate = 0.01,
-	print_summary = False):
-
-	if args.use_upsampling:
-		print ("Using UpSampling2D")
-	else:
-		print("Using Transposed Deconvolution")
-
-	if CHANNEL_LAST:
-		inputs = keras.layers.Input((img_rows, img_cols, n_cl_in), name="Images")
-	else:
-		inputs = keras.layers.Input((n_cl_in, img_rows, img_cols), name="Images")
-
-
-
-	params = dict(kernel_size=(3, 3), activation="relu",
-				  padding="same", data_format=data_format,
-				  kernel_initializer="he_uniform") #RandomUniform(minval=-0.01, maxval=0.01, seed=816))
-
-	conv1 = keras.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
-	conv1 = keras.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
-	pool1 = keras.layers.MaxPooling2D(name="pool1", pool_size=(2, 2))(conv1)
-
-	conv2 = keras.layers.Conv2D(name="conv2a", filters=64, **params)(pool1)
-	conv2 = keras.layers.Conv2D(name="conv2b", filters=64, **params)(conv2)
-	pool2 = keras.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
-
-	conv3 = keras.layers.Conv2D(name="conv3a", filters=128, **params)(pool2)
-	conv3 = keras.layers.Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
-	conv3 = keras.layers.Conv2D(name="conv3b", filters=128, **params)(conv3)
-
-	pool3 = keras.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
-
-	conv4 = keras.layers.Conv2D(name="conv4a", filters=256, **params)(pool3)
-	conv4 = keras.layers.Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
-	conv4 = keras.layers.Conv2D(name="conv4b", filters=256, **params)(conv4)
-
-	pool4 = keras.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
-
-	conv5 = keras.layers.Conv2D(name="conv5a", filters=512, **params)(pool4)
-
-	if args.use_upsampling:
-		conv5 = keras.layers.Conv2D(name="conv5b", filters=256, **params)(conv5)
-		up6 = keras.layers.concatenate([keras.layers.UpSampling2D(name="up6", size=(2, 2))(conv5), conv4], axis=concat_axis)
-	else:
-		conv5 = keras.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
-		up6 = keras.layers.concatenate([keras.layers.Conv2DTranspose(name="transConv6", filters=256, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv5), conv4], axis=concat_axis)
-
-	conv6 = keras.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
-
-	if args.use_upsampling:
-		conv6 = keras.layers.Conv2D(name="conv6b", filters=128, **params)(conv6)
-		up7 = keras.layers.concatenate([keras.layers.UpSampling2D(name="up7", size=(2, 2))(conv6), conv3], axis=concat_axis)
-	else:
-		conv6 = keras.layers.Conv2D(name="conv6b", filters=256, **params)(conv6)
-		up7 = keras.layers.concatenate([keras.layers.Conv2DTranspose(name="transConv7", filters=128, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv6), conv3], axis=concat_axis)
-
-	conv7 = keras.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
-
-
-	if args.use_upsampling:
-		conv7 = keras.layers.Conv2D(name="conv7b", filters=64, **params)(conv7)
-		up8 = keras.layers.concatenate([keras.layers.UpSampling2D(name="up8", size=(2, 2))(conv7), conv2], axis=concat_axis)
-	else:
-		conv7 = keras.layers.Conv2D(name="conv7b", filters=128, **params)(conv7)
-		up8 = keras.layers.concatenate([keras.layers.Conv2DTranspose(name="transConv8", filters=64, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv7), conv2], axis=concat_axis)
-
-	conv8 = keras.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
-
-	if args.use_upsampling:
-		conv8 = keras.layers.Conv2D(name="conv8b", filters=32, **params)(conv8)
-		up9 = keras.layers.concatenate([keras.layers.UpSampling2D(name="up9", size=(2, 2))(conv8), conv1], axis=concat_axis)
-	else:
-		conv8 = keras.layers.Conv2D(name="conv8b", filters=64, **params)(conv8)
-		up9 = keras.layers.concatenate([keras.layers.Conv2DTranspose(name="transConv9", filters=32, data_format=data_format,
-			               kernel_size=(2, 2), strides=(2, 2), padding="same")(conv8), conv1], axis=concat_axis)
-
-	conv9 = keras.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
-	conv9 = keras.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
-
-	conv10 = keras.layers.Conv2D(name="Mask", filters=n_cl_out, kernel_size=(1, 1),
-					data_format=data_format, activation="sigmoid")(conv9)
-
-	model = keras.models.Model(inputs=[inputs], outputs=[conv10])
-
-	optimizer=keras.optimizers.Adam(lr=args.learningrate, beta_1=0.9,
-									beta_2=0.99, epsilon=1e-08, decay=0.00001)
-
-	model.compile(optimizer=optimizer,
-		loss=dice_coef_loss, #dice_coef_loss, #"binary_crossentropy",
-		metrics=["accuracy", dice_coef], options=run_options, run_metadata=run_metadata)
-
-	if print_summary:
-		print (model.summary())
-
-	return model
 
 def train_and_predict(data_path, img_rows, img_cols, n_epoch,
-					  input_no = 3, output_no = 3,
-					  fn= "model", mode = 1, args=None):
+                      input_no=3, output_no=3, mode=1):
 
-	print("-"*30)
-	print("Loading and preprocessing train data...")
-	print("-"*30)
+    print("-" * 40)
+    print("Loading and preprocessing train data...")
+    print("-" * 40)
 
-	imgs_train, msks_train = load_data(data_path,"_train")
-	imgs_train, msks_train = update_channels(imgs_train, msks_train, input_no, output_no,
-		mode)
+    imgs_train, msks_train = load_data(data_path, "_train")
+    imgs_train, msks_train = update_channels(imgs_train, msks_train,
+                                             input_no, output_no, mode)
 
-	print("-"*30)
-	print("Loading and preprocessing test data...")
-	print("-"*30)
-	imgs_test, msks_test = load_data(data_path,"_test")
-	imgs_test, msks_test = update_channels(imgs_test, msks_test, input_no, output_no, mode)
+    print("-" * 40)
+    print("Loading and preprocessing test data...")
+    print("-" * 40)
+    imgs_test, msks_test = load_data(data_path, "_test")
+    imgs_test, msks_test = update_channels(imgs_test, msks_test,
+                                           input_no, output_no, mode)
 
-	print("-"*30)
-	print("Creating and compiling model...")
-	print("-"*30)
+    print("-" * 30)
+    print("Creating and compiling model...")
+    print("-" * 30)
 
-	if args.keras_api:
-		model = unet_keras_api(args, img_rows, img_cols,
-							   input_no, output_no,
-							   print_summary=args.print_model)
-	else:
-		model = unet_model(args, img_rows, img_cols,
-						   input_no, output_no,
-						   print_summary=args.print_model)
+    model = unet_model(img_rows, img_cols,
+                       input_no, output_no)
 
-	if (args.use_upsampling):
-		model_fn	= os.path.join(data_path, fn+"_upsampling.hdf5")
-	else:
-		model_fn	= os.path.join(data_path, fn+"_transposed.hdf5")
+    if (args.use_upsampling):
+        model_fn = os.path.join(data_path, "unet_model_upsampling.hdf5")
+    else:
+        model_fn = os.path.join(data_path, "unet_model_transposed.hdf5")
 
-	print ("Writing model to ", model_fn)
+    print("Writing model to ", model_fn)
 
-	if args.keras_api:
-		model_checkpoint = keras.callbacks.ModelCheckpoint(model_fn,
-							monitor="loss", save_best_only=True)
-	else:
-		model_checkpoint = tf.keras.callbacks.ModelCheckpoint(model_fn,
-							monitor="loss", save_best_only=True)
+    model_checkpoint = K.callbacks.ModelCheckpoint(model_fn,
+                                                   monitor="loss",
+                                                   save_best_only=True)
 
-	directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
-					num_threads, num_inter_op_threads)
+    directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
+                                                          num_threads,
+                                                          num_inter_op_threads)
 
-	if (args.use_upsampling):
+    if (args.use_upsampling):
 
-		if args.keras_api:
-			tensorboard_checkpoint = keras.callbacks.TensorBoard(
-			log_dir="./keras_tensorboard_upsampling_batch{}/{}".format(batch_size, directoryName),
-			write_graph=True, write_images=True)
-		else:
-			tensorboard_checkpoint = tf.keras.callbacks.TensorBoard(
-				log_dir="./keras_tensorboard_upsampling_batch{}/{}".format(batch_size, directoryName),
-				write_graph=True, write_images=True)
-	else:
-		if args.keras_api:
-			tensorboard_checkpoint = keras.callbacks.TensorBoard(
-				log_dir="./keras_tensorboard_transposed_batch{}/{}".format(batch_size, directoryName),
-				write_graph=True, write_images=True)
-		else:
-			tensorboard_checkpoint = tf.keras.callbacks.TensorBoard(
-			log_dir="./keras_tensorboard_transposed_batch{}/{}".format(batch_size, directoryName),
-			write_graph=True, write_images=True)
+        tensorboard_checkpoint = K.callbacks.TensorBoard(
+            log_dir="./keras_tensorboard_upsampling_batch{}/{}".format(
+                batch_size, directoryName),
+            write_graph=True, write_images=True)
+    else:
+        tensorboard_checkpoint = K.callbacks.TensorBoard(
+            log_dir="./keras_tensorboard_transposed_batch{}/{}".format(
+                batch_size, directoryName),
+            write_graph=True, write_images=True)
 
-	print("-"*30)
-	print("Fitting model...")
-	print("-"*30)
+    print("-" * 30)
+    print("Fitting model...")
+    print("-" * 30)
 
-	if args.keras_api:
-		history = keras.callbacks.History()
-	else:
-		history = tf.keras.callbacks.History()
+    history = K.callbacks.History()
 
-	print("Batch size = {}".format(batch_size))
-	if not CHANNEL_LAST:  # Swap first and last axes on data
-		imgs_train = np.swapaxes(imgs_train,1,-1)
-		msks_train = np.swapaxes(msks_train,1,-1)
-		imgs_test  = np.swapaxes(imgs_test,1,-1)
-		msks_test  = np.swapaxes(msks_test,1,-1)
+    print("Batch size = {}".format(batch_size))
+    if not CHANNEL_LAST:  # Swap first and last axes on data
+        imgs_train = np.swapaxes(imgs_train, 1, -1)
+        msks_train = np.swapaxes(msks_train, 1, -1)
+        imgs_test = np.swapaxes(imgs_test, 1, -1)
+        msks_test = np.swapaxes(msks_test, 1, -1)
 
-	history = model.fit(imgs_train, msks_train,
-	 	batch_size=batch_size,
-	 	epochs=n_epoch,
-	 	validation_data = (imgs_test, msks_test),
-	 	verbose=1,
-	 	callbacks=[model_checkpoint, tensorboard_checkpoint])
-	json_fn = os.path.join(data_path, fn+".json")
-	with open(json_fn,"w") as f:
-		f.write(model.to_json())
+    history = model.fit(imgs_train, msks_train,
+                        batch_size=batch_size,
+                        epochs=n_epoch,
+                        validation_data=(imgs_test, msks_test),
+                        verbose=1,
+                        callbacks=[model_checkpoint, tensorboard_checkpoint])
 
-	"""
-	Save the training timeline
-	"""
-	from tensorflow.python.client import timeline
+    if settings.CREATE_TRACE_TIMELINE:
+        """
+        Save the training timeline
+        """
+        from tensorflow.python.client import timeline
 
-	fetched_timeline = timeline.Timeline(run_metadata.step_stats)
-	chrome_trace = fetched_timeline.generate_chrome_trace_format()
-	with open(timeline_filename, "w") as f:
-		print("Saved Tensorflow trace to: {}".format(timeline_filename))
-		f.write(chrome_trace)
+        fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+        chrome_trace = fetched_timeline.generate_chrome_trace_format()
+        with open(timeline_filename, "w") as f:
+            print("Saved Tensorflow trace to: {}".format(timeline_filename))
+            f.write(chrome_trace)
 
-	print("-"*30)
-	print("Loading saved weights...")
-	print("-"*30)
-	epochNo = len(history.history["loss"])-1
-	model.load_weights(model_fn)
+    print("-" * 30)
+    print("Predicting masks on test data...")
+    print("-" * 30)
+    msks_pred = model.predict(imgs_test, verbose=1)
 
-	print("-"*30)
-	print("Predicting masks on test data...")
-	print("-"*30)
-	msks_pred = model.predict(imgs_test, verbose=1)
+    print("Saving predictions to file")
+    if (args.use_upsampling):
+        np.save("msks_pred_upsampling.npy", msks_pred)
+    else:
+        np.save("msks_pred_transposed.npy", msks_pred)
 
-	print("Saving predictions to file")
-	if (args.use_upsampling):
-		np.save("msks_pred_upsampling.npy", msks_pred)
-	else:
-		np.save("msks_pred_transposed.npy", msks_pred)
+    print("Evaluating model")
+    scores = model.evaluate(
+        imgs_test,
+        msks_test,
+        batch_size=batch_size,
+        verbose=2)
+    print("Evaluation Scores", scores)
 
-	print("Evaluating model")
-	scores = model.evaluate(imgs_test, msks_test, batch_size=batch_size, verbose = 2)
-	print ("Evaluation Scores", scores)
 
 if __name__ == "__main__":
 
-	import datetime
-	print(datetime.datetime.now())
+    import datetime
+    print(datetime.datetime.now())
 
-	print("args = {}".format(args))
-	start_time = time.time()
+    print("args = {}".format(args))
+    start_time = time.time()
 
-	train_and_predict(settings.OUT_PATH, settings.IMG_ROWS,
-		settings.IMG_COLS,
-		EPOCHS, settings.IN_CHANNEL_NO, \
-		settings.OUT_CHANNEL_NO, settings.MODEL_FN, settings.MODE, args)
+    train_and_predict(settings.OUT_PATH, settings.IMG_ROWS,
+                      settings.IMG_COLS,
+                      EPOCHS, settings.IN_CHANNEL_NO,
+                      settings.OUT_CHANNEL_NO,
+                      settings.MODE)
 
-	print("Total time elapsed for program = {} seconds".format(time.time() - start_time))
-	print(datetime.datetime.now())
+    print(
+        "Total time elapsed for program = {} seconds".format(
+            time.time() -
+            start_time))
+    print(datetime.datetime.now())

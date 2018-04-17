@@ -1,27 +1,31 @@
-BASE = "/home/bduser/tony/unet/data/"
-DATA_PATH = BASE+"/slices"
-OUT_PATH  = BASE+"slices/Results/"
+import os
+
+BASE = "../../"
+OUT_PATH  = os.path.join(BASE, "data/")
+
 IMG_ROWS = 128
 IMG_COLS = 128
-
-BLOCKTIME = 0
-NUM_INTER_THREADS = 2
-NUM_INTRA_THREADS = 200
 
 IN_CHANNEL_NO = 1
 OUT_CHANNEL_NO = 1
 
 EPOCHS = 10
+BATCH_SIZE = 128
+LEARNING_RATE = 0.0001
+PRINT_MODEL = False
 
-MODEL_FN = "brainWholeTumor" #Name for Mode=1
-#MODEL_FN = "brainActiveTumor" #Name for Mode=2
-#MODEL_FN = "brainCoreTumor" #Name for Mode=3
+# Mode 1: Use flair to identify the entire tumor
+# Mode 2: Use T1 Gd to identify the active tumor
+# Mode 3: Use T2 to identify the active core (necrosis, enhancing, non-enh)
+MODE=1  # 1, 2, or 3
 
-#Use flair to identify the entire tumor: test reaches 0.78-0.80: MODE=1
-#Use T1 Post to identify the active tumor: test reaches 0.65-0.75: MODE=2
-#Use T2 to identify the active core (necrosis, enhancing, non-enh): test reaches 0.5-0.55: MODE=3
-MODE=1
 
-# Important that these are ordered correctly: [0] = master, [1] = worker, etc.
-PS_HOSTS = ["10.100.68.245:2222"]
-WORKER_HOSTS = ["10.100.68.193:2222"] #,"10.100.68.183:2222","10.100.68.185:2222","10.100.68.187:2222"]
+import psutil
+BLOCKTIME = 0
+NUM_INTER_THREADS = 1
+NUM_INTRA_THREADS = psutil.cpu_count(logical=False) - 2
+
+CHANNELS_FIRST = False
+USE_KERAS_API = False
+USE_UPSAMPLING = False
+CREATE_TRACE_TIMELINE=False
