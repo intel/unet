@@ -402,7 +402,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 if __name__ == "__main__":
 
     import datetime
-    print(datetime.datetime.now())
+    print("Start script at {}".format(datetime.datetime.now()))
 
     print("args = {}".format(args))
     print("OS: ".format(os.system("uname -a")))
@@ -419,4 +419,4 @@ if __name__ == "__main__":
         "Total time elapsed for program = {} seconds".format(
             time.time() -
             start_time))
-    print(datetime.datetime.now())
+    print("Stop script at {}".format(datetime.datetime.now()))
