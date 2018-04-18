@@ -1,3 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+
 # """
 # BEGIN - Limit Tensoflow to only use specific GPU
 # """
@@ -11,7 +32,7 @@
 # # END - Limit Tensoflow to only use specific GPU
 # # """
 
-# numactl -p 1 python train.py --num_threads=50 --num_inter_threads=1
+# numactl -p 1 python train.py --num_threads=50 --num_inter_threads=2
 # --batch_size=128 --blocktime=0
 import psutil
 import settings    # Use the custom settings.py file for default parameters
@@ -51,6 +72,11 @@ parser.add_argument("--channels_first", help="use channels first data format",
                     action="store_true", default=settings.CHANNELS_FIRST)
 parser.add_argument("--print_model", help="print the model",
                     action="store_true", default=settings.PRINT_MODEL)
+parser.add_argument(
+    "--trace",
+    help="create a tensorflow timeline trace",
+    action="store_true",
+    default=settings.CREATE_TRACE_TIMELINE)
 
 args = parser.parse_args()
 
@@ -65,10 +91,6 @@ if (args.blocktime > 1000):
     blocktime = "infinite"
 else:
     blocktime = str(args.blocktime)
-
-EPOCHS = args.epochs
-learningrate = args.learningrate
-
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
@@ -100,14 +122,20 @@ sess = tf.Session(config=config)
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()  # For Tensorflow trace
 
-CHANNEL_LAST = not args.channels_first
-if CHANNEL_LAST:
+if args.channels_first:
+    """
+    Use NCHW format for data
+    """
+    concat_axis = 1
+    data_format = "channels_first"
+
+else:
+    """
+    Use NHWC format for data
+    """
     concat_axis = -1
     data_format = "channels_last"
 
-else:
-    concat_axis = 1
-    data_format = "channels_first"
 
 print("Data format = " + data_format)
 if args.keras_api:
@@ -147,26 +175,33 @@ def dice_coef_loss(y_true, y_pred, smooth=1.):
     return loss
 
 
-def unet_model(img_rows=224,
-               img_cols=224,
-               n_cl_in=3,
-               n_cl_out=3,
-               dropout=0.2,
-               learning_rate=0.01):
+def unet_model(img_height=224,
+               img_width=224,
+               num_chan_in=3,
+               num_chan_out=3,
+               dropout=0.2):
 
     if args.use_upsampling:
         print("Using UpSampling2D")
     else:
         print("Using Transposed Deconvolution")
 
-    if CHANNEL_LAST:
-        inputs = K.layers.Input((img_rows, img_cols, n_cl_in), name="Images")
+    if args.channels_first:
+        inputs = K.layers.Input((num_chan_in, img_height, img_width),
+                                name="Images")
     else:
-        inputs = K.layers.Input((n_cl_in, img_rows, img_cols), name="Images")
+        inputs = K.layers.Input((img_height, img_width, num_chan_in),
+                                name="Images")
 
+    # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
                   padding="same", data_format=data_format,
                   kernel_initializer="he_uniform")
+
+    # Transposed convolution parameters
+    params_trans = dict(data_format=data_format,
+                        kernel_size=(2, 2), strides=(2, 2),
+                        padding="same")
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
     conv1 = K.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
@@ -195,9 +230,7 @@ def unet_model(img_rows=224,
         up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
     else:
         up = K.layers.Conv2DTranspose(name="transConv6", filters=256,
-                                      data_format=data_format,
-                                      kernel_size=(2, 2), strides=(2, 2),
-                                      padding="same")(conv5)
+                                      **params_trans)(conv5)
     up6 = K.layers.concatenate([up, conv4], axis=concat_axis)
 
     conv6 = K.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
@@ -207,9 +240,7 @@ def unet_model(img_rows=224,
         up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
     else:
         up = K.layers.Conv2DTranspose(name="transConv7", filters=128,
-                                      data_format=data_format,
-                                      kernel_size=(2, 2), strides=(2, 2),
-                                      padding="same")(conv6)
+                                      **params_trans)(conv6)
     up7 = K.layers.concatenate([up, conv3], axis=concat_axis)
 
     conv7 = K.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
@@ -219,10 +250,7 @@ def unet_model(img_rows=224,
         up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
     else:
         up = K.layers.Conv2DTranspose(name="transConv8", filters=64,
-                                      data_format=data_format,
-                                      kernel_size=(2, 2),
-                                      strides=(2, 2),
-                                      padding="same")(conv7)
+                                      **params_trans)(conv7)
     up8 = K.layers.concatenate([up, conv2], axis=concat_axis)
 
     conv8 = K.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
@@ -232,16 +260,14 @@ def unet_model(img_rows=224,
         up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
     else:
         up = K.layers.Conv2DTranspose(name="transConv9", filters=32,
-                                      data_format=data_format,
-                                      kernel_size=(2, 2), strides=(2, 2),
-                                      padding="same")(conv8)
+                                      **params_trans)(conv8)
     up9 = K.layers.concatenate([up, conv1], axis=concat_axis)
 
     conv9 = K.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
     conv9 = K.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
 
     prediction = K.layers.Conv2D(name="PredictionMask",
-                                 filters=n_cl_out, kernel_size=(1, 1),
+                                 filters=num_chan_out, kernel_size=(1, 1),
                                  data_format=data_format,
                                  activation="sigmoid")(conv9)
 
@@ -249,7 +275,7 @@ def unet_model(img_rows=224,
 
     optimizer = K.optimizers.Adam(lr=args.learningrate)
 
-    if settings.CREATE_TRACE_TIMELINE:
+    if args.trace:
         model.compile(optimizer=optimizer,
                       loss=dice_coef_loss,
                       metrics=["accuracy", dice_coef],
@@ -262,7 +288,7 @@ def unet_model(img_rows=224,
     return model
 
 
-def train_and_predict(data_path, img_rows, img_cols, n_epoch,
+def train_and_predict(data_path, img_height, img_width, n_epoch,
                       input_no=3, output_no=3, mode=1):
 
     print("-" * 40)
@@ -284,8 +310,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch,
     print("Creating and compiling model...")
     print("-" * 30)
 
-    model = unet_model(img_rows, img_cols,
-                       input_no, output_no)
+    model = unet_model(img_height, img_width, input_no, output_no)
 
     if (args.use_upsampling):
         model_fn = os.path.join(data_path, "unet_model_upsampling.hdf5")
@@ -303,7 +328,6 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch,
                                                           num_inter_op_threads)
 
     if (args.use_upsampling):
-
         tensorboard_checkpoint = K.callbacks.TensorBoard(
             log_dir="./keras_tensorboard_upsampling_batch{}/{}".format(
                 batch_size, directoryName),
@@ -321,7 +345,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch,
     history = K.callbacks.History()
 
     print("Batch size = {}".format(batch_size))
-    if not CHANNEL_LAST:  # Swap first and last axes on data
+    if args.channels_first:  # Swap first and last axes on data
         imgs_train = np.swapaxes(imgs_train, 1, -1)
         msks_train = np.swapaxes(msks_train, 1, -1)
         imgs_test = np.swapaxes(imgs_test, 1, -1)
@@ -334,7 +358,7 @@ def train_and_predict(data_path, img_rows, img_cols, n_epoch,
                         verbose=1,
                         callbacks=[model_checkpoint, tensorboard_checkpoint])
 
-    if settings.CREATE_TRACE_TIMELINE:
+    if args.trace:
         """
         Save the training timeline
         """
@@ -374,10 +398,10 @@ if __name__ == "__main__":
     print("args = {}".format(args))
     start_time = time.time()
 
-    train_and_predict(settings.OUT_PATH, settings.IMG_ROWS,
-                      settings.IMG_COLS,
-                      EPOCHS, settings.IN_CHANNEL_NO,
-                      settings.OUT_CHANNEL_NO,
+    train_and_predict(settings.OUT_PATH, settings.IMG_HEIGHT,
+                      settings.IMG_WIDTH,
+                      args.epochs, settings.NUM_IN_CHANNELS,
+                      settings.NUM_OUT_CHANNELS,
                       settings.MODE)
 
     print(
