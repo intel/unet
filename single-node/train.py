@@ -371,6 +371,11 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
             f.write(chrome_trace)
 
     print("-" * 30)
+    print("Loading the best trained model ...")
+    print("-" * 30)
+    model = K.models.load_model(model_checkpoint)
+
+    print("-" * 30)
     print("Predicting masks on test data...")
     print("-" * 30)
     msks_pred = model.predict(imgs_test, verbose=1)
@@ -381,13 +386,17 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     else:
         np.save("msks_pred_transposed.npy", msks_pred)
 
+    start_inference = time.time()
     print("Evaluating model")
     scores = model.evaluate(
         imgs_test,
         msks_test,
         batch_size=batch_size,
         verbose=2)
+    print("{:.3f} images per second inference".format(imgs_test.shape[0]
+                                            /(time.time()-start_inference)))
     print("Evaluation Scores", scores)
+
 
 
 if __name__ == "__main__":
@@ -396,6 +405,8 @@ if __name__ == "__main__":
     print(datetime.datetime.now())
 
     print("args = {}".format(args))
+    print("OS: ".format(os.system("uname -a")))
+    print("TensorFlow version: {}".format(tf.__version__))
     start_time = time.time()
 
     train_and_predict(settings.OUT_PATH, settings.IMG_HEIGHT,
