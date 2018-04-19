@@ -317,7 +317,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     else:
         model_fn = os.path.join(data_path, "unet_model_transposed.hdf5")
 
-    print("Writing model to ", model_fn)
+    print("Writing model to '{}'".format(model_fn))
 
     model_checkpoint = K.callbacks.ModelCheckpoint(model_fn,
                                                    monitor="loss",
@@ -396,8 +396,10 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         msks_test,
         batch_size=batch_size,
         verbose=2)
-    print("{:.3f} images per second inference".format(
-        imgs_test.shape[0] / (time.time() - start_inference)))
+
+    elapsed_time = time.time() - start_inference
+    print("{} images in {:.2f} seconds = {:.3f} images per second inference".format(
+        imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
     print("Evaluation Scores", scores)
 
 
