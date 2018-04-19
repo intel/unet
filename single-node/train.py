@@ -373,7 +373,10 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("-" * 30)
     print("Loading the best trained model ...")
     print("-" * 30)
-    model = K.models.load_model(model_checkpoint)
+    model = K.models.load_model(
+        model_fn, custom_objects={
+            "dice_coef_loss": dice_coef_loss,
+            "dice_coef": dice_coef})
 
     print("-" * 30)
     print("Predicting masks on test data...")
@@ -393,16 +396,15 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         msks_test,
         batch_size=batch_size,
         verbose=2)
-    print("{:.3f} images per second inference".format(imgs_test.shape[0]
-                                            /(time.time()-start_inference)))
+    print("{:.3f} images per second inference".format(
+        imgs_test.shape[0] / (time.time() - start_inference)))
     print("Evaluation Scores", scores)
-
 
 
 if __name__ == "__main__":
 
     import datetime
-    print("Start script at {}".format(datetime.datetime.now()))
+    print("Started script on {}".format(datetime.datetime.now()))
 
     print("args = {}".format(args))
     print("OS: ".format(os.system("uname -a")))
@@ -419,4 +421,4 @@ if __name__ == "__main__":
         "Total time elapsed for program = {} seconds".format(
             time.time() -
             start_time))
-    print("Stop script at {}".format(datetime.datetime.now()))
+    print("Stopped script on {}".format(datetime.datetime.now()))

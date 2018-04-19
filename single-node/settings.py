@@ -43,7 +43,7 @@ MODE=1  # 1, 2, or 3
 import psutil
 BLOCKTIME = 0
 NUM_INTER_THREADS = 2
-NUM_INTRA_THREADS = psutil.cpu_count(logical=False) - 1
+NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 
 CHANNELS_FIRST = False
 USE_KERAS_API = False
