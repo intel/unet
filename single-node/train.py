@@ -405,6 +405,9 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
 if __name__ == "__main__":
 
+    import commands
+    print ("{}".format(commands.getstatusoutput("lscpu")[1]))
+
     import datetime
     print("Started script on {}".format(datetime.datetime.now()))
 
