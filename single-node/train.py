@@ -412,7 +412,7 @@ if __name__ == "__main__":
     print("Started script on {}".format(datetime.datetime.now()))
 
     print("args = {}".format(args))
-    print("OS: ".format(os.system("uname -a")))
+    print("OS: {}".format(os.system("uname -a")))
     print("TensorFlow version: {}".format(tf.__version__))
     start_time = time.time()
 
