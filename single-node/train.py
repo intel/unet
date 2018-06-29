@@ -152,15 +152,13 @@ from preprocess import *
 import settings
 
 
-def dice_coef(y_true, y_pred, smooth=1.):
-
-    y_true_f = K.backend.flatten(y_true)
-    y_pred_f = K.backend.flatten(y_pred)
-    intersection = K.backend.sum(y_true_f * y_pred_f)
-    coef = (2. * intersection + smooth) / \
-        (K.backend.sum(y_true_f) + K.backend.sum(y_pred_f) + smooth)
-
-    return coef
+def dice_coef(y_true, y_pred, smooth=1.0):
+   intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
+   union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
+   numerator = tf.constant(2.) * intersection + smooth
+   denominator = union + smooth
+   coef = numerator / denominator
+   return tf.reduce_mean(coef)
 
 
 def dice_coef_loss(y_true, y_pred, smooth=1.):
