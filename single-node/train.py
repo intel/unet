@@ -38,6 +38,10 @@ import psutil
 import settings    # Use the custom settings.py file for default parameters
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", default=settings.DATA_PATH,
+                    help="the path to the data")
+parser.add_argument("--output_path", default=settings.OUT_PATH,
+                    help="the folder to save the model and checkpoints")
 parser.add_argument("--use_upsampling",
                     help="use upsampling instead of transposed convolution",
                     action="store_true", default=settings.USE_UPSAMPLING)
@@ -311,9 +315,9 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     model = unet_model(img_height, img_width, input_no, output_no)
 
     if (args.use_upsampling):
-        model_fn = os.path.join(data_path, "unet_model_upsampling.hdf5")
+        model_fn = os.path.join(args.output_path, "unet_model_upsampling.hdf5")
     else:
-        model_fn = os.path.join(data_path, "unet_model_transposed.hdf5")
+        model_fn = os.path.join(args.output_path, "unet_model_transposed.hdf5")
 
     print("Writing model to '{}'".format(model_fn))
 
@@ -327,13 +331,15 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     if (args.use_upsampling):
         tensorboard_checkpoint = K.callbacks.TensorBoard(
-            log_dir="./keras_tensorboard_upsampling_batch{}/{}".format(
-                batch_size, directoryName),
+            log_dir=os.path.join(args.output_path,
+                "keras_tensorboard_upsampling_batch{}/{}".format(
+                batch_size, directoryName)),
             write_graph=True, write_images=True)
     else:
         tensorboard_checkpoint = K.callbacks.TensorBoard(
-            log_dir="./keras_tensorboard_transposed_batch{}/{}".format(
-                batch_size, directoryName),
+            log_dir=os.path.join(args.output_path,
+                "keras_tensorboard_transposed_batch{}/{}".format(
+                batch_size, directoryName)),
             write_graph=True, write_images=True)
 
     print("-" * 30)
@@ -403,18 +409,17 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
 if __name__ == "__main__":
 
-    import commands
-    print ("{}".format(commands.getstatusoutput("lscpu")[1]))
+    os.system("lscpu")
 
     import datetime
     print("Started script on {}".format(datetime.datetime.now()))
 
     print("args = {}".format(args))
-    print("OS: {}".format(os.system("uname -a")))
+    os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
     start_time = time.time()
 
-    train_and_predict(settings.OUT_PATH, settings.IMG_HEIGHT,
+    train_and_predict(args.data_path, settings.IMG_HEIGHT,
                       settings.IMG_WIDTH,
                       args.epochs, settings.NUM_IN_CHANNELS,
                       settings.NUM_OUT_CHANNELS,
