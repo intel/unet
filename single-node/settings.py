@@ -20,7 +20,7 @@
 
 import os
 
-DATA_PATH = os.path.join("../../../data/")
+DATA_PATH = os.path.join("../../data/Brats2018/128x128/")
 OUT_PATH  = os.path.join("./output/")
 
 IMG_HEIGHT = 128
@@ -29,10 +29,10 @@ IMG_WIDTH = 128
 NUM_IN_CHANNELS = 1
 NUM_OUT_CHANNELS = 1
 
-EPOCHS = 10
+EPOCHS = 15
 BATCH_SIZE = 128
-LEARNING_RATE = 0.0005
-PRINT_MODEL = False
+LEARNING_RATE = 0.0001
+PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
 # Mode 2: Use T1 Gd to identify the active tumor

@@ -181,7 +181,7 @@ def unet_model(img_height=224,
                img_width=224,
                num_chan_in=3,
                num_chan_out=3,
-               dropout=0.2):
+               dropout=0.2, final=False):
 
     if args.use_upsampling:
         print("Using UpSampling2D")
@@ -189,10 +189,10 @@ def unet_model(img_height=224,
         print("Using Transposed Deconvolution")
 
     if args.channels_first:
-        inputs = K.layers.Input((num_chan_in, img_height, img_width),
+        inputs = K.layers.Input((num_chan_in, None, None),
                                 name="Images")
     else:
-        inputs = K.layers.Input((img_height, img_width, num_chan_in),
+        inputs = K.layers.Input((None, None, num_chan_in),
                                 name="Images")
 
     # Convolution parameters
@@ -277,15 +277,23 @@ def unet_model(img_height=224,
 
     optimizer = K.optimizers.Adam(lr=args.learningrate)
 
+    if final:
+        metrics = ["accuracy"]
+        loss = "binary_crossentropy"
+        model.trainable = False
+    else:
+        metrics = ["accuracy", dice_coef]
+        loss = dice_coef_loss
+
     if args.trace:
         model.compile(optimizer=optimizer,
-                      loss=dice_coef_loss,
-                      metrics=["accuracy", dice_coef],
+                      loss=loss,
+                      metrics=metrics,
                       options=run_options, run_metadata=run_metadata)
     else:
         model.compile(optimizer=optimizer,
-                      loss=dice_coef_loss,
-                      metrics=["accuracy", dice_coef])
+                      loss=loss,
+                      metrics=metrics)
 
     return model
 
@@ -406,6 +414,18 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
     print("Evaluation Scores", scores)
 
+    # Save final model without custom loss and metrics
+    # This way we can easily re-load it into Keras for inference
+    model.save_weights("weights.h5")
+    model = unet_model(args, final=True)  # Model without Dice and custom metrics
+    model.load_weights("weights.h5")
+
+
+    if (args.use_upsampling):
+        model_fn = os.path.join(args.output_path, "unet_model_upsampling_for_inference.hdf5")
+    else:
+        model_fn = os.path.join(args.output_path, "unet_model_transposed_for_inference.hdf5")
+    model.save(model_fn)
 
 if __name__ == "__main__":
 
