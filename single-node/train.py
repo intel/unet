@@ -156,7 +156,7 @@ from preprocess import *
 import settings
 
 
-def dice_coef(y_true, y_pred, smooth=1.0):
+def dice_coef(y_true, y_pred, smooth=1.):
    intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
    union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
    numerator = tf.constant(2.) * intersection + smooth
@@ -170,7 +170,7 @@ def dice_coef_loss(y_true, y_pred, smooth=1.):
     y_true_f = K.backend.flatten(y_true)
     y_pred_f = K.backend.flatten(y_pred)
     intersection = K.backend.sum(y_true_f * y_pred_f)
-    loss = -K.backend.log(2.0 * intersection + smooth) + \
+    loss = -K.backend.log(2. * intersection + smooth) + \
         K.backend.log((K.backend.sum(y_true_f) +
                        K.backend.sum(y_pred_f) + smooth))
 
@@ -417,14 +417,16 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
     model.save_weights("weights.h5")
-    model = unet_model(args, final=True)  # Model without Dice and custom metrics
+    model = unet_model(img_height, img_width, input_no, output_no, final=True)  # Model without Dice and custom metrics
     model.load_weights("weights.h5")
-
 
     if (args.use_upsampling):
         model_fn = os.path.join(args.output_path, "unet_model_upsampling_for_inference.hdf5")
     else:
         model_fn = os.path.join(args.output_path, "unet_model_transposed_for_inference.hdf5")
+
+    print("Writing final model (without custom Dice metrics) for inference to {}".format(model_fn))
+    print("Please use that version for inference.")
     model.save(model_fn)
 
 if __name__ == "__main__":
