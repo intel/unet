@@ -205,68 +205,70 @@ def unet_model(img_height=224,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    conv1 = K.layers.Conv2D(name="conv1a", filters=32, **params)(inputs)
-    conv1 = K.layers.Conv2D(name="conv1b", filters=32, **params)(conv1)
+    fms = 64
+
+    conv1 = K.layers.Conv2D(name="conv1a", filters=fms, **params)(inputs)
+    conv1 = K.layers.Conv2D(name="conv1b", filters=fms, **params)(conv1)
     pool1 = K.layers.MaxPooling2D(name="pool1", pool_size=(2, 2))(conv1)
 
-    conv2 = K.layers.Conv2D(name="conv2a", filters=64, **params)(pool1)
-    conv2 = K.layers.Conv2D(name="conv2b", filters=64, **params)(conv2)
+    conv2 = K.layers.Conv2D(name="conv2a", filters=fms*2, **params)(pool1)
+    conv2 = K.layers.Conv2D(name="conv2b", filters=fms*2, **params)(conv2)
     pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
 
-    conv3 = K.layers.Conv2D(name="conv3a", filters=128, **params)(pool2)
+    conv3 = K.layers.Conv2D(name="conv3a", filters=fms*4, **params)(pool2)
     conv3 = K.layers.Dropout(dropout)(conv3)
-    conv3 = K.layers.Conv2D(name="conv3b", filters=128, **params)(conv3)
+    conv3 = K.layers.Conv2D(name="conv3b", filters=fms*4, **params)(conv3)
 
     pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
 
-    conv4 = K.layers.Conv2D(name="conv4a", filters=256, **params)(pool3)
+    conv4 = K.layers.Conv2D(name="conv4a", filters=fms*8, **params)(pool3)
     conv4 = K.layers.Dropout(dropout)(conv4)
-    conv4 = K.layers.Conv2D(name="conv4b", filters=256, **params)(conv4)
+    conv4 = K.layers.Conv2D(name="conv4b", filters=fms*8, **params)(conv4)
 
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
 
-    conv5 = K.layers.Conv2D(name="conv5a", filters=512, **params)(pool4)
-    conv5 = K.layers.Conv2D(name="conv5b", filters=512, **params)(conv5)
+    conv5 = K.layers.Conv2D(name="conv5a", filters=fms*16, **params)(pool4)
+    conv5 = K.layers.Conv2D(name="conv5b", filters=fms*8, **params)(conv5)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
     else:
-        up = K.layers.Conv2DTranspose(name="transConv6", filters=256,
+        up = K.layers.Conv2DTranspose(name="transConv6", filters=fms*8,
                                       **params_trans)(conv5)
     up6 = K.layers.concatenate([up, conv4], axis=concat_axis)
 
-    conv6 = K.layers.Conv2D(name="conv6a", filters=256, **params)(up6)
-    conv6 = K.layers.Conv2D(name="conv6b", filters=256, **params)(conv6)
+    conv6 = K.layers.Conv2D(name="conv6a", filters=fms*8, **params)(up6)
+    conv6 = K.layers.Conv2D(name="conv6b", filters=fms*4, **params)(conv6)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
     else:
-        up = K.layers.Conv2DTranspose(name="transConv7", filters=128,
+        up = K.layers.Conv2DTranspose(name="transConv7", filters=fms*4,
                                       **params_trans)(conv6)
     up7 = K.layers.concatenate([up, conv3], axis=concat_axis)
 
-    conv7 = K.layers.Conv2D(name="conv7a", filters=128, **params)(up7)
-    conv7 = K.layers.Conv2D(name="conv7b", filters=128, **params)(conv7)
+    conv7 = K.layers.Conv2D(name="conv7a", filters=fms*4, **params)(up7)
+    conv7 = K.layers.Conv2D(name="conv7b", filters=fms*2, **params)(conv7)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
     else:
-        up = K.layers.Conv2DTranspose(name="transConv8", filters=64,
+        up = K.layers.Conv2DTranspose(name="transConv8", filters=fms*2,
                                       **params_trans)(conv7)
     up8 = K.layers.concatenate([up, conv2], axis=concat_axis)
 
-    conv8 = K.layers.Conv2D(name="conv8a", filters=64, **params)(up8)
-    conv8 = K.layers.Conv2D(name="conv8b", filters=64, **params)(conv8)
+    conv8 = K.layers.Conv2D(name="conv8a", filters=fms*2, **params)(up8)
+    conv8 = K.layers.Conv2D(name="conv8b", filters=fms, **params)(conv8)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
     else:
-        up = K.layers.Conv2DTranspose(name="transConv9", filters=32,
+        up = K.layers.Conv2DTranspose(name="transConv9", filters=fms,
                                       **params_trans)(conv8)
     up9 = K.layers.concatenate([up, conv1], axis=concat_axis)
 
-    conv9 = K.layers.Conv2D(name="conv9a", filters=32, **params)(up9)
-    conv9 = K.layers.Conv2D(name="conv9b", filters=32, **params)(conv9)
+    conv9 = K.layers.Conv2D(name="conv9a", filters=fms, **params)(up9)
+    conv9 = K.layers.Conv2D(name="conv9b", filters=fms, **params)(conv9)
 
     prediction = K.layers.Conv2D(name="PredictionMask",
                                  filters=num_chan_out, kernel_size=(1, 1),
