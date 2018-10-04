@@ -228,7 +228,7 @@ def unet_model(img_height=224,
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
 
     conv5 = K.layers.Conv2D(name="conv5a", filters=fms*16, **params)(pool4)
-    conv5 = K.layers.Conv2D(name="conv5b", filters=fms*8, **params)(conv5)
+    conv5 = K.layers.Conv2D(name="conv5b", filters=fms*16, **params)(conv5)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
@@ -238,7 +238,7 @@ def unet_model(img_height=224,
     up6 = K.layers.concatenate([up, conv4], axis=concat_axis)
 
     conv6 = K.layers.Conv2D(name="conv6a", filters=fms*8, **params)(up6)
-    conv6 = K.layers.Conv2D(name="conv6b", filters=fms*4, **params)(conv6)
+    conv6 = K.layers.Conv2D(name="conv6b", filters=fms*8, **params)(conv6)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
@@ -248,7 +248,7 @@ def unet_model(img_height=224,
     up7 = K.layers.concatenate([up, conv3], axis=concat_axis)
 
     conv7 = K.layers.Conv2D(name="conv7a", filters=fms*4, **params)(up7)
-    conv7 = K.layers.Conv2D(name="conv7b", filters=fms*2, **params)(conv7)
+    conv7 = K.layers.Conv2D(name="conv7b", filters=fms*4, **params)(conv7)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
@@ -258,7 +258,7 @@ def unet_model(img_height=224,
     up8 = K.layers.concatenate([up, conv2], axis=concat_axis)
 
     conv8 = K.layers.Conv2D(name="conv8a", filters=fms*2, **params)(up8)
-    conv8 = K.layers.Conv2D(name="conv8b", filters=fms, **params)(conv8)
+    conv8 = K.layers.Conv2D(name="conv8b", filters=fms*2, **params)(conv8)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
