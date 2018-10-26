@@ -14,7 +14,7 @@ def dice_score(pred, truth):
     return numerator / denominator
 
 with tf.Session() as sess:
-  saver = tf.train.import_meta_graph("tf_checkpoint/unet_model.ckpt.meta")
+  saver = tf.train.import_meta_graph("tf_checkpoint/unet_model.meta")
   saver.restore(sess, tf.train.latest_checkpoint("tf_checkpoint"))
   graph = tf.get_default_graph()
 

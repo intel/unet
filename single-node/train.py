@@ -188,12 +188,21 @@ def unet_model(img_height=224,
     else:
         print("Using Transposed Deconvolution")
 
-    if args.channels_first:
-        inputs = K.layers.Input((num_chan_in, None, None),
-                                name="Images")
+    if final:
+        if args.channels_first:
+            inputs = K.layers.Input(batch_shape=(1, num_chan_in, 128, 128),
+                                    name="Images")
+        else:
+            inputs = K.layers.Input(batch_shape=(1, 128, 128, num_chan_in),
+                                    name="Images")
     else:
-        inputs = K.layers.Input((None, None, num_chan_in),
-                                name="Images")
+        if args.channels_first:
+            inputs = K.layers.Input((num_chan_in, 128, 128),
+                                    name="Images")
+        else:
+            inputs = K.layers.Input((128, 128, num_chan_in),
+                                    name="Images")
+
 
     # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
@@ -216,13 +225,13 @@ def unet_model(img_height=224,
     pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
 
     conv3 = K.layers.Conv2D(name="conv3a", filters=fms*4, **params)(pool2)
-    conv3 = K.layers.Dropout(dropout)(conv3)
+    #conv3 = K.layers.Dropout(dropout)(conv3)
     conv3 = K.layers.Conv2D(name="conv3b", filters=fms*4, **params)(conv3)
 
     pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
 
     conv4 = K.layers.Conv2D(name="conv4a", filters=fms*8, **params)(pool3)
-    conv4 = K.layers.Dropout(dropout)(conv4)
+    #conv4 = K.layers.Dropout(dropout)(conv4)
     conv4 = K.layers.Conv2D(name="conv4b", filters=fms*8, **params)(conv4)
 
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
@@ -280,22 +289,20 @@ def unet_model(img_height=224,
     optimizer = K.optimizers.Adam(lr=args.learningrate)
 
     if final:
-        metrics = ["accuracy"]
-        loss = "binary_crossentropy"
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
         loss = dice_coef_loss
 
-    if args.trace:
-        model.compile(optimizer=optimizer,
-                      loss=loss,
-                      metrics=metrics,
-                      options=run_options, run_metadata=run_metadata)
-    else:
-        model.compile(optimizer=optimizer,
-                      loss=loss,
-                      metrics=metrics)
+        if args.trace:
+            model.compile(optimizer=optimizer,
+                          loss=loss,
+                          metrics=metrics,
+                          options=run_options, run_metadata=run_metadata)
+        else:
+            model.compile(optimizer=optimizer,
+                          loss=loss,
+                          metrics=metrics)
 
     return model
 
@@ -307,16 +314,16 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("Loading and preprocessing train data...")
     print("-" * 40)
 
-    imgs_train, msks_train = load_data(data_path, "_train")
-    imgs_train, msks_train = update_channels(imgs_train, msks_train,
-                                             input_no, output_no, mode)
+    imgs_train, msks_train = load_data(data_path, "_train_norm")
+    # imgs_train, msks_train = update_channels(imgs_train, msks_train,
+    #                                          input_no, output_no, mode)
 
     print("-" * 40)
     print("Loading and preprocessing test data...")
     print("-" * 40)
-    imgs_test, msks_test = load_data(data_path, "_test")
-    imgs_test, msks_test = update_channels(imgs_test, msks_test,
-                                           input_no, output_no, mode)
+    imgs_test, msks_test = load_data(data_path, "_test_norm")
+    # imgs_test, msks_test = update_channels(imgs_test, msks_test,
+    #                                        input_no, output_no, mode)
 
     print("-" * 30)
     print("Creating and compiling model...")
@@ -418,9 +425,15 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
-    model.save_weights("weights.h5")
+    model.save_weights(os.path.join(args.output_path,"weights.hdf5"))
     model = unet_model(img_height, img_width, input_no, output_no, final=True)  # Model without Dice and custom metrics
-    model.load_weights("weights.h5")
+    model.load_weights(os.path.join(args.output_path,"weights.hdf5"))
+
+    model_json = model.to_json()
+    with open(os.path.join(args.output_path,"model.json"), "w") as json_file:
+        json_file.write(model_json)
+
+    model.save_weights(os.path.join(args.output_path,"weights.hdf5"))
 
     if (args.use_upsampling):
         model_fn = os.path.join(args.output_path, "unet_model_upsampling_for_inference.hdf5")
@@ -429,7 +442,25 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     print("Writing final model (without custom Dice metrics) for inference to {}".format(model_fn))
     print("Please use that version for inference.")
-    model.save(model_fn)
+    model.save(model_fn, include_optimizer=False)
+
+    sess = K.backend.get_session()
+
+    model = K.models.load_model(model_fn)
+
+    K.backend.set_learning_phase(0)
+
+    saver = tf.train.Saver()
+
+    directory = os.path.join(args.output_path, "tf_checkpoint")
+    try:
+        os.stat(directory)
+    except:
+        os.mkdir(directory)
+
+    save_path = saver.save(sess, os.path.join(directory, "unet_model"))
+    print("Checkpoint saved in path: {}".format(save_path))
+
 
 if __name__ == "__main__":
 
