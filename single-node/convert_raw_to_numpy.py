@@ -41,12 +41,8 @@ parser.add_argument("--save_path",
 parser.add_argument("--resize", type=int, default=128,
                     help="Resize height and width to this size. "
                     "Original size = 240")
-parser.add_argument("--rotate", type=int, default=3,
-                    help="Number of counter-clockwise, 90 degree rotations")
 parser.add_argument("--split", type=float, default=0.85,
                     help="Train/test split ratio")
-parser.add_argument("--save_interval", type=int, default=25,
-                    help="Interval between images to save file.")
 
 args = parser.parse_args()
 
@@ -104,49 +100,61 @@ def normalize_img(img):
     return img
 
 # Save training set images
-imgsArray = []
-
 print("Step 1 of 4. Save training images.")
+first = True
 for idx in tqdm(trainList):
 
     img = np.array(nib.load(imgList[idx]).dataobj)
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)
 
-    imgsArray.append(img[:,:,:,2]) # Just save FLAIR channel
+    if first:
+        imgsArray = np.array(img[:,:,:,2])
+        first = False
+    else:
+        imgsArray = np.concatenate([imgsArray, img[:,:,:,2]], axis=2) # Just save FLAIR channel
 
-np.save(os.path.join(save_dir, "imgs_train.npy"), imgsArray)
+np.save(os.path.join(save_dir, "imgs_train.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
 
 del imgsArray
 
 # Save testing set images
-imgsArray = []
 
 print("Step 2 of 4. Save testing images.")
+first = True
 for idx in tqdm(testList):
 
     img = np.array(nib.load(imgList[idx]).dataobj)
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)
 
-    imgsArray.append(img[:,:,:,2]) # Just save FLAIR channel
+    if first:
+        imgsArray = np.array(img[:,:,:,2])
+        first = False
+    else:
+        imgsArray = np.concatenate([imgsArray, img[:,:,:,2]], axis=2) # Just save FLAIR channel
 
-np.save(os.path.join(save_dir, "imgs_test.npy"), imgsArray)
-
+np.save(os.path.join(save_dir, "imgs_test.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
 
 # Save training set masks
 msksArray = []
 
 print("Step 3 of 4. Save training masks.")
+first = True
 for idx in tqdm(trainList):
 
     msk = np.array(nib.load(mskList[idx]).dataobj)
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
-    msksArray.append(msk)
+    if first:
+        msksArray = np.array(msk)
+        first = False
+    else:
+        msksArray = np.concatenate([msksArray, np.array(msk)], axis=1)
 
-np.save(os.path.join(save_dir, "msks_train.npy"), msksArray)
+
+np.save(os.path.join(save_dir, "msks_train.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 
 del msksArray
 
@@ -154,14 +162,19 @@ del msksArray
 msksArray = []
 
 print("Step 4 of 4. Save testing masks.")
+first = True
 for idx in tqdm(testList):
 
     msk = np.array(nib.load(mskList[idx]).dataobj)
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
-    msksArray.append(msk)
+    if first:
+        msksArray = np.array(msk)
+        first = False
+    else:
+        msksArray = np.concatenate([msksArray, np.array(msk)], axis=1)
 
-np.save(os.path.join(save_dir, "msks_test.npy"), msksArray)
+np.save(os.path.join(save_dir, "msks_test.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 
 del msksArray
 

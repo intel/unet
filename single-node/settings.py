@@ -20,7 +20,9 @@
 
 import os
 
-DATA_PATH = os.path.join("/nfs/pdx/home/ganthony/data/BraTS2016")
+DATA_PATH = os.path.join("../../data/Brats2016/128x128/")
+#DATA_PATH = os.path.join("../../data/decathlon/128x128/")
+
 OUT_PATH  = os.path.join("./output/")
 
 IMG_HEIGHT = 128
@@ -31,7 +33,7 @@ NUM_OUT_CHANNELS = 1
 
 EPOCHS = 15
 BATCH_SIZE = 128
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 0.0002
 PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
@@ -46,6 +48,6 @@ NUM_INTER_THREADS = 1
 NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 
 CHANNELS_FIRST = False
-USE_KERAS_API = False
+USE_KERAS_API = True
 USE_UPSAMPLING = False
 CREATE_TRACE_TIMELINE=False

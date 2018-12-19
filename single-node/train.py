@@ -34,6 +34,8 @@
 
 # numactl -p 1 python train.py --num_threads=50 --num_inter_threads=2
 # --batch_size=128 --blocktime=0
+#import ngraph_bridge
+
 import psutil
 import settings    # Use the custom settings.py file for default parameters
 import argparse
@@ -96,7 +98,7 @@ if (args.blocktime > 1000):
 else:
     blocktime = str(args.blocktime)
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+#os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 os.environ["KMP_BLOCKTIME"] = blocktime
 os.environ["KMP_AFFINITY"] = "compact,1,0,granularity=fine"
@@ -214,7 +216,7 @@ def unet_model(img_height=224,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    fms = 64
+    fms = 32
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=fms, **params)(inputs)
     conv1 = K.layers.Conv2D(name="conv1b", filters=fms, **params)(conv1)
