@@ -153,8 +153,6 @@ for idx in tqdm(trainList):
     else:
         msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
 
-    print(msksArray.shape)
-
 np.save(os.path.join(save_dir, "msks_train.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 
 del msksArray
@@ -175,8 +173,6 @@ for idx in tqdm(testList):
         first = False
     else:
         msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
-
-    print(msksArray.shape)
 
 np.save(os.path.join(save_dir, "msks_test.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 
