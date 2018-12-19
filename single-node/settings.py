@@ -20,8 +20,8 @@
 
 import os
 
-DATA_PATH = os.path.join("../../data/Brats2016/128x128/")
-#DATA_PATH = os.path.join("../../data/decathlon/128x128/")
+#DATA_PATH = os.path.join("../../data/Brats2016/128x128/")
+DATA_PATH = os.path.join("../../data/decathlon/128x128/")
 
 OUT_PATH  = os.path.join("./output/")
 

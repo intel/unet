@@ -151,8 +151,9 @@ for idx in tqdm(trainList):
         msksArray = np.array(msk)
         first = False
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=1)
+        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
 
+    print(msksArray.shape)
 
 np.save(os.path.join(save_dir, "msks_train.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 
@@ -168,11 +169,14 @@ for idx in tqdm(testList):
     msk = np.array(nib.load(mskList[idx]).dataobj)
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
+    msk[msk > 1] = 1 # Combine all masks
     if first:
         msksArray = np.array(msk)
         first = False
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=1)
+        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
+
+    print(msksArray.shape)
 
 np.save(os.path.join(save_dir, "msks_test.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
 

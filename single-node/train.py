@@ -316,14 +316,14 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("Loading and preprocessing train data...")
     print("-" * 40)
 
-    imgs_train, msks_train = load_data(data_path, "_train_norm")
+    imgs_train, msks_train = load_data(data_path, "_train") #_norm")
     # imgs_train, msks_train = update_channels(imgs_train, msks_train,
     #                                          input_no, output_no, mode)
 
     print("-" * 40)
     print("Loading and preprocessing test data...")
     print("-" * 40)
-    imgs_test, msks_test = load_data(data_path, "_test_norm")
+    imgs_test, msks_test = load_data(data_path, "_test") #_norm")
     # imgs_test, msks_test = update_channels(imgs_test, msks_test,
     #                                        input_no, output_no, mode)
 
