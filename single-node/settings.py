@@ -33,7 +33,7 @@ NUM_OUT_CHANNELS = 1
 
 EPOCHS = 15
 BATCH_SIZE = 256
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.0001
 PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
