@@ -312,21 +312,34 @@ def unet_model(img_height=224,
 def train_and_predict(data_path, img_height, img_width, n_epoch,
                       input_no=3, output_no=3, mode=1):
 
-    print("-" * 40)
-    print("Loading and preprocessing train data...")
-    print("-" * 40)
-
-    imgs_train, msks_train = load_data(data_path, "_train") #_norm")
-    # imgs_train, msks_train = update_channels(imgs_train, msks_train,
-    #                                          input_no, output_no, mode)
-
-    print("-" * 40)
-    print("Loading and preprocessing test data...")
-    print("-" * 40)
-    imgs_test, msks_test = load_data(data_path, "_test") #_norm")
+    # print("-" * 40)
+    # print("Loading and preprocessing train data...")
+    # print("-" * 40)
+    #
+    # imgs_train, msks_train = load_data(data_path, "_train") #_norm")
+    # # imgs_train, msks_train = update_channels(imgs_train, msks_train,
+    # #                                          input_no, output_no, mode)
+    #
+    # print("-" * 40)
+    # print("Loading and preprocessing test data...")
+    # print("-" * 40)
+    # imgs_test, msks_test = load_data(data_path, "_test") #_norm")
     # imgs_test, msks_test = update_channels(imgs_test, msks_test,
     #                                        input_no, output_no, mode)
 
+    import h5py
+    df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+
+    imgs_train = df["imgs_train"]
+    imgs_test = df["imgs_test"]
+    msks_train = df["msks_train"]
+    msks_test = df["msks_test"]
+
+    print(imgs_train.shape)
+    print(imgs_test.shape)
+    print(msks_train.shape)
+    print(msks_test.shape)
+    
     print("-" * 30)
     print("Creating and compiling model...")
     print("-" * 30)

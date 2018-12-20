@@ -167,7 +167,7 @@ for idx in tqdm(trainList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
-    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-2), -1)
+    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-1), -1)
     num_rows = msk.shape[0]
 
     if first:
@@ -193,7 +193,7 @@ for idx in tqdm(testList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
-    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-2), -1)
+    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-1), -1)
     num_rows = msk.shape[0]
 
     if first:
