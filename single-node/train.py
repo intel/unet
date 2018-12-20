@@ -335,11 +335,6 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     msks_train = df["msks_train"]
     msks_test = df["msks_test"]
 
-    print(imgs_train.shape)
-    print(imgs_test.shape)
-    print(msks_train.shape)
-    print(msks_test.shape)
-    
     print("-" * 30)
     print("Creating and compiling model...")
     print("-" * 30)
@@ -394,7 +389,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
                         batch_size=batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
-                        verbose=1,
+                        verbose=1, shuffle="batch",
                         callbacks=[model_checkpoint,
                                    tensorboard_checkpoint,
                                    plateau_callback])
