@@ -111,12 +111,12 @@ for idx in tqdm(trainList):
     img = normalize_img(img)
 
     if first:
-        imgsArray = np.array(img[:,:,:,2])
+        imgsArray = np.array(img)
         first = False
     else:
-        imgsArray = np.concatenate([imgsArray, img[:,:,:,2]], axis=2) # Just save FLAIR channel
+        imgsArray = np.concatenate([imgsArray, img], axis=2)
 
-np.save(os.path.join(save_dir, "imgs_train.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
+np.save(os.path.join(save_dir, "imgs_train.npy"), np.swapaxes(imgsArray,0,-1), -1)
 
 del imgsArray
 
@@ -132,12 +132,12 @@ for idx in tqdm(testList):
     img = normalize_img(img)
 
     if first:
-        imgsArray = np.array(img[:,:,:,2])
+        imgsArray = np.array(img)
         first = False
     else:
-        imgsArray = np.concatenate([imgsArray, img[:,:,:,2]], axis=2) # Just save FLAIR channel
+        imgsArray = np.concatenate([imgsArray, img], axis=2)
 
-np.save(os.path.join(save_dir, "imgs_test.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
+np.save(os.path.join(save_dir, "imgs_test.npy"), np.swapaxes(imgsArray,0,-1), -1)
 
 # Save training set masks
 msksArray = []

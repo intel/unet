@@ -216,7 +216,7 @@ def unet_model(img_height=224,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    fms = 32
+    fms = 64
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=fms, **params)(inputs)
     conv1 = K.layers.Conv2D(name="conv1b", filters=fms, **params)(conv1)
