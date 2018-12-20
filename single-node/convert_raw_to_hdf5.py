@@ -23,6 +23,7 @@ import nibabel as nib
 import numpy as np
 from tqdm import tqdm
 import glob
+import h5py
 
 import argparse
 
@@ -62,7 +63,7 @@ except OSError:
 # Check for existing numpy train/test files
 check_dir = os.listdir(save_dir)
 for item in check_dir:
-    if item.endswith(".npy"):
+    if item.endswith(".h5"):
         os.remove(os.path.join(save_dir, item))
         print("Removed old version of {}".format(item))
 
@@ -101,6 +102,9 @@ def normalize_img(img):
 
     return img
 
+filename = os.path.join(save_dir, "decathlon_brats.h5")
+hdf_file = h5py.File(filename, "w")
+
 # Save training set images
 print("Step 1 of 4. Save training images.")
 first = True
@@ -110,15 +114,22 @@ for idx in tqdm(trainList):
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)
 
+    img = np.swapaxes(np.array(img),0,-2)
+    num_rows = img.shape[0]
+
     if first:
-        imgsArray = np.array(img)
         first = False
+        img_train_dset = hdf_file.create_dataset("imgs_train",
+                         img.shape,
+                         maxshape=(None, img.shape[1],
+                         img.shape[2], img.shape[3]),
+                         dtype=float)
+        img_train_dset[:] = img
     else:
-        imgsArray = np.concatenate([imgsArray, img], axis=2)
+        row = img_train_dset.shape[0] # Count current dataset rows
+        img_train_dset.resize(row+num_rows, axis=0) # Add new row
+        img_train_dset[row:(row+num_rows), :] = img # Insert data into new row
 
-np.save(os.path.join(save_dir, "imgs_train.npy"), np.swapaxes(imgsArray,0,-1), -1)
-
-del imgsArray
 
 # Save testing set images
 
@@ -131,17 +142,23 @@ for idx in tqdm(testList):
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)
 
-    if first:
-        imgsArray = np.array(img)
-        first = False
-    else:
-        imgsArray = np.concatenate([imgsArray, img], axis=2)
+    img = np.swapaxes(np.array(img),0,-2)
+    num_rows = img.shape[0]
 
-np.save(os.path.join(save_dir, "imgs_test.npy"), np.swapaxes(imgsArray,0,-1), -1)
+    if first:
+        first = False
+        img_test_dset = hdf_file.create_dataset("imgs_test",
+                         img.shape,
+                         maxshape=(None, img.shape[1],
+                         img.shape[2], img.shape[3]),
+                         dtype=float)
+        img_test_dset[:] = img
+    else:
+        row = img_test_dset.shape[0] # Count current dataset rows
+        img_test_dset.resize(row+num_rows, axis=0) # Add new row
+        img_test_dset[row:(row+num_rows), :] = img # Insert data into new row
 
 # Save training set masks
-msksArray = []
-
 print("Step 3 of 4. Save training masks.")
 first = True
 for idx in tqdm(trainList):
@@ -150,18 +167,23 @@ for idx in tqdm(trainList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
+    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-2), -1)
+    num_rows = msk.shape[0]
+
     if first:
-        msksArray = np.array(msk)
         first = False
+        msk_train_dset = hdf_file.create_dataset("msks_train",
+                         msk.shape,
+                         maxshape=(None, msk.shape[1],
+                         msk.shape[2], msk.shape[3]),
+                         dtype=float)
+        msk_train_dset[:] = msk
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
-
-np.save(os.path.join(save_dir, "msks_train.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
-
-del msksArray
+        row = msk_train_dset.shape[0] # Count current dataset rows
+        msk_train_dset.resize(row+num_rows, axis=0) # Add new row
+        msk_train_dset[row:(row+num_rows), :] = msk # Insert data into new row
 
 # Save training set masks
-msksArray = []
 
 print("Step 4 of 4. Save testing masks.")
 first = True
@@ -171,15 +193,21 @@ for idx in tqdm(testList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
+    msk = np.expand_dims(np.swapaxes(np.array(msk),0,-2), -1)
+    num_rows = msk.shape[0]
+
     if first:
-        msksArray = np.array(msk)
         first = False
+        msk_test_dset = hdf_file.create_dataset("msks_test",
+                         msk.shape,
+                         maxshape=(None, msk.shape[1],
+                         msk.shape[2], msk.shape[3]),
+                         dtype=float)
+        msk_test_dset[:] = msk
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
-
-np.save(os.path.join(save_dir, "msks_test.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
-
-del msksArray
+        row = msk_test_dset.shape[0] # Count current dataset rows
+        msk_test_dset.resize(row+num_rows, axis=0) # Add new row
+        msk_test_dset[row:(row+num_rows), :] = msk # Insert data into new row
 
 print("Finished processing.")
-print("Numpy arrays saved to {}".format(save_dir))
+print("HDF5 saved to {}".format(filename))
