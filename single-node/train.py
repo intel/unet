@@ -344,6 +344,9 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
                                                    monitor="loss",
                                                    save_best_only=True)
 
+    plateau_callback = K.callbacks.ReduceLROnPlateau(monitor="val_loss",
+                factor=0.9, patience=3, verbose=1, min_lr=0.00001)
+
     directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
                                                           num_threads,
                                                           num_inter_op_threads)
@@ -379,7 +382,9 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
                         verbose=1,
-                        callbacks=[model_checkpoint, tensorboard_checkpoint])
+                        callbacks=[model_checkpoint,
+                                   tensorboard_checkpoint,
+                                   plateau_callback])
 
     if args.trace:
         """
