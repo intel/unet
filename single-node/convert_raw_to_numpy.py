@@ -87,10 +87,12 @@ def crop_center(img,cropx,cropy,cropz):
     starty = y//2-(cropy//2)
     startz = z//2-(cropz//2)
 
+    # Let's just take the entire z slices since
+    # we are doing 2D anyway.
     if len(img.shape) == 4:
-        return img[startx:startx+cropx,starty:starty+cropy,startz:startz+cropz,:]
+        return img[startx:startx+cropx,starty:starty+cropy,:,:]
     else:
-        return img[startx:startx+cropx,starty:starty+cropy,startz:startz+cropz]
+        return img[startx:startx+cropx,starty:starty+cropy,:]
 
 def normalize_img(img):
 
@@ -124,6 +126,7 @@ print("Step 2 of 4. Save testing images.")
 first = True
 for idx in tqdm(testList):
 
+    # Nibabel should read the file as X,Y,Z,C
     img = np.array(nib.load(imgList[idx]).dataobj)
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)

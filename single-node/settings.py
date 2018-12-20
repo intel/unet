@@ -32,8 +32,8 @@ NUM_IN_CHANNELS = 1
 NUM_OUT_CHANNELS = 1
 
 EPOCHS = 15
-BATCH_SIZE = 128
-LEARNING_RATE = 0.0002
+BATCH_SIZE = 256
+LEARNING_RATE = 0.0005
 PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
@@ -49,5 +49,5 @@ NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True
-USE_UPSAMPLING = False
+USE_UPSAMPLING = True
 CREATE_TRACE_TIMELINE=False
