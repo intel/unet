@@ -159,7 +159,7 @@ def dice_coef(y_true, y_pred, smooth=1.):
     numerator = tf.constant(2.) * intersection + smooth
     denominator = union + smooth
     coef = numerator / denominator
-    
+
     return tf.reduce_mean(coef)
 
 def dice_coef_loss(y_true, y_pred, smooth=1.):
@@ -226,13 +226,13 @@ def unet_model(img_height=128,
     pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
 
     conv3 = K.layers.Conv2D(name="conv3a", filters=fms*4, **params)(pool2)
-    conv3 = K.layers.Dropout(dropout)(conv3)
+    conv3 = K.layers.SpatialDropout2D(dropout, data_format=data_format)(conv3)
     conv3 = K.layers.Conv2D(name="conv3b", filters=fms*4, **params)(conv3)
 
     pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
 
     conv4 = K.layers.Conv2D(name="conv4a", filters=fms*8, **params)(pool3)
-    conv4 = K.layers.Dropout(dropout)(conv4)
+    conv4 = K.layers.SpatialDropout2D(dropout, data_format=data_format)(conv4)
     conv4 = K.layers.Conv2D(name="conv4b", filters=fms*8, **params)(conv4)
 
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
