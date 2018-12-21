@@ -29,8 +29,8 @@ OUT_PATH = os.path.join("./output/")
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
 
-NUM_IN_CHANNELS = 4
-NUM_OUT_CHANNELS = 1
+NUM_IN_CHANNELS = 4  # How many channels from the MRI to use
+NUM_OUT_CHANNELS = 1  # If 1, then predict the combined tumor masks
 
 EPOCHS = 30
 BATCH_SIZE = 128
@@ -42,12 +42,12 @@ PRINT_MODEL = True
 # Mode 3: Use T2 to identify the active core (necrosis, enhancing, non-enh)
 MODE = 1  # 1, 2, or 3
 
-
 BLOCKTIME = 1
 NUM_INTER_THREADS = 1
+# Default is to use the number of physical cores available
 NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 
 CHANNELS_FIRST = False
-USE_KERAS_API = True
-USE_UPSAMPLING = True
+USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
+USE_UPSAMPLING = True  # If true, then use bilinear interpolation. Otherwise, transposed convolution
 CREATE_TRACE_TIMELINE = False

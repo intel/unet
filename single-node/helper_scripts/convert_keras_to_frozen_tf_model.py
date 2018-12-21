@@ -19,11 +19,7 @@
 #
 
 import os
-import sys
-
 import argparse
-
-from pathlib import Path
 
 import tensorflow as tf
 from tensorflow.python.framework import graph_util
@@ -47,18 +43,6 @@ parser.add_argument("--output_directory",
 
 argv = parser.parse_args()
 
-def setKerasOptions():
-    """
-    Tell Keras that we want to remove the training ops and
-    just do inference. Also, sets the data to channel last
-    (NHWC) which is faster on most hardware.
-    """
-    K.backend._LEARNING_PHASE = tf.constant(0)
-    K.backend.set_learning_phase(False)
-    K.backend.set_learning_phase(0)
-    K.backend.set_image_data_format("channels_last")
-    print("Setting to channels last data format (NHWC).")
-
 def export_keras_to_tf(input_model, output_model):
     """
     Load the Keras model. Use the TF graph conversion utilities
@@ -68,6 +52,15 @@ def export_keras_to_tf(input_model, output_model):
     print("Loading Keras model: ", input_model)
 
     keras_model = K.models.load_model(input_model)
+
+    """
+    Tell Keras that we want to remove the training ops and
+    just do inference. Also, sets the data to channel last
+    (NHWC) which is faster on most hardware.
+    """
+    K.backend.set_learning_phase(0)
+    K.backend.set_image_data_format("channels_last")
+    print("Setting to channels last data format (NHWC).")
 
     num_outputs = len(keras_model.outputs)
 
@@ -91,8 +84,10 @@ def export_keras_to_tf(input_model, output_model):
 def main():
 
     input_model = argv.input_model
+
+    out_filename = os.path.splitext(os.path.basename(input_model))[0] + ".pb"
     output_model = os.path.join(argv.output_directory,
-                   str(Path(input_model).name) + ".pb")
+                   out_filename)
 
     prediction_node_names = export_keras_to_tf(input_model, output_model)
 
