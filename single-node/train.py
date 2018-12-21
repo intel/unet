@@ -186,10 +186,10 @@ def unet_model(img_height=128,
 
     if args.channels_first:
         inputs = K.layers.Input((num_chan_in, img_height, img_width),
-                                name="Images")
+                                name="MRImages")
     else:
         inputs = K.layers.Input((img_height, img_width, num_chan_in),
-                                name="Images")
+                                name="MRImages")
 
     # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
@@ -198,6 +198,7 @@ def unet_model(img_height=128,
 
     # Transposed convolution parameters
     params_trans = dict(data_format=data_format,
+                        activation="relu",
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
@@ -212,13 +213,13 @@ def unet_model(img_height=128,
     pool2 = K.layers.MaxPooling2D(name="pool2", pool_size=(2, 2))(conv2)
 
     conv3 = K.layers.Conv2D(name="conv3a", filters=fms*4, **params)(pool2)
-    #conv3 = K.layers.Dropout(dropout)(conv3)
+    conv3 = K.layers.Dropout(dropout)(conv3)
     conv3 = K.layers.Conv2D(name="conv3b", filters=fms*4, **params)(conv3)
 
     pool3 = K.layers.MaxPooling2D(name="pool3", pool_size=(2, 2))(conv3)
 
     conv4 = K.layers.Conv2D(name="conv4a", filters=fms*8, **params)(pool3)
-    #conv4 = K.layers.Dropout(dropout)(conv4)
+    conv4 = K.layers.Dropout(dropout)(conv4)
     conv4 = K.layers.Conv2D(name="conv4b", filters=fms*8, **params)(conv4)
 
     pool4 = K.layers.MaxPooling2D(name="pool4", pool_size=(2, 2))(conv4)
