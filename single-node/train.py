@@ -406,26 +406,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     print("Validation image dimensions: {}".format(imgs_test.shape))
     print("Validation mask dimensions:  {}".format(msks_test.shape))
 
-    """
-    Image and mask augmentation
-    This will create random rotations, flips, etc. to both
-    the images and masks during training.
-    """
-    data_gen_args = dict(
-                     shear_range=(-1,1), # Random shear angle in degrees
-                     rotation_range=90    # Random rotation in degrees
-                     )
-    image_datagen = K.preprocessing.image.ImageDataGenerator(**data_gen_args)
-    mask_datagen = K.preprocessing.image.ImageDataGenerator(**data_gen_args)
-
-    # Provide the same seed and keyword arguments to the fit
-    # If the random seed is the same for both then they will
-    # have the same random augmentations applied.
-    seed = 816
-    image_datagen.fit(imgs_train, augment=True, seed=seed)
-    mask_datagen.fit(msks_train, augment=True, seed=seed)
-
-    history = model.fit(image_datagen, mask_datagen,
+    history = model.fit(imgs_train, msks_train,
                         batch_size=args.batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
