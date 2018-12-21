@@ -322,30 +322,30 @@ def load_data_from_numpy(data_path, prefix = "_train"):
 def train_and_predict(data_path, img_height, img_width, n_epoch,
                       input_no=3, output_no=3, mode=1):
 
-    """
-    Load data from Numpy data files
-    """
-    print("-" * 30)
-    print("Loading train data...")
-    print("-" * 30)
-
-    imgs_train, msks_train = load_data_from_numpy(data_path, "_train")  # _norm")
-
-    print("-" * 30)
-    print("Loading test data...")
-    print("-" * 30)
-    imgs_test, msks_test = load_data_from_numpy(data_path, "_test")  # _norm")
+    # """
+    # Load data from Numpy data files
+    # """
+    # print("-" * 30)
+    # print("Loading train data...")
+    # print("-" * 30)
+    #
+    # imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
+    #
+    # print("-" * 30)
+    # print("Loading test data...")
+    # print("-" * 30)
+    # imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
 
     """
     Load data from HDF5 file
     """
-    # import h5py
-    # df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
-    #
-    # imgs_train = df["imgs_train"]
-    # imgs_test = df["imgs_test"]
-    # msks_train = df["msks_train"]
-    # msks_test = df["msks_test"]
+    import h5py
+    df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+
+    imgs_train = df["imgs_train"]
+    imgs_test = df["imgs_test"]
+    msks_train = df["msks_train"]
+    msks_test = df["msks_test"]
 
     print("-" * 30)
     print("Creating and compiling model...")
@@ -402,21 +402,21 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     This will create random rotations, flips, etc. to both
     the images and masks during training.
     """
-    data_gen_args = dict(
-                     #shear_range=(-.2,.2), # Random shear angle in degrees
-                     rotation_range=90    # Random rotation in degrees
-                     )
-    image_datagen = ImageDataGenerator(**data_gen_args)
-    mask_datagen = ImageDataGenerator(**data_gen_args)
+    # data_gen_args = dict(
+    #                  #shear_range=(-.2,.2), # Random shear angle in degrees
+    #                  rotation_range=90    # Random rotation in degrees
+    #                  )
+    # image_datagen = ImageDataGenerator(**data_gen_args)
+    # mask_datagen = ImageDataGenerator(**data_gen_args)
+    #
+    # # Provide the same seed and keyword arguments to the fit
+    # # If the random seed is the same for both then they will
+    # # have the same random augmentations applied.
+    # seed = 816
+    # image_datagen.fit(imgs_train, augment=True, seed=seed)
+    # mask_datagen.fit(msks_train, augment=True, seed=seed)
 
-    # Provide the same seed and keyword arguments to the fit
-    # If the random seed is the same for both then they will
-    # have the same random augmentations applied.
-    seed = 816
-    image_datagen.fit(imgs_train, augment=True, seed=seed)
-    mask_datagen.fit(msks_train, augment=True, seed=seed)
-
-    history = model.fit(image_datagen, mask_datagen,
+    history = model.fit(imgs_train, msks_train,
                         batch_size=batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
