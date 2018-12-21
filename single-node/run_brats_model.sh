@@ -28,6 +28,15 @@
 
 # tar -xvf  Task01_BrainTumour.tar
 #
+if [ "$1" == "-h" ]; then
+  echo "Usage: `basename $0` [DECATHLON_DIR] [HDF5_DIR] [IMG_SIZE]" \
+       " [MODEL_OUTPUT_DIR] [MODEL_OUTPUT_FILENAME]"
+  echo "Trains a U-Net model based on the Decathlon Brain Tumor" \
+       "Segmentation (BraTS) dataset found at: "
+  echo "http://medicaldecathlon.com"
+  echo " "
+  exit 0
+fi
 
 DECATHLON_DIR=${1:-"../../data/decathlon/Task01_BrainTumour/"}
 HDF5_DIR=${2:-"../../data/decathlon/"}
