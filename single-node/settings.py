@@ -32,7 +32,7 @@ IMG_WIDTH = 128
 NUM_IN_CHANNELS = 4  # How many channels from the MRI to use
 NUM_OUT_CHANNELS = 1  # If 1, then predict the combined tumor masks
 
-EPOCHS = 30
+EPOCHS = 1 #30
 BATCH_SIZE = 128
 LEARNING_RATE = 0.00001
 PRINT_MODEL = True

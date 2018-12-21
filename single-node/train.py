@@ -93,9 +93,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-batch_size = args.batch_size
-
-
 num_threads = args.num_threads
 num_inter_op_threads = args.num_inter_threads
 
@@ -322,30 +319,30 @@ def load_data_from_numpy(data_path, prefix = "_train"):
 def train_and_predict(data_path, img_height, img_width, n_epoch,
                       input_no=3, output_no=3, mode=1):
 
-    # """
-    # Load data from Numpy data files
-    # """
-    # print("-" * 30)
-    # print("Loading train data...")
-    # print("-" * 30)
-    #
-    # imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
-    #
-    # print("-" * 30)
-    # print("Loading test data...")
-    # print("-" * 30)
-    # imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
-
     """
-    Load data from HDF5 file
+    Load data from Numpy data files
     """
-    import h5py
-    df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+    print("-" * 30)
+    print("Loading train data...")
+    print("-" * 30)
 
-    imgs_train = df["imgs_train"]
-    imgs_test = df["imgs_test"]
-    msks_train = df["msks_train"]
-    msks_test = df["msks_test"]
+    imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
+
+    print("-" * 30)
+    print("Loading test data...")
+    print("-" * 30)
+    imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
+
+    # """
+    # Load data from HDF5 file
+    # """
+    # import h5py
+    # df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+    #
+    # imgs_train = df["imgs_train"]
+    # imgs_test = df["imgs_test"]
+    # msks_train = df["msks_train"]
+    # msks_test = df["msks_test"]
 
     print("-" * 30)
     print("Creating and compiling model...")
@@ -360,29 +357,34 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     print("Writing model to '{}'".format(model_fn))
 
+    # Save model whenever we get better validation loss
     model_checkpoint = K.callbacks.ModelCheckpoint(model_fn,
                                                    monitor="loss",
                                                    save_best_only=True)
 
+    # Reduce learning rate if we hit a training loss plateau
     plateau_callback = K.callbacks.ReduceLROnPlateau(monitor="val_loss",
-                                                     factor=0.9, patience=3, verbose=1, min_lr=0.000001)
+                                                     factor=0.8, patience=3,
+                                                     verbose=1,
+                                                     min_lr=0.000001)
 
     directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
                                                           num_threads,
                                                           num_inter_op_threads)
 
+    # Tensorboard callbacks
     if (args.use_upsampling):
-        tensorboard_checkpoint = K.callbacks.TensorBoard(
-            log_dir=os.path.join(args.output_path,
+        tensorboard_filename = os.path.join(args.output_path,
                                  "keras_tensorboard_upsampling_batch{}/{}".format(
-                                     batch_size, directoryName)),
-            write_graph=True, write_images=True)
+                                     args.batch_size, directoryName))
     else:
-        tensorboard_checkpoint = K.callbacks.TensorBoard(
-            log_dir=os.path.join(args.output_path,
+        tensorboard_filename = os.path.join(args.output_path,
                                  "keras_tensorboard_transposed_batch{}/{}".format(
-                                     batch_size, directoryName)),
-            write_graph=True, write_images=True)
+                                     args.batch_size, directoryName))
+
+    tensorboard_checkpoint = K.callbacks.TensorBoard(
+        log_dir=tensorboard_filename,
+        write_graph=True, write_images=True)
 
     print("-" * 30)
     print("Fitting model...")
@@ -390,7 +392,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     history = K.callbacks.History()
 
-    print("Batch size = {}".format(batch_size))
+    print("Batch size = {}".format(args.batch_size))
     if args.channels_first:  # Swap first and last axes on data
         imgs_train = np.swapaxes(imgs_train, 1, -1)
         msks_train = np.swapaxes(msks_train, 1, -1)
@@ -417,7 +419,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     # mask_datagen.fit(msks_train, augment=True, seed=seed)
 
     history = model.fit(imgs_train, msks_train,
-                        batch_size=batch_size,
+                        batch_size=args.batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
                         verbose=1, shuffle="batch",
@@ -461,7 +463,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     scores = model.evaluate(
         imgs_test,
         msks_test,
-        batch_size=batch_size,
+        batch_size=args.batch_size,
         verbose=2)
 
     elapsed_time = time.time() - start_inference
