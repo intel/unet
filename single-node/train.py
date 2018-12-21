@@ -36,13 +36,10 @@
 # --batch_size=128 --blocktime=0
 #import ngraph_bridge
 
-import settings
-from preprocess import *
 import numpy as np
 import tensorflow as tf
 import time
 import os
-import psutil
 import settings    # Use the custom settings.py file for default parameters
 import argparse
 
@@ -307,25 +304,41 @@ def unet_model(img_height=224,
 
     return model
 
+def load_data_from_numpy(data_path, prefix = "_train"):
+	"""
+	Load data from Numpy data file.
+	This does a mmap so that the entire Numpy file doesn't
+	need to be loaded into RAM, but instead will access which
+	part of the array it needs from disk.
+	"""
+	imgs_train = np.load(os.path.join(data_path, "imgs"+prefix+".npy"),
+						 mmap_mode="r", allow_pickle=False)
+	msks_train = np.load(os.path.join(data_path, "msks"+prefix+".npy"),
+						 mmap_mode="r", allow_pickle=False)
+
+	return imgs_train, msks_train
+
 
 def train_and_predict(data_path, img_height, img_width, n_epoch,
                       input_no=3, output_no=3, mode=1):
 
-    print("-" * 40)
-    print("Loading and preprocessing train data...")
-    print("-" * 40)
+    """
+    Load data from Numpy data files
+    """
+    print("-" * 30)
+    print("Loading train data...")
+    print("-" * 30)
 
-    imgs_train, msks_train = load_data(data_path, "_train")  # _norm")
-    # imgs_train, msks_train = update_channels(imgs_train, msks_train,
-    #                                          input_no, output_no, mode)
+    imgs_train, msks_train = load_data_from_numpy(data_path, "_train")  # _norm")
 
-    print("-" * 40)
-    print("Loading and preprocessing test data...")
-    print("-" * 40)
-    imgs_test, msks_test = load_data(data_path, "_test")  # _norm")
-    # imgs_test, msks_test = update_channels(imgs_test, msks_test,
-    #                                        input_no, output_no, mode)
+    print("-" * 30)
+    print("Loading test data...")
+    print("-" * 30)
+    imgs_test, msks_test = load_data_from_numpy(data_path, "_test")  # _norm")
 
+    """
+    Load data from HDF5 file
+    """
     # import h5py
     # df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
     #

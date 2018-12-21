@@ -114,7 +114,7 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
                                                      img.shape,
                                                      maxshape=(None, img.shape[1],
                                                                img.shape[2], img.shape[3]),
-                                                     dtype=float)
+                                                     dtype=float, compression="gzip")
             img_train_dset[:] = img
         else:
             row = img_train_dset.shape[0]  # Count current dataset rows
@@ -142,7 +142,7 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
                                                     img.shape,
                                                     maxshape=(None, img.shape[1],
                                                               img.shape[2], img.shape[3]),
-                                                    dtype=float)
+                                                    dtype=float, compression="gzip")
             img_test_dset[:] = img
         else:
             row = img_test_dset.shape[0]  # Count current dataset rows
@@ -167,7 +167,7 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
                                                      msk.shape,
                                                      maxshape=(None, msk.shape[1],
                                                                msk.shape[2], msk.shape[3]),
-                                                     dtype=float)
+                                                     dtype=float, compression="gzip")
             msk_train_dset[:] = msk
         else:
             row = msk_train_dset.shape[0]  # Count current dataset rows
@@ -193,7 +193,7 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
                                                     msk.shape,
                                                     maxshape=(None, msk.shape[1],
                                                               msk.shape[2], msk.shape[3]),
-                                                    dtype=float)
+                                                    dtype=float, compression="gzip")
             msk_test_dset[:] = msk
         else:
             row = msk_test_dset.shape[0]  # Count current dataset rows
