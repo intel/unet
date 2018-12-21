@@ -173,10 +173,10 @@ def dice_coef_loss(y_true, y_pred, smooth=1.):
     return loss
 
 
-def unet_model(img_height=224,
-               img_width=224,
-               num_chan_in=3,
-               num_chan_out=3,
+def unet_model(img_height=128,
+               img_width=128,
+               num_chan_in=1,
+               num_chan_out=1,
                dropout=0.2, final=False):
 
     if args.use_upsampling:
@@ -184,20 +184,12 @@ def unet_model(img_height=224,
     else:
         print("Using Transposed Deconvolution")
 
-    if final:
-        if args.channels_first:
-            inputs = K.layers.Input(batch_shape=(1, num_chan_in, 128, 128),
-                                    name="Images")
-        else:
-            inputs = K.layers.Input(batch_shape=(1, 128, 128, num_chan_in),
-                                    name="Images")
+    if args.channels_first:
+        inputs = K.layers.Input((num_chan_in, img_height, img_width),
+                                name="Images")
     else:
-        if args.channels_first:
-            inputs = K.layers.Input((num_chan_in, 128, 128),
-                                    name="Images")
-        else:
-            inputs = K.layers.Input((128, 128, num_chan_in),
-                                    name="Images")
+        inputs = K.layers.Input((img_height, img_width, num_chan_in),
+                                name="Images")
 
     # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
@@ -299,6 +291,9 @@ def unet_model(img_height=224,
                           loss=loss,
                           metrics=metrics)
 
+        if args.print_model:
+            model.summary()
+
     return model
 
 def load_data_from_numpy(data_path, prefix = "_train"):
@@ -316,37 +311,41 @@ def load_data_from_numpy(data_path, prefix = "_train"):
 	return imgs_train, msks_train
 
 
-def train_and_predict(data_path, img_height, img_width, n_epoch,
-                      input_no=3, output_no=3, mode=1):
-
-    """
-    Load data from Numpy data files
-    """
-    print("-" * 30)
-    print("Loading train data...")
-    print("-" * 30)
-
-    imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
-
-    print("-" * 30)
-    print("Loading test data...")
-    print("-" * 30)
-    imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
+def train_and_predict(data_path, n_epoch, mode=1):
 
     # """
-    # Load data from HDF5 file
+    # Load data from Numpy data files
     # """
-    # import h5py
-    # df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+    # print("-" * 30)
+    # print("Loading train data...")
+    # print("-" * 30)
     #
-    # imgs_train = df["imgs_train"]
-    # imgs_test = df["imgs_test"]
-    # msks_train = df["msks_train"]
-    # msks_test = df["msks_test"]
+    # imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
+    #
+    # print("-" * 30)
+    # print("Loading test data...")
+    # print("-" * 30)
+    # imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
+
+    """
+    Load data from HDF5 file
+    """
+    import h5py
+    df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+
+    imgs_train = df["imgs_train"]
+    imgs_test = df["imgs_test"]
+    msks_train = df["msks_train"]
+    msks_test = df["msks_test"]
 
     print("-" * 30)
     print("Creating and compiling model...")
     print("-" * 30)
+
+    img_height = imgs_train.shape[1]
+    img_width = imgs_train.shape[2]
+    input_no = imgs_train.shape[3]
+    output_no = msks_train.shape[3]
 
     model = unet_model(img_height, img_width, input_no, output_no)
 
@@ -375,12 +374,14 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     # Tensorboard callbacks
     if (args.use_upsampling):
         tensorboard_filename = os.path.join(args.output_path,
-                                 "keras_tensorboard_upsampling_batch{}/{}".format(
-                                     args.batch_size, directoryName))
+                                 "keras_tensorboard_upsampling"
+                                 "_batch{}/{}".format(
+                                 args.batch_size, directoryName))
     else:
         tensorboard_filename = os.path.join(args.output_path,
-                                 "keras_tensorboard_transposed_batch{}/{}".format(
-                                     args.batch_size, directoryName))
+                                 "keras_tensorboard_transposed"
+                                 "_batch{}/{}".format(
+                                 args.batch_size, directoryName))
 
     tensorboard_checkpoint = K.callbacks.TensorBoard(
         log_dir=tensorboard_filename,
@@ -393,32 +394,38 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     history = K.callbacks.History()
 
     print("Batch size = {}".format(args.batch_size))
-    if args.channels_first:  # Swap first and last axes on data
+    # Data was saved as NHWC (channels last)
+    if args.channels_first:  # NCHW
         imgs_train = np.swapaxes(imgs_train, 1, -1)
         msks_train = np.swapaxes(msks_train, 1, -1)
         imgs_test = np.swapaxes(imgs_test, 1, -1)
         msks_test = np.swapaxes(msks_test, 1, -1)
+
+    print("Training image dimensions:   {}".format(imgs_train.shape))
+    print("Training mask dimensions:    {}".format(msks_train.shape))
+    print("Validation image dimensions: {}".format(imgs_test.shape))
+    print("Validation mask dimensions:  {}".format(msks_test.shape))
 
     """
     Image and mask augmentation
     This will create random rotations, flips, etc. to both
     the images and masks during training.
     """
-    # data_gen_args = dict(
-    #                  #shear_range=(-.2,.2), # Random shear angle in degrees
-    #                  rotation_range=90    # Random rotation in degrees
-    #                  )
-    # image_datagen = ImageDataGenerator(**data_gen_args)
-    # mask_datagen = ImageDataGenerator(**data_gen_args)
-    #
-    # # Provide the same seed and keyword arguments to the fit
-    # # If the random seed is the same for both then they will
-    # # have the same random augmentations applied.
-    # seed = 816
-    # image_datagen.fit(imgs_train, augment=True, seed=seed)
-    # mask_datagen.fit(msks_train, augment=True, seed=seed)
+    data_gen_args = dict(
+                     shear_range=(-1,1), # Random shear angle in degrees
+                     rotation_range=90    # Random rotation in degrees
+                     )
+    image_datagen = ImageDataGenerator(**data_gen_args)
+    mask_datagen = ImageDataGenerator(**data_gen_args)
 
-    history = model.fit(imgs_train, msks_train,
+    # Provide the same seed and keyword arguments to the fit
+    # If the random seed is the same for both then they will
+    # have the same random augmentations applied.
+    seed = 816
+    image_datagen.fit(imgs_train, augment=True, seed=seed)
+    mask_datagen.fit(msks_train, augment=True, seed=seed)
+
+    history = model.fit(image_datagen, mask_datagen,
                         batch_size=args.batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
@@ -467,9 +474,10 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         verbose=2)
 
     elapsed_time = time.time() - start_inference
-    print("{} images in {:.2f} seconds = {:.3f} images per second inference".format(
+    print("{} images in {:.2f} seconds = {:.3f} images per "
+          "second inference".format(
         imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
-    print("Evaluation Scores", scores)
+    print("Average Dice score = {:.4f}", scores[1])
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
@@ -491,7 +499,8 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         model_fn = os.path.join(
             args.output_path, "unet_model_transposed_for_inference.hdf5")
 
-    print("Writing final model (without custom Dice metrics) for inference to {}".format(model_fn))
+    print("Writing final model (without custom Dice metrics) "
+          "for inference to {}".format(model_fn))
     print("Please use that version for inference.")
     model.save(model_fn, include_optimizer=False)
 
@@ -507,10 +516,8 @@ if __name__ == "__main__":
     print("TensorFlow version: {}".format(tf.__version__))
     start_time = time.time()
 
-    train_and_predict(args.data_path, settings.IMG_HEIGHT,
-                      settings.IMG_WIDTH,
-                      args.epochs, settings.NUM_IN_CHANNELS,
-                      settings.NUM_OUT_CHANNELS,
+    train_and_predict(args.data_path,
+                      args.epochs,
                       settings.MODE)
 
     print(

@@ -55,8 +55,7 @@ def export_keras_to_tf(input_model, output_model):
 
     """
     Tell Keras that we want to remove the training ops and
-    just do inference. Also, sets the data to channel last
-    (NHWC) which is faster on most hardware.
+    just do inference.
     """
     K.backend.set_learning_phase(0)
     K.backend.set_image_data_format("channels_last")
