@@ -114,7 +114,7 @@ for idx in tqdm(trainList):
     else:
         imgsArray = np.concatenate([imgsArray, img], axis=2) # Just save FLAIR channel
 
-np.save(os.path.join(save_dir, "imgs_train.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
+np.save(os.path.join(save_dir, "imgs_train.npy"), np.swapaxes(imgsArray,0,-2))
 
 del imgsArray
 
@@ -134,11 +134,10 @@ for idx in tqdm(testList):
     else:
         imgsArray = np.concatenate([imgsArray, img], axis=2) # Just save FLAIR channel
 
-np.save(os.path.join(save_dir, "imgs_test.npy"), np.expand_dims(np.swapaxes(imgsArray,0,-1), -1))
+np.save(os.path.join(save_dir, "imgs_test.npy"), np.swapaxes(imgsArray,0,-2))
+del imgsArray
 
 # Save training set masks
-msksArray = []
-
 print("Step 3 of 4. Save training masks.")
 first = True
 for idx in tqdm(trainList):
@@ -147,19 +146,19 @@ for idx in tqdm(trainList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
+    msk = np.expand_dims(msk, -1)
+
     if first:
-        msksArray = np.array(msk)
+        msksArray = msk
         first = False
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
+        msksArray = np.concatenate([msksArray, msk], axis=2)
 
-np.save(os.path.join(save_dir, "msks_train.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
+np.save(os.path.join(save_dir, "msks_train.npy"), np.swapaxes(msksArray,0,-2))
 
 del msksArray
 
-# Save training set masks
-msksArray = []
-
+# Save testing set masks
 print("Step 4 of 4. Save testing masks.")
 first = True
 for idx in tqdm(testList):
@@ -168,13 +167,15 @@ for idx in tqdm(testList):
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
     msk[msk > 1] = 1 # Combine all masks
+    msk = np.expand_dims(msk, -1)
+
     if first:
-        msksArray = np.array(msk)
+        msksArray = msk
         first = False
     else:
-        msksArray = np.concatenate([msksArray, np.array(msk)], axis=2)
+        msksArray = np.concatenate([msksArray, msk], axis=2)
 
-np.save(os.path.join(save_dir, "msks_test.npy"), np.expand_dims(np.swapaxes(msksArray,0,-1), -1))
+np.save(os.path.join(save_dir, "msks_test.npy"), np.swapaxes(msksArray,0,-2))
 
 del msksArray
 

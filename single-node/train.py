@@ -324,8 +324,8 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("Loading and preprocessing test data...")
     print("-" * 40)
     imgs_test, msks_test = load_data(data_path, "_test") #_norm")
-    imgs_test, msks_test = update_channels(imgs_test, msks_test,
-                                           input_no, output_no, mode)
+    # imgs_test, msks_test = update_channels(imgs_test, msks_test,
+    #                                        input_no, output_no, mode)
 
     # import h5py
     # df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
