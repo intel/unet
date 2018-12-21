@@ -64,10 +64,10 @@ def export_keras_to_tf(input_model, output_model):
 
     num_outputs = len(keras_model.outputs)
 
-    predictions = [None] * num_output
-    prediction_node_names = [None] * num_output
+    predictions = [None] * num_outputs
+    prediction_node_names = [None] * num_outputs
 
-    for idx in range(num_output):
+    for idx in range(num_outputs):
         prediction_node_names[idx] = "output_node" + str(idx)
         predictions[idx] = tf.identity(keras_model.outputs[idx],
                          name=prediction_node_names[idx])
@@ -86,8 +86,7 @@ def main():
     input_model = argv.input_model
 
     out_filename = os.path.splitext(os.path.basename(input_model))[0] + ".pb"
-    output_model = os.path.join(argv.output_directory,
-                   out_filename)
+    output_model = os.path.join(argv.output_directory, out_filename)
 
     prediction_node_names = export_keras_to_tf(input_model, output_model)
 
