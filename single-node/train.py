@@ -119,7 +119,6 @@ os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 timeline_filename = "timeline_ge_unet_{}_{}_{}.json".format(
     blocktime, num_threads, num_inter_op_threads)
 
-
 config = tf.ConfigProto(intra_op_parallelism_threads=num_threads,
                         inter_op_parallelism_threads=num_inter_op_threads)
 
@@ -151,17 +150,22 @@ else:
 
 K.backend.set_image_data_format(data_format)
 
-
 def dice_coef(y_true, y_pred, smooth=1.):
+    """
+    Sorensen Dice coefficient
+    """
     intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
     union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
     numerator = tf.constant(2.) * intersection + smooth
     denominator = union + smooth
     coef = numerator / denominator
+    
     return tf.reduce_mean(coef)
 
-
 def dice_coef_loss(y_true, y_pred, smooth=1.):
+    """
+    Loss based on Dice coefficient
+    """
 
     y_true_f = K.backend.flatten(y_true)
     y_pred_f = K.backend.flatten(y_pred)
@@ -177,7 +181,16 @@ def unet_model(img_height=128,
                img_width=128,
                num_chan_in=1,
                num_chan_out=1,
-               dropout=0.2, final=False):
+               dropout=0.2,
+               final=False):
+    """
+    U-Net Model
+    ===========
+    Based on https://arxiv.org/abs/1505.04597
+    The default uses UpSampling2D (bilinear interpolation) in
+    the decoder path. The alternative is to use Transposed
+    Convolution.
+    """
 
     if args.use_upsampling:
         print("Using UpSampling2D")
@@ -313,6 +326,9 @@ def load_data_from_numpy(data_path, prefix = "_train"):
 
 
 def train_and_predict(data_path, n_epoch, mode=1):
+    """
+    Create a model, load the data, and train it.
+    """
 
     # """
     # Load data from Numpy data files
