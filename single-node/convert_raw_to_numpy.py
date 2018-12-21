@@ -95,12 +95,13 @@ def convert_raw_data_to_numpy(trainList, testList, imgList, save_dir):
     first = True
     for idx in tqdm(trainList):
 
+        # nibabel loads images as X,Y,Z,C  (HWDC)
         img = np.array(nib.load(imgList[idx]).dataobj)
         img = crop_center(img, args.resize, args.resize, args.resize)
         img = normalize_img(img)
 
         if first:
-            imgsArray = np.array(img)
+            imgsArray = img
             first = False
         else:
             imgsArray = np.concatenate([imgsArray, img], axis=2)
@@ -121,7 +122,7 @@ def convert_raw_data_to_numpy(trainList, testList, imgList, save_dir):
         img = normalize_img(img)
 
         if first:
-            imgsArray = np.array(img)
+            imgsArray = img
             first = False
         else:
             imgsArray = np.concatenate([imgsArray, img], axis=2)
