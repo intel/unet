@@ -364,8 +364,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     # Reduce learning rate if we hit a training loss plateau
     plateau_callback = K.callbacks.ReduceLROnPlateau(monitor="val_loss",
                                                      factor=0.8, patience=3,
-                                                     verbose=1,
-                                                     min_lr=0.000001)
+                                                     verbose=1)
 
     directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
                                                           num_threads,
