@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(
     description="Convert Decathlon raw Nifti data "
     "(http://medicaldecathlon.com/) "
     "files to Numpy data files",
-    add_help=True)
+    add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--data_path",
                     default="../../data/decathlon/Task01_BrainTumour/",

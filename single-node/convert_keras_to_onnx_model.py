@@ -71,14 +71,14 @@ onnx_model = onnxmltools.convert_keras(model)
 try:
     os.stat(args.output_directory)
 except:
-    os.mkdir(args.output_directory)       
+    os.mkdir(args.output_directory)
 
 # Save as text
-onnxmltools.utils.save_text(onnx_model, os.path.join(args.output_directory, "onnx_model.json"))
+onnxmltools.utils.save_text(onnx_model, os.path.join(
+    args.output_directory, "onnx_model.json"))
 
 # Save as protobuf
-onnxmltools.utils.save_model(onnx_model, os.path.join(args.output_directory, "onnx_model.onnx"))
+onnxmltools.utils.save_model(onnx_model, os.path.join(
+    args.output_directory, "onnx_model.onnx"))
 
 print("Exported to ONNX model is directory {}".format(args.output_directory))
-
-

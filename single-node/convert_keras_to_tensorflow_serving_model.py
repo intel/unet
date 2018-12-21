@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+from tensorflow.contrib.session_bundle import exporter
 import keras
 import tensorflow as tf
 
@@ -67,8 +68,6 @@ model = keras.models.load_model(args.input_filename, custom_objects={
                                 "dice_coef": dice_coef, "dice_coef_loss": dice_coef_loss})
 
 
-from tensorflow.contrib.session_bundle import exporter
-
 print("Freezing the graph.")
 keras.backend.set_learning_phase(0)
 
@@ -87,5 +86,3 @@ builder.add_meta_graph_and_variables(
     })
 builder.save()
 print("TensorFlow protobuf version of model is saved.")
-
-

@@ -36,10 +36,20 @@
 # --batch_size=128 --blocktime=0
 #import ngraph_bridge
 
+import settings
+from preprocess import *
+import numpy as np
+import tensorflow as tf
+import time
+import os
 import psutil
 import settings    # Use the custom settings.py file for default parameters
 import argparse
-parser = argparse.ArgumentParser()
+
+parser = argparse.ArgumentParser(
+    description="Trains 2D U-Net model (Keras/TF) on BraTS dataset.",
+    add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
 parser.add_argument("--data_path", default=settings.DATA_PATH,
                     help="the path to the data")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
@@ -88,7 +98,6 @@ args = parser.parse_args()
 
 batch_size = args.batch_size
 
-import os
 
 num_threads = args.num_threads
 num_inter_op_threads = args.num_inter_threads
@@ -98,7 +107,7 @@ if (args.blocktime > 1000):
 else:
     blocktime = str(args.blocktime)
 
-#os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 os.environ["KMP_BLOCKTIME"] = blocktime
 os.environ["KMP_AFFINITY"] = "compact,1,0,granularity=fine"
@@ -116,9 +125,6 @@ os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 timeline_filename = "timeline_ge_unet_{}_{}_{}.json".format(
     blocktime, num_threads, num_inter_op_threads)
 
-import time
-
-import tensorflow as tf
 
 config = tf.ConfigProto(intra_op_parallelism_threads=num_threads,
                         inter_op_parallelism_threads=num_inter_op_threads)
@@ -151,20 +157,14 @@ else:
 
 K.backend.set_image_data_format(data_format)
 
-import numpy as np
-import os
-
-from preprocess import *
-import settings
-
 
 def dice_coef(y_true, y_pred, smooth=1.):
-   intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
-   union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
-   numerator = tf.constant(2.) * intersection + smooth
-   denominator = union + smooth
-   coef = numerator / denominator
-   return tf.reduce_mean(coef)
+    intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
+    union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
+    numerator = tf.constant(2.) * intersection + smooth
+    denominator = union + smooth
+    coef = numerator / denominator
+    return tf.reduce_mean(coef)
 
 
 def dice_coef_loss(y_true, y_pred, smooth=1.):
@@ -204,7 +204,6 @@ def unet_model(img_height=224,
         else:
             inputs = K.layers.Input((128, 128, num_chan_in),
                                     name="Images")
-
 
     # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
@@ -316,14 +315,14 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("Loading and preprocessing train data...")
     print("-" * 40)
 
-    imgs_train, msks_train = load_data(data_path, "_train") #_norm")
+    imgs_train, msks_train = load_data(data_path, "_train")  # _norm")
     # imgs_train, msks_train = update_channels(imgs_train, msks_train,
     #                                          input_no, output_no, mode)
 
     print("-" * 40)
     print("Loading and preprocessing test data...")
     print("-" * 40)
-    imgs_test, msks_test = load_data(data_path, "_test") #_norm")
+    imgs_test, msks_test = load_data(data_path, "_test")  # _norm")
     # imgs_test, msks_test = update_channels(imgs_test, msks_test,
     #                                        input_no, output_no, mode)
 
@@ -353,7 +352,7 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
                                                    save_best_only=True)
 
     plateau_callback = K.callbacks.ReduceLROnPlateau(monitor="val_loss",
-                factor=0.9, patience=3, verbose=1, min_lr=0.000001)
+                                                     factor=0.9, patience=3, verbose=1, min_lr=0.000001)
 
     directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
                                                           num_threads,
@@ -362,14 +361,14 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     if (args.use_upsampling):
         tensorboard_checkpoint = K.callbacks.TensorBoard(
             log_dir=os.path.join(args.output_path,
-                "keras_tensorboard_upsampling_batch{}/{}".format(
-                batch_size, directoryName)),
+                                 "keras_tensorboard_upsampling_batch{}/{}".format(
+                                     batch_size, directoryName)),
             write_graph=True, write_images=True)
     else:
         tensorboard_checkpoint = K.callbacks.TensorBoard(
             log_dir=os.path.join(args.output_path,
-                "keras_tensorboard_transposed_batch{}/{}".format(
-                batch_size, directoryName)),
+                                 "keras_tensorboard_transposed_batch{}/{}".format(
+                                     batch_size, directoryName)),
             write_graph=True, write_images=True)
 
     print("-" * 30)
@@ -385,7 +384,26 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
         imgs_test = np.swapaxes(imgs_test, 1, -1)
         msks_test = np.swapaxes(msks_test, 1, -1)
 
-    history = model.fit(imgs_train, msks_train,
+    """
+    Image and mask augmentation
+    This will create random rotations, flips, etc. to both
+    the images and masks during training.
+    """
+    data_gen_args = dict(
+                     #shear_range=(-.2,.2), # Random shear angle in degrees
+                     rotation_range=90    # Random rotation in degrees
+                     )
+    image_datagen = ImageDataGenerator(**data_gen_args)
+    mask_datagen = ImageDataGenerator(**data_gen_args)
+
+    # Provide the same seed and keyword arguments to the fit
+    # If the random seed is the same for both then they will
+    # have the same random augmentations applied.
+    seed = 816
+    image_datagen.fit(imgs_train, augment=True, seed=seed)
+    mask_datagen.fit(msks_train, augment=True, seed=seed)
+
+    history = model.fit(image_datagen, mask_datagen,
                         batch_size=batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_test, msks_test),
@@ -440,20 +458,23 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
-    model.save_weights(os.path.join(args.output_path,"weights.hdf5"))
-    model = unet_model(img_height, img_width, input_no, output_no, final=True)  # Model without Dice and custom metrics
-    model.load_weights(os.path.join(args.output_path,"weights.hdf5"))
+    model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
+    # Model without Dice and custom metrics
+    model = unet_model(img_height, img_width, input_no, output_no, final=True)
+    model.load_weights(os.path.join(args.output_path, "weights.hdf5"))
 
     model_json = model.to_json()
-    with open(os.path.join(args.output_path,"model.json"), "w") as json_file:
+    with open(os.path.join(args.output_path, "model.json"), "w") as json_file:
         json_file.write(model_json)
 
-    model.save_weights(os.path.join(args.output_path,"weights.hdf5"))
+    model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
 
     if (args.use_upsampling):
-        model_fn = os.path.join(args.output_path, "unet_model_upsampling_for_inference.hdf5")
+        model_fn = os.path.join(
+            args.output_path, "unet_model_upsampling_for_inference.hdf5")
     else:
-        model_fn = os.path.join(args.output_path, "unet_model_transposed_for_inference.hdf5")
+        model_fn = os.path.join(
+            args.output_path, "unet_model_transposed_for_inference.hdf5")
 
     print("Writing final model (without custom Dice metrics) for inference to {}".format(model_fn))
     print("Please use that version for inference.")

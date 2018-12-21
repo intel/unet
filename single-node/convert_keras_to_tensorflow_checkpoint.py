@@ -67,7 +67,6 @@ model = keras.models.load_model(args.input_filename, custom_objects={
                                 "dice_coef": dice_coef, "dice_coef_loss": dice_coef_loss})
 
 
-
 print("Saving the model to directory {}".format(args.output_directory))
 
 saver = tf.train.Saver()
@@ -78,6 +77,6 @@ try:
 except:
     os.mkdir(args.output_directory)
 
-save_path = saver.save(sess, os.path.join(args.output_directory, "unet_model.ckpt"))
+save_path = saver.save(sess, os.path.join(
+    args.output_directory, "unet_model.ckpt"))
 print("Checkpoint saved in path: {}".format(save_path))
-

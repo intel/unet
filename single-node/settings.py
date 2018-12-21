@@ -18,12 +18,13 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+import psutil
 import os
 
 #DATA_PATH = os.path.join("../../data/Brats2016/128x128/")
 DATA_PATH = os.path.join("../../data/decathlon/128x128/")
 
-OUT_PATH  = os.path.join("./output/")
+OUT_PATH = os.path.join("./output/")
 
 IMG_HEIGHT = 128
 IMG_WIDTH = 128
@@ -32,17 +33,16 @@ NUM_IN_CHANNELS = 4
 NUM_OUT_CHANNELS = 1
 
 EPOCHS = 30
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 LEARNING_RATE = 0.00001
 PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
 # Mode 2: Use T1 Gd to identify the active tumor
 # Mode 3: Use T2 to identify the active core (necrosis, enhancing, non-enh)
-MODE=1  # 1, 2, or 3
+MODE = 1  # 1, 2, or 3
 
 
-import psutil
 BLOCKTIME = 1
 NUM_INTER_THREADS = 1
 NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
@@ -50,4 +50,4 @@ NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 CHANNELS_FIRST = False
 USE_KERAS_API = True
 USE_UPSAMPLING = True
-CREATE_TRACE_TIMELINE=False
+CREATE_TRACE_TIMELINE = False
