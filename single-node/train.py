@@ -457,16 +457,16 @@ def train_and_predict(data_path, n_epoch, mode=1):
     K.backend.set_learning_phase(0)
     start_inference = time.time()
     print("Evaluating model. Please wait...")
-    scores = model.evaluate(
+    loss, accuracy, metric = model.evaluate(
         imgs_test,
         msks_test,
         batch_size=args.batch_size,
-        verbose=2)
+        verbose=1)
     elapsed_time = time.time() - start_inference
     print("{} images in {:.2f} seconds => {:.3f} images per "
           "second inference".format(
         imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
-    print("Average Dice score for prediction = {:.4f}", scores[1])
+    print("Mean Dice score for predictions = {:.4f}", metric)
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
