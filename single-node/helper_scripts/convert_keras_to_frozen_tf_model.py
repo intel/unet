@@ -22,8 +22,6 @@ import os
 import argparse
 
 import tensorflow as tf
-from tensorflow.python.framework import graph_util
-from tensorflow.python.framework import graph_io
 
 #import keras as K
 from tensorflow import keras as K
@@ -33,7 +31,7 @@ parser = argparse.ArgumentParser(
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--input_model", "-m",
-                    default=os.path.join("..", "output",
+                    default=os.path.join("output",
                     "unet_model_upsampling_for_inference.hdf5"),
                     type=str, help="Path to Keras model to be converted.")
 parser.add_argument("--output_directory",
@@ -43,7 +41,7 @@ parser.add_argument("--output_directory",
 
 argv = parser.parse_args()
 
-def export_keras_to_tf(input_model, output_model):
+def export_keras_to_tf(input_model, output_dir):
     """
     Load the Keras model. Use the TF graph conversion utilities
     to freeze the graph and save it as a protobuf file.
@@ -61,36 +59,42 @@ def export_keras_to_tf(input_model, output_model):
     K.backend.set_image_data_format("channels_last")
     print("Setting to channels last data format (NHWC).")
 
-    num_outputs = len(keras_model.outputs)
+    input_node_names = []
+    for idx in range(len(keras_model.inputs)):
+        input_node_names.append(keras_model.inputs[idx].name)
 
-    predictions = [None] * num_outputs
-    prediction_node_names = [None] * num_outputs
+    predictions = []
+    prediction_node_names = []
 
-    for idx in range(num_outputs):
-        prediction_node_names[idx] = "output_node" + str(idx)
-        predictions[idx] = tf.identity(keras_model.outputs[idx],
-                         name=prediction_node_names[idx])
+    for idx in range(len(keras_model.outputs)):
+        prediction_node_names.append("output_node" + str(idx))
+        predictions.append(tf.identity(keras_model.outputs[idx],
+                         name=prediction_node_names[idx]))
 
-    sess = K.get_session()
+    sess = K.backend.get_session()
 
-    constant_graph = graph_util.convert_variables_to_constants(sess,
+    constant_graph = tf.compat.v1.graph_util.convert_variables_to_constants(sess,
                      sess.graph.as_graph_def(), prediction_node_names)
-    infer_graph = graph_util.remove_training_nodes(constant_graph)
+    infer_graph = tf.compat.v1.graph_util.remove_training_nodes(constant_graph)
 
-    graph_io.write_graph(infer_graph, ".", output_model, as_text=False)
+    out_filename = os.path.splitext(os.path.basename(input_model))[0] + ".pb"
 
+    tf.io.write_graph(infer_graph, output_dir, out_filename, as_text=True)
+
+    print("Saved as TF frozen model to: ",
+          os.path.join(output_dir, out_filename))
+
+    return prediction_node_names, input_node_names
 
 def main():
 
     input_model = argv.input_model
 
-    out_filename = os.path.splitext(os.path.basename(input_model))[0] + ".pb"
-    output_model = os.path.join(argv.output_directory, out_filename)
+    prediction_node_names, input_node_names = export_keras_to_tf(input_model,
+                argv.output_directory)
 
-    prediction_node_names = export_keras_to_tf(input_model, output_model)
-
+    print("Input nodes are :", input_node_names)
     print("Output nodes are:", prediction_node_names)
-    print("Saved as TF frozen model to: ", output_model)
 
 
 if __name__ == "__main__":
