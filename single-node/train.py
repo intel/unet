@@ -416,7 +416,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
                      rotation_range=90    # Random rotation in degrees
                      )
     image_datagen = K..preprocessing.image.ImageDataGenerator(**data_gen_args)
-    mask_datagen = K..preprocessing.image.ImageDataGenerator(**data_gen_args)
+    mask_datagen = K.preprocessing.image.ImageDataGenerator(**data_gen_args)
 
     # Provide the same seed and keyword arguments to the fit
     # If the random seed is the same for both then they will
