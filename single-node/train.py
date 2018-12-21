@@ -493,24 +493,6 @@ def train_and_predict(data_path, img_height, img_width, n_epoch,
     print("Please use that version for inference.")
     model.save(model_fn, include_optimizer=False)
 
-    sess = K.backend.get_session()
-
-    model = K.models.load_model(model_fn)
-
-    K.backend.set_learning_phase(0)
-
-    saver = tf.train.Saver()
-
-    directory = os.path.join(args.output_path, "tf_checkpoint")
-    try:
-        os.stat(directory)
-    except:
-        os.mkdir(directory)
-
-    save_path = saver.save(sess, os.path.join(directory, "unet_model"))
-    print("Checkpoint saved in path: {}".format(save_path))
-
-
 if __name__ == "__main__":
 
     os.system("lscpu")
