@@ -454,30 +454,19 @@ def train_and_predict(data_path, n_epoch, mode=1):
             "dice_coef_loss": dice_coef_loss,
             "dice_coef": dice_coef})
 
-    print("-" * 30)
-    print("Predicting masks on test data...")
-    print("-" * 30)
-    msks_pred = model.predict(imgs_test, verbose=1)
-
-    print("Saving predictions to file")
-    if (args.use_upsampling):
-        np.save("msks_pred_upsampling.npy", msks_pred)
-    else:
-        np.save("msks_pred_transposed.npy", msks_pred)
-
+    K.backend.set_learning_phase(0)
     start_inference = time.time()
-    print("Evaluating model")
+    print("Evaluating model. Please wait...")
     scores = model.evaluate(
         imgs_test,
         msks_test,
         batch_size=args.batch_size,
         verbose=2)
-
     elapsed_time = time.time() - start_inference
-    print("{} images in {:.2f} seconds = {:.3f} images per "
+    print("{} images in {:.2f} seconds => {:.3f} images per "
           "second inference".format(
         imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
-    print("Average Dice score = {:.4f}", scores[1])
+    print("Average Dice score for prediction = {:.4f}", scores[1])
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference
