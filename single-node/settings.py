@@ -26,7 +26,7 @@ DATA_PATH = os.path.join("../../data/decathlon/128x128/")
 
 OUT_PATH = os.path.join("./output/")
 
-EPOCHS = 30
+EPOCHS = 15
 BATCH_SIZE = 128  # If the batch size is to small, then training is unstable
 LEARNING_RATE = 0.00001  # 0.00001
 PRINT_MODEL = True
