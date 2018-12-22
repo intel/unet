@@ -38,10 +38,10 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-DECATHLON_DIR=${1:-"../../data/decathlon/Task01_BrainTumour/"}
-HDF5_DIR=${2:-"../../data/decathlon/"}
+DECATHLON_DIR=${1:-"../../data/decathlon/Task01_BrainTumour"}
+HDF5_DIR=${2:-"../../data/decathlon"}
 IMG_SIZE=${3:-128}
-MODEL_OUTPUT_DIR=${4:-"./output/"}
+MODEL_OUTPUT_DIR=${4:-"./output"}
 MODEL_OUTPUT_FILENAME=${5:-"decathlon_brats.h5"}
 INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
