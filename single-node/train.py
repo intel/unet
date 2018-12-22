@@ -53,6 +53,8 @@ parser.add_argument("--data_filename", default=settings.DATA_FILENAME,
                     help="the HDF5 data filename")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
+parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
+                    help="the Keras inference model filename")
 parser.add_argument("--use_upsampling",
                     help="use upsampling instead of transposed convolution",
                     action="store_true", default=settings.USE_UPSAMPLING)
@@ -157,9 +159,8 @@ def dice_coef(y_true, y_pred, smooth=1.):
     Sorensen Dice coefficient
     """
     intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
-    union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
     numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
+    denominator = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3)) + smooth
     coef = numerator / denominator
 
     return tf.reduce_mean(coef)
@@ -350,7 +351,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     Load data from HDF5 file
     """
     import h5py
-    df = h5py.File(os.path.join(data_path, args.datafilename))
+    df = h5py.File(os.path.join(data_path, args.datafilename), "r")
 
     imgs_train = df["imgs_train"]
     imgs_test = df["imgs_test"]
@@ -480,8 +481,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
 
     model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
 
-    model_fn = os.path.join(
-        args.output_path, "unet_model_for_inference.hdf5")
+    model_fn = os.path.join(args.output_path, args.inference_filename)
 
     print("Writing final model (without custom Dice metrics) "
           "for inference to {}".format(model_fn))

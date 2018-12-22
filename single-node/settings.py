@@ -25,6 +25,7 @@ import os
 DATA_PATH = os.path.join("../../data/decathlon/128x128/")
 DATA_FILENAME = "decathlon_brats.h5"
 OUT_PATH = os.path.join("./output/")
+INFERENCE_FILENAME="unet_model_for_inference.hdf5"
 
 EPOCHS = 15
 BATCH_SIZE = 128  # If the batch size is to small, then training is unstable

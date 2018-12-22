@@ -43,6 +43,7 @@ HDF5_DIR=${2:-"../../data/decathlon/"}
 IMG_SIZE=${3:-128}
 MODEL_OUTPUT_DIR=${4:-"./output/"}
 MODEL_OUTPUT_FILENAME=${5:-"decathlon_brats.h5"}
+INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
 clear
 echo "Script to train Decathlon Brain Tumor Segmentation (BraTS) U-Net model"
@@ -73,11 +74,14 @@ echo "Run U-Net training on BraTS Decathlon dataset"
 # The settings.py file contains the model training.
 python train.py --data_path ${HDF5_DIR}/${IMG_SIZE}x${IMG_SIZE} \
         --data_filename $MODEL_OUTPUT_FILENAME \
-        --output_path $MODEL_OUTPUT_DIR
+        --output_path $MODEL_OUTPUT_DIR \
+        --inference_filename $INFERENCE_FILENAME
 
 echo "*****************************************"
 echo "Step 3 of 3: Run sample inference script"
 echo "*****************************************"
 
 python run_inference.py --model $MODEL_OUTPUT_DIR/unet_model_for_inference.hdf5 \
-        --data_path $HDF5_DIR/${IMG_SIZE}x${IMG_SIZE}/$MODEL_OUTPUT_FILENAME
+        --data_path $HDF5_DIR/${IMG_SIZE}x${IMG_SIZE}/$MODEL_OUTPUT_FILENAME \
+        --output_path $MODEL_OUTPUT_DIR \
+        --inference_filename $INFERENCE_FILENAME
