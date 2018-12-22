@@ -23,7 +23,7 @@ import os
 
 #DATA_PATH = os.path.join("../../data/Brats2016/128x128/")
 DATA_PATH = os.path.join("../../data/decathlon/128x128/")
-
+DATA_FILENAME = "decathlon_brats.h5"
 OUT_PATH = os.path.join("./output/")
 
 EPOCHS = 15

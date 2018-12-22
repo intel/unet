@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("--input_model", "-m",
                     default=os.path.join("output",
-                    "unet_model_upsampling_for_inference.hdf5"),
+                    "unet_model_for_inference.hdf5"),
                     type=str, help="Path to Keras model to be converted.")
 parser.add_argument("--output_directory",
                     type=str,

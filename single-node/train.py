@@ -49,6 +49,8 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("--data_path", default=settings.DATA_PATH,
                     help="the path to the data")
+parser.add_argument("--data_filename", default=settings.DATA_FILENAME,
+                    help="the HDF5 data filename")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--use_upsampling",
@@ -348,7 +350,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     Load data from HDF5 file
     """
     import h5py
-    df = h5py.File(os.path.join(data_path, "decathlon_brats.h5"))
+    df = h5py.File(os.path.join(data_path, args.datafilename))
 
     imgs_train = df["imgs_train"]
     imgs_test = df["imgs_test"]
@@ -478,12 +480,8 @@ def train_and_predict(data_path, n_epoch, mode=1):
 
     model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
 
-    if (args.use_upsampling):
-        model_fn = os.path.join(
-            args.output_path, "unet_model_upsampling_for_inference.hdf5")
-    else:
-        model_fn = os.path.join(
-            args.output_path, "unet_model_transposed_for_inference.hdf5")
+    model_fn = os.path.join(
+        args.output_path, "unet_model_for_inference.hdf5")
 
     print("Writing final model (without custom Dice metrics) "
           "for inference to {}".format(model_fn))
