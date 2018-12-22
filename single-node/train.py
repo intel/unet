@@ -351,7 +351,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     Load data from HDF5 file
     """
     import h5py
-    df = h5py.File(os.path.join(data_path, args.datafilename), "r")
+    df = h5py.File(os.path.join(data_path, args.data_filename), "r")
 
     imgs_train = df["imgs_train"]
     imgs_test = df["imgs_test"]

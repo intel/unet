@@ -55,6 +55,7 @@ echo "tar -xvf Task01_BrainTumour.tar"
 echo "Make sure to change the DECATHLON_DIR variable in this script"
 echo " to wherever you untarred the dataset."
 
+echo " "
 echo "*****************************************"
 echo "Step 1 of 3: Convert raw data to HDF5 file"
 echo "*****************************************"
@@ -65,6 +66,7 @@ python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR \
         --output_filename $MODEL_OUTPUT_FILENAME \
         --save_path $HDF5_DIR --resize=$IMG_SIZE
 
+echo " "
 echo "*****************************************"
 echo "Step 2 of 3: Train U-Net on dataset"
 echo "*****************************************"
@@ -77,6 +79,7 @@ python train.py --data_path ${HDF5_DIR}/${IMG_SIZE}x${IMG_SIZE} \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME
 
+echo " "
 echo "*****************************************"
 echo "Step 3 of 3: Run sample inference script"
 echo "*****************************************"
