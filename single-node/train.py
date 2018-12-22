@@ -466,7 +466,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     print("{} images in {:.2f} seconds => {:.3f} images per "
           "second inference".format(
         imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
-    print("Mean Dice score for predictions = {:.4f}", metric)
+    print("Mean Dice score for predictions = {:.4f}".format(metric))
 
     # Save final model without custom loss and metrics
     # This way we can easily re-load it into Keras for inference

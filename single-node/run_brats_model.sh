@@ -84,7 +84,7 @@ echo "*****************************************"
 echo "Step 3 of 3: Run sample inference script"
 echo "*****************************************"
 
-python run_inference.py --model $MODEL_OUTPUT_DIR/unet_model_for_inference.hdf5 \
+python run_inference.py  \
         --data_path $HDF5_DIR/${IMG_SIZE}x${IMG_SIZE}/$MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME
