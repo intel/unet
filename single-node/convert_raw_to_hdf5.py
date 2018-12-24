@@ -262,9 +262,12 @@ if __name__ == "__main__":
     np.random.seed(816)
     numFiles = experiment_data["numTraining"]
     idxList = np.arange(numFiles)  # List of file indices
-    np.random.shuffle(idxList)  # Randomize the file list
-    trainList = idxList[:np.int(numFiles*args.split)]
-    validateList = idxList[np.int(numFiles*args.split):]
+    randomList = np.random.random((numFiles)) # List of random numbers
+    # Random number go from 0 to 1. So anything above 
+    # args.train_split is in the validation list.
+    trainList = idxList[randomList < args.split]  
+    validateList =idxList[randomList >= args.split]
+
 
     convert_raw_data_to_hdf5(trainList, validateList,
                              experiment_data["training"],

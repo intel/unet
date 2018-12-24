@@ -365,6 +365,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
 
     # Save model whenever we get better validation loss
     model_checkpoint = K.callbacks.ModelCheckpoint(model_fn,
+    						   verbose=1,
                                                    monitor="loss",
                                                    save_best_only=True)
 
