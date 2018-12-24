@@ -186,7 +186,7 @@ def dice_coef_loss(y_true, y_pred, axis=(1, 2), smooth=1.):
     return dice_loss
 
 
-def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.7):
+def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.8):
     """
     Combined Dice and Binary Cross Entropy Loss
     """
@@ -366,7 +366,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     # Save model whenever we get better validation loss
     model_checkpoint = K.callbacks.ModelCheckpoint(model_fn,
     						   verbose=1,
-                                                   monitor="loss",
+                                                   monitor="val_loss",
                                                    save_best_only=True)
 
     # Reduce learning rate if we hit a training loss plateau
