@@ -154,30 +154,45 @@ else:
 
 K.backend.set_image_data_format(data_format)
 
-def dice_coef(y_true, y_pred, smooth=1.):
+def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
-    Sorensen Dice coefficient
+    Sorenson (Soft) Dice
+    2 * |TP| / |T|*|P|
+    where T is ground truth mask and P is the prediction mask
     """
-    intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
+    intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
+    union = tf.reduce_sum(y_true + y_pred, axis=axis)
     numerator = tf.constant(2.) * intersection + smooth
-    denominator = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3)) + smooth
+    denominator = union + smooth
     coef = numerator / denominator
 
     return tf.reduce_mean(coef)
 
-def dice_coef_loss(y_true, y_pred, smooth=0.1):
-    """
-    Loss based on Dice coefficient
-    """
 
-    y_true_f = K.backend.flatten(y_true)
-    y_pred_f = K.backend.flatten(y_pred)
-    intersection = K.backend.sum(y_true_f * y_pred_f)
-    loss = -K.backend.log(2. * intersection + smooth) + \
-        K.backend.log((K.backend.sum(y_true_f) +
-                       K.backend.sum(y_pred_f) + smooth))
+def dice_coef_loss(y_true, y_pred, axis=(1, 2), smooth=1.):
+    """
+    Sorenson (Soft) Dice loss
+    Using -log(Dice) as the loss since it is better behaved.
+    Also, the log allows avoidance of the division which
+    can help prevent underflow when the numbers are very small.
+    """
+    intersection = tf.reduce_sum(y_pred * y_true, axis=axis)
+    p = tf.reduce_sum(y_pred, axis=axis)
+    t = tf.reduce_sum(y_true, axis=axis)
+    numerator = tf.reduce_mean(intersection + smooth)
+    denominator = tf.reduce_mean(t + p + smooth)
+    dice_loss = -tf.log(2.*numerator) + tf.log(denominator)
 
-    return loss
+    return dice_loss
+
+
+def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.7):
+    """
+    Combined Dice and Binary Cross Entropy Loss
+    """
+    return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
+        (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
+
 
 
 def unet_model(img_height=128,
@@ -296,7 +311,8 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        loss = dice_coef_loss
+        #loss = dice_coef_loss
+        loss = combined_dice_ce_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
