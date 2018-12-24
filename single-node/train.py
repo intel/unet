@@ -165,7 +165,7 @@ def dice_coef(y_true, y_pred, smooth=1.):
 
     return tf.reduce_mean(coef)
 
-def dice_coef_loss(y_true, y_pred, smooth=1.):
+def dice_coef_loss(y_true, y_pred, smooth=0.1):
     """
     Loss based on Dice coefficient
     """
@@ -296,7 +296,7 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        loss = "binary_crossentropy" #dice_coef_loss
+        loss = dice_coef_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
@@ -313,39 +313,10 @@ def unet_model(img_height=128,
 
     return model
 
-def load_data_from_numpy(data_path, prefix = "_train"):
-	"""
-	Load data from Numpy data file.
-	This does a mmap so that the entire Numpy file doesn't
-	need to be loaded into RAM, but instead will access which
-	part of the array it needs from disk.
-	"""
-	imgs_train = np.load(os.path.join(data_path, "imgs"+prefix+".npy"),
-						 mmap_mode="r", allow_pickle=False)
-	msks_train = np.load(os.path.join(data_path, "msks"+prefix+".npy"),
-						 mmap_mode="r", allow_pickle=False)
-
-	return imgs_train, msks_train
-
-
 def train_and_predict(data_path, n_epoch, mode=1):
     """
     Create a model, load the data, and train it.
     """
-
-    # """
-    # Load data from Numpy data files
-    # """
-    # print("-" * 30)
-    # print("Loading train data...")
-    # print("-" * 30)
-    #
-    # imgs_train, msks_train = load_data_from_numpy(data_path, "_train")
-    #
-    # print("-" * 30)
-    # print("Loading test data...")
-    # print("-" * 30)
-    # imgs_test, msks_test = load_data_from_numpy(data_path, "_test")
 
     """
     Load data from HDF5 file
