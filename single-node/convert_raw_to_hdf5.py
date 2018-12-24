@@ -22,8 +22,8 @@ import os
 import nibabel as nib
 import numpy as np
 from tqdm import tqdm
-import glob
 import h5py
+import json
 
 import argparse
 
@@ -42,7 +42,7 @@ parser.add_argument("--save_path",
 parser.add_argument("--output_filename",
                     default="decathlon_brats.h5",
                     help="Name of the output HDF5 file")
-parser.add_argument("--resize", type=int, default=128,
+parser.add_argument("--resize", type=int, default=144,
                     help="Resize height and width to this size. "
                     "Original size = 240")
 parser.add_argument("--split", type=float, default=0.85,
@@ -54,8 +54,7 @@ def crop_center(img, cropx, cropy, cropz):
     """
     Take a center crop of the images.
     If we are using a 2D model, then we'll just stack the
-    z dimension so we can take all slices in that case
-    rather than just the crop.
+    z dimension.
     """
 
     if len(img.shape) == 4:
@@ -67,12 +66,14 @@ def crop_center(img, cropx, cropy, cropz):
     starty = y//2-(cropy//2)
     startz = z//2-(cropz//2)
 
-    # Let's just take the entire z slices since
-    # we are doing 2D anyway.
+    endx = startx + cropx
+    endy = starty + cropy
+    endz = startz + cropz
+
     if len(img.shape) == 4:
-        return img[startx:startx+cropx, starty:starty+cropy, :, :]
+        return img[startx:endx, starty:endy, startz:endz, :]
     else:
-        return img[startx:startx+cropx, starty:starty+cropy, :]
+        return img[startx:endx, starty:endy, startz:endz]
 
 
 def normalize_img(img):
@@ -92,16 +93,23 @@ def normalize_img(img):
     return img
 
 
-def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
+def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx, filename, dataDir):
 
+    """
+    Go through the Decathlon dataset.json file.
+    We've already split into training and validation subsets.
+    Read in Nifti format files. Crop images and masks.
+    Save to HDF5 format.
+    """
     hdf_file = h5py.File(filename, "w")
 
     # Save training set images
-    print("Step 1 of 4. Save training images.")
+    print("Step 1 of 4. Save training set images.")
     first = True
-    for idx in tqdm(trainList):
+    for idx in tqdm(trainIdx):
 
-        img = np.array(nib.load(imgList[idx]).dataobj)
+        data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
+        img = np.array(nib.load(data_filename).dataobj)
         img = crop_center(img, args.resize, args.resize, args.resize)
         img = normalize_img(img)
 
@@ -122,14 +130,14 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
             img_train_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
 
-    # Save testing set images
-
-    print("Step 2 of 4. Save testing images.")
+    # Save validaition set images
+    print("Step 2 of 4. Save validation set images.")
     first = True
-    for idx in tqdm(testList):
+    for idx in tqdm(validateIdx):
 
         # Nibabel should read the file as X,Y,Z,C
-        img = np.array(nib.load(imgList[idx]).dataobj)
+        data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
+        img = np.array(nib.load(data_filename).dataobj)
         img = crop_center(img, args.resize, args.resize, args.resize)
         img = normalize_img(img)
 
@@ -150,11 +158,12 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
             img_test_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
     # Save training set masks
-    print("Step 3 of 4. Save training masks.")
+    print("Step 3 of 4. Save training set masks.")
     first = True
-    for idx in tqdm(trainList):
+    for idx in tqdm(trainIdx):
 
-        msk = np.array(nib.load(mskList[idx]).dataobj)
+        data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
+        msk = np.array(nib.load(data_filename).dataobj)
         msk = crop_center(msk, args.resize, args.resize, args.resize)
 
         msk[msk > 1] = 1  # Combine all masks
@@ -174,13 +183,14 @@ def convert_raw_data_to_hdf5(trainList, testList, imgList, filename):
             msk_train_dset.resize(row+num_rows, axis=0)  # Add new row
             msk_train_dset[row:(row+num_rows), :] = msk  # Insert data into new row
 
-    # Save training set masks
+    # Save testing/validation set masks
 
-    print("Step 4 of 4. Save testing masks.")
+    print("Step 4 of 4. Save validation set masks.")
     first = True
-    for idx in tqdm(testList):
+    for idx in tqdm(validateIdx):
 
-        msk = np.array(nib.load(mskList[idx]).dataobj)
+        data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
+        msk = np.array(nib.load(data_filename).dataobj)
         msk = crop_center(msk, args.resize, args.resize, args.resize)
 
         msk[msk > 1] = 1  # Combine all masks
@@ -228,22 +238,32 @@ if __name__ == "__main__":
 
     """
     Get the training file names from the data directory.
-    Anything ending in .nii.gz in the imagesTr subdirectory
-    is a training file.
+    Decathlon should always have a dataset.json file in the
+    subdirectory which lists the experiment information including
+    the input and label filenames.
     """
-    imgList = glob.glob(os.path.join(args.data_path, "imagesTr", "*.nii.gz"))
-    mskList = [w.replace("imagesTr", "labelsTr") for w in imgList]
+
+    json_filename = os.path.join(args.data_path, "dataset.json")
+
+    try:
+        with open(json_filename, "r") as fp:
+            experiment_data = json.load(fp)
+    except IOError as e:
+        print("File {} doesn't exist. It should be part of the "
+              "Decathlon directory".format(json_filename))
 
     """
     Randomize the file list. Then separate into training and
     validation (testing) lists.
     """
-    numFiles = len(imgList)
     # Set the random seed so that always get same random mix
     np.random.seed(816)
+    numFiles = experiment_data["numTraining"]
     idxList = np.arange(numFiles)  # List of file indices
     np.random.shuffle(idxList)  # Randomize the file list
     trainList = idxList[:np.int(numFiles*args.split)]
-    testList = idxList[np.int(numFiles*args.split):]
+    validateList = idxList[np.int(numFiles*args.split):]
 
-    convert_raw_data_to_hdf5(trainList, testList, imgList, filename)
+    convert_raw_data_to_hdf5(trainList, validateList,
+                             experiment_data["training"],
+                             filename, args.data_path)

@@ -296,7 +296,7 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        loss = dice_coef_loss
+        loss = "binary_crossentropy" #dice_coef_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
