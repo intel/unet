@@ -62,13 +62,15 @@ def crop_center(img, cropx, cropy, cropz):
     else:
         x, y, z = img.shape
 
-    startx = x//2-(cropx//2)
-    starty = y//2-(cropy//2)
-    startz = z//2-(cropz//2)
+    # Make sure starting index is >= 0
+    startx = np.max(x//2-(cropx//2), 0)
+    starty = np.max(y//2-(cropy//2), 0)
+    startz = np.max(z//2-(cropz//2), 0)
 
-    endx = startx + cropx
-    endy = starty + cropy
-    endz = startz + cropz
+    # Make sure ending index is <= size
+    endx = np.min(startx + cropx, x)
+    endy = np.min(starty + cropy, y)
+    endz = np.min(startz + cropz, z)
 
     if len(img.shape) == 4:
         return img[startx:endx, starty:endy, startz:endz, :]
