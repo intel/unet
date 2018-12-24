@@ -218,7 +218,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx, filename, dataDir):
 if __name__ == "__main__":
 
     print("Converting Decathlon raw Nifti data files to single "
-          "training and testing HDF5 data file.")
+          "training and validation HDF5 data file.")
     print(args)
 
     save_dir = os.path.join(
