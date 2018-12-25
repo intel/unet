@@ -149,7 +149,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             img_train_dset.resize(row+num_rows, axis=0)  # Add new row
             img_train_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
-    img_train_dset.attrs["modalities"] = json_data["modalities"]
+    hdf_file["imgs_train"].attrs["modalities"] = json_data["modalities"]
 
     # Save validaition set images
     print("Step 2 of 4. Save validation set images.")
@@ -178,7 +178,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             img_test_dset.resize(row+num_rows, axis=0)  # Add new row
             img_test_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
-    img_test_dset.attrs["modalities"] = json_data["modalities"]
+    hdf_file["imgs_test"].attrs["modalities"] = json_data["modalities"]
     
     # Save training set masks
     print("Step 3 of 4. Save training set masks.")
