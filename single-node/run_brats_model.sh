@@ -47,9 +47,11 @@ INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
 
 if [[ ! -f ${DECATHLON_DIR}/dataset.json ]] ; then
-    echo 'File "${DECATHLON_DIR}/dataset.json" is not there, aborting.'
-    echo 'Please download the Decathlon dataset, extract it, and point this script '
-    echo 'to that directory.'
+    clear
+    echo "ERROR:"
+    echo "File '${DECATHLON_DIR}/dataset.json' is not there, aborting."
+    echo "Please download the Decathlon dataset, extract it, and point this script "
+    echo "to that directory."
     exit
 fi
 
