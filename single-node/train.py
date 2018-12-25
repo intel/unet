@@ -311,8 +311,8 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        #loss = dice_coef_loss
-        loss = combined_dice_ce_loss
+        loss = dice_coef_loss
+#        loss = combined_dice_ce_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
@@ -369,11 +369,6 @@ def train_and_predict(data_path, n_epoch, mode=1):
                                                    monitor="val_loss",
                                                    save_best_only=True)
 
-    # Reduce learning rate if we hit a training loss plateau
-    plateau_callback = K.callbacks.ReduceLROnPlateau(monitor="val_loss",
-                                                     factor=0.8, patience=3,
-                                                     verbose=1)
-
     directoryName = "unet_block{}_inter{}_intra{}".format(blocktime,
                                                           num_threads,
                                                           num_inter_op_threads)
@@ -419,8 +414,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
                         validation_data=(imgs_test, msks_test),
                         verbose=1, shuffle="batch",
                         callbacks=[model_checkpoint,
-                                   tensorboard_checkpoint,
-                                   plateau_callback])
+                                   tensorboard_checkpoint])
 
     if args.trace:
         """
