@@ -311,8 +311,8 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        loss = dice_coef_loss
-#        loss = combined_dice_ce_loss
+#        loss = dice_coef_loss
+        loss = combined_dice_ce_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
@@ -433,6 +433,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     print("-" * 30)
     model = K.models.load_model(
         model_fn, custom_objects={
+            "combined_dice_ce_loss": combined_dice_ce_loss,
             "dice_coef_loss": dice_coef_loss,
             "dice_coef": dice_coef})
 

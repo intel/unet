@@ -26,9 +26,9 @@ DATA_FILENAME = "decathlon_brats.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME="unet_model_for_inference.hdf5"
 
-EPOCHS = 30
+EPOCHS = 20
 BATCH_SIZE = 128  # If the batch size is to small, then training is unstable
-LEARNING_RATE = 0.0002  # 0.00001
+LEARNING_RATE = 0.00005  # 0.00005
 PRINT_MODEL = True
 
 # Mode 1: Use flair to identify the entire tumor
