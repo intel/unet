@@ -95,7 +95,7 @@ def normalize_img(img):
     return img
 
 
-def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx, 
+def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
                              filename, dataDir, json_data):
 
     """
@@ -105,28 +105,28 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     Save to HDF5 format.
     """
     hdf_file = h5py.File(filename, "w")
-   
+
     # Save information about the Decathlon dataset
     dt = h5py.special_dtype(vlen=str)
     license = hdf_file.create_dataset("license", (100,), dtype=dt)
     license = json_data["licence"] # sic
-    
+
     dataset_name = hdf_file.create_dataset("name", (100,), dtype=dt)
     dataset_name = json_data["name"]
-    
+
     description = hdf_file.create_dataset("description", (200,), dtype=dt)
     description = json_data["description"]
-    
+
     reference = hdf_file.create_dataset("reference", (100,), dtype=dt)
     reference = json_data["reference"]
-    
+
     release = hdf_file.create_dataset("release", (50,), dtype=dt)
     release = json_data["release"]
 
     # Save training set images
     print("Step 1 of 4. Save training set images.")
     first = True
-    for idx in tqdm(trainIdx):
+    for idx in tqdm(trainIdx[:4]):
 
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
         img = np.array(nib.load(data_filename).dataobj)
@@ -149,12 +149,14 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             img_train_dset.resize(row+num_rows, axis=0)  # Add new row
             img_train_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
-    hdf_file["imgs_train"].attrs["modalities"] = json_data["modalities"]
+
+    img_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                dtype=h5py.special_dtype(vlen=str))
 
     # Save validaition set images
     print("Step 2 of 4. Save validation set images.")
     first = True
-    for idx in tqdm(validateIdx):
+    for idx in tqdm(validateIdx[:4]):
 
         # Nibabel should read the file as X,Y,Z,C
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
@@ -178,8 +180,9 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             img_test_dset.resize(row+num_rows, axis=0)  # Add new row
             img_test_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
-    hdf_file["imgs_test"].attrs["modalities"] = json_data["modalities"]
-    
+    img_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                dtype=h5py.special_dtype(vlen=str))
+
     # Save training set masks
     print("Step 3 of 4. Save training set masks.")
     first = True
@@ -285,7 +288,7 @@ if __name__ == "__main__":
     print("Dataset license:     ", experiment_data["licence"]) # sic
     print("="*30)
     print("*"*30)
-    
+
     """
     Randomize the file list. Then separate into training and
     validation (testing) lists.
@@ -295,9 +298,9 @@ if __name__ == "__main__":
     numFiles = experiment_data["numTraining"]
     idxList = np.arange(numFiles)  # List of file indices
     randomList = np.random.random((numFiles)) # List of random numbers
-    # Random number go from 0 to 1. So anything above 
+    # Random number go from 0 to 1. So anything above
     # args.train_split is in the validation list.
-    trainList = idxList[randomList < args.split]  
+    trainList = idxList[randomList < args.split]
     validateList = idxList[randomList >= args.split]
 
 
