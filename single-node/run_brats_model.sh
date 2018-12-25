@@ -45,6 +45,14 @@ MODEL_OUTPUT_DIR=${4:-"./output"}
 MODEL_OUTPUT_FILENAME=${5:-"decathlon_brats.h5"}
 INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
+
+if [[ ! -f ${DECATHLON_DIR}/dataset.json ]] ; then
+    echo 'File "${DECATHLON_DIR}/dataset.json" is not there, aborting.'
+    echo 'Please download the Decathlon dataset, extract it, and point this script '
+    echo 'to that directory.'
+    exit
+fi
+
 clear
 echo "Script to train Decathlon Brain Tumor Segmentation (BraTS) U-Net model"
 echo "======================================================================"
