@@ -126,7 +126,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     # Save training set images
     print("Step 1 of 4. Save training set images.")
     first = True
-    for idx in tqdm(trainIdx[:4]):
+    for idx in tqdm(trainIdx):
 
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
         img = np.array(nib.load(data_filename).dataobj)
@@ -152,11 +152,21 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
     img_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
                                 dtype=h5py.special_dtype(vlen=str))
+    img_train_dset.attrs.create("license", json_data["licence"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_train_dset.attrs.create("reference", json_data["reference"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_train_dset.attrs.create("name", json_data["name"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_train_dset.attrs.create("description", json_data["description"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_train_dset.attrs.create("release", json_data["release"],
+                                dtype=h5py.special_dtype(vlen=str))
 
-    # Save validaition set images
+    # Save validation set images
     print("Step 2 of 4. Save validation set images.")
     first = True
-    for idx in tqdm(validateIdx[:4]):
+    for idx in tqdm(validateIdx):
 
         # Nibabel should read the file as X,Y,Z,C
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
@@ -181,6 +191,16 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             img_test_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
     img_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                dtype=h5py.special_dtype(vlen=str))
+    img_test_dset.attrs.create("license", json_data["licence"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_test_dset.attrs.create("reference", json_data["reference"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_test_dset.attrs.create("name", json_data["name"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_test_dset.attrs.create("description", json_data["description"],
+                                dtype=h5py.special_dtype(vlen=str))
+    img_test_dset.attrs.create("release", json_data["release"],
                                 dtype=h5py.special_dtype(vlen=str))
 
     # Save training set masks
