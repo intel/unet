@@ -276,14 +276,15 @@ if __name__ == "__main__":
               "Decathlon directory".format(json_filename))
 
     # Print information about the Decathlon experiment data
-    print("Dataset name = ", experiment_data["name"])
-    print(experiment_data["description"])
-    print("Dataset release: ", experiment_data["release"])
-    print("Dataset reference: ", experiment_data["reference"])
-    print("Dataset license: ", experiment_data["licence"]) # sic
-    
+    print("*"*30)
     print("="*30)
+    print("Dataset name:        ", experiment_data["name"])
+    print("Dataset description: ", experiment_data["description"])
+    print("Dataset release:     ", experiment_data["release"])
+    print("Dataset reference:   ", experiment_data["reference"])
+    print("Dataset license:     ", experiment_data["licence"]) # sic
     print("="*30)
+    print("*"*30)
     
     """
     Randomize the file list. Then separate into training and
