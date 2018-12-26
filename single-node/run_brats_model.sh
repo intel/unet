@@ -29,8 +29,8 @@
 # tar -xvf  Task01_BrainTumour.tar
 #
 if [ "$1" == "-h" ]; then
-  echo "Usage: `basename $0` [DECATHLON_DIR] [HDF5_DIR] [IMG_SIZE]" \
-       " [MODEL_OUTPUT_DIR] [MODEL_OUTPUT_FILENAME]"
+  echo "Usage: `basename $0` [DECATHLON_DIR] [SUBSET_DIR] [IMG_SIZE]" \
+       " [MODEL_OUTPUT_DIR] [INFERENCE_FILENAME]"
   echo "Trains a U-Net model based on the Decathlon Brain Tumor" \
        "Segmentation (BraTS) dataset found at: "
   echo "http://medicaldecathlon.com"
@@ -38,13 +38,13 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-DECATHLON_DIR=${1:-"../../data/decathlon/Task01_BrainTumour"}
-HDF5_DIR=${2:-"../../data/decathlon"}
+DECATHLON_DIR=${1:-"../../data/decathlon"}
+SUBSET_DIR=${2:-"Task01_BrainTumour"}
 IMG_SIZE=${3:-144}
 MODEL_OUTPUT_DIR=${4:-"./output"}
-MODEL_OUTPUT_FILENAME=${5:-"decathlon_brats.h5"}
 INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
+MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 
 clear
 echo "Script to train Decathlon Brain Tumor Segmentation (BraTS) U-Net model"
@@ -52,14 +52,14 @@ echo "======================================================================"
 echo "You need to download the dataset from http://medicaldecathlon.com"
 echo "Download the tar file 'Task01_BrainTumour.tar'"
 echo "Then extract the data from the tar file"
-echo "tar -xvf Task01_BrainTumour.tar"
+echo "tar -vf Task01_BrainTumour.tar"
 echo "Make sure to change the DECATHLON_DIR variable in this script"
 echo " to wherever you untarred the dataset."
 
-if [[ ! -f ${DECATHLON_DIR}/dataset.json ]] ; then
+if [[ ! -f ${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json ]] ; then
     echo " "
     echo "ERROR:"
-    echo "File '${DECATHLON_DIR}/dataset.json' is not there, aborting."
+    echo "File '${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json' is not there, aborting."
     echo "Please download the Decathlon dataset, extract it, and point this script "
     echo "to that directory."
     exit
@@ -72,9 +72,9 @@ echo "*****************************************"
 
 echo "Converting Decathlon raw data to HDF5 file."
 # Run Python script to convert to a single HDF5 file
-python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR \
+python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
         --output_filename $MODEL_OUTPUT_FILENAME \
-        --save_path $HDF5_DIR --resize=$IMG_SIZE
+        --save_path $DECATHLON_DIR --resize=$IMG_SIZE
 
 echo " "
 echo "*****************************************"
@@ -84,7 +84,7 @@ echo "*****************************************"
 echo "Run U-Net training on BraTS Decathlon dataset"
 # Run training script
 # The settings.py file contains the model training.
-python train.py --data_path ${HDF5_DIR}/${IMG_SIZE}x${IMG_SIZE} \
+python train.py --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME
@@ -95,7 +95,7 @@ echo "Step 3 of 3: Run sample inference script"
 echo "*****************************************"
 
 python plot_inference_examples.py  \
-        --data_path $HDF5_DIR/${IMG_SIZE}x${IMG_SIZE} \
+        --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME

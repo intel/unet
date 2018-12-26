@@ -256,6 +256,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             msk_test_dset.resize(row+num_rows, axis=0)  # Add new row
             msk_test_dset[row:(row+num_rows), :] = msk  # Insert data into new row
 
+    hdf_file.close()
     print("Finished processing.")
     print("HDF5 saved to {}".format(filename))
 

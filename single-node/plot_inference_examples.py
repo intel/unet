@@ -78,26 +78,26 @@ def plot_results(model, imgs_test, msks_test, img_no, png_directory):
     pred_mask = model.predict(img)
 
     dice_score = calc_dice(pred_mask, msk)
-    
+
     print("Dice score for Image #{} = {:.4f}".format(img_no,
                             dice_score))
 
     plt.figure(figsize=(15,15));
     plt.subplot(1,3,1);
-    plt.imshow(img[0,:,:,2], cmap="bone");
+    plt.imshow(img[0,:,:,2], cmap="bone", origin="lower");
     plt.axis("off");
-    plt.title("MRI Input");
+    plt.title("MRI Input", fontsize=20);
     plt.subplot(1,3,2);
-    plt.imshow(msk[0,:,:,0]);
+    plt.imshow(msk[0,:,:,0], origin="lower");
     plt.axis("off");
-    plt.title("Ground truth");
+    plt.title("Ground truth", fontsize=20);
     plt.subplot(1,3,3);
-    plt.imshow(pred_mask[0,:,:,0]);
+    plt.imshow(pred_mask[0,:,:,0], origin="lower");
     plt.axis("off");
-    plt.title("Prediction\nDice = {:.4f}".format(dice_score));
+    plt.title("Prediction\nDice = {:.4f}".format(dice_score), fontsize=20);
 
     plt.tight_layout();
-    
+
     png_name = os.path.join(png_directory, "pred{}.png".format(img_no))
     plt.savefig(png_name, bbox_inches="tight", pad_inches=0)
     print("Saved png file to {}".format(png_name))
@@ -119,10 +119,22 @@ if __name__ == "__main__":
     png_directory = "inference_examples"
     if not os.path.exists(png_directory):
         os.makedirs(png_directory)
-        
+
+    # Plot some results
+    # The plots will be saved to the png_directory
+    plot_results(model, imgs_test, msks_test, 28, png_directory) # Image #28
+    plot_results(model, imgs_test, msks_test, 40, png_directory) # Image #40
+    plot_results(model, imgs_test, msks_test, 61, png_directory) # Image #61
+    plot_results(model, imgs_test, msks_test, 4560, png_directory) # Image #4560
     plot_results(model, imgs_test, msks_test, 400, png_directory) # Image #400
     plot_results(model, imgs_test, msks_test, 1100, png_directory) # Image #1100
-    plot_results(model, imgs_test, msks_test, 5673, png_directory) 
+    plot_results(model, imgs_test, msks_test, 5673, png_directory)
+    plot_results(model, imgs_test, msks_test, 4385, png_directory)
+    plot_results(model, imgs_test, msks_test, 5566, png_directory)
+    plot_results(model, imgs_test, msks_test, 4385, png_directory)
     plot_results(model, imgs_test, msks_test, 6433, png_directory)
+    plot_results(model, imgs_test, msks_test, 7864, png_directory)
+    plot_results(model, imgs_test, msks_test, 8722, png_directory)
+    plot_results(model, imgs_test, msks_test, 8889, png_directory)
     plot_results(model, imgs_test, msks_test, 9003, png_directory)
     plot_results(model, imgs_test, msks_test, 10591, png_directory)
