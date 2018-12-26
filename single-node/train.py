@@ -311,8 +311,8 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-#        loss = dice_coef_loss
-        loss = combined_dice_ce_loss
+        loss = dice_coef_loss
+#        loss = combined_dice_ce_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
@@ -471,6 +471,8 @@ def train_and_predict(data_path, n_epoch, mode=1):
     print("Please use that version for inference.")
     model.save(model_fn, include_optimizer=False)
 
+    df.close()
+    
 if __name__ == "__main__":
 
     os.system("lscpu")
