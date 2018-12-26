@@ -1,5 +1,8 @@
 # 2D U-Net for Medical Decathlon Dataset
 
+![prediction4385](https://github.com/IntelAI/unet/blob/master/single-node/images/pred4385.png)
+
+
 Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
 
 Steps:
@@ -12,4 +15,4 @@ Steps:
 7. The bash script should pre-process the Decathlon data and store it in a new HDF5 file (`convert_raw_to_hdf5.py`)´. Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the validation set within 20 epochs.
 
 
-  
+![prediction61](https://github.com/IntelAI/unet/blob/master/single-node/images/pred61.png)
