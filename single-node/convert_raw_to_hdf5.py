@@ -179,28 +179,28 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         if first:
             first = False
-            img_test_dset = hdf_file.create_dataset("imgs_test",
+            img_validation_dset = hdf_file.create_dataset("imgs_validation",
                                                     img.shape,
                                                     maxshape=(None, img.shape[1],
                                                               img.shape[2], img.shape[3]),
                                                     dtype=float, compression="gzip")
-            img_test_dset[:] = img
+            img_validation_dset[:] = img
         else:
-            row = img_test_dset.shape[0]  # Count current dataset rows
-            img_test_dset.resize(row+num_rows, axis=0)  # Add new row
-            img_test_dset[row:(row+num_rows), :] = img  # Insert data into new row
+            row = img_validation_dset.shape[0]  # Count current dataset rows
+            img_validation_dset.resize(row+num_rows, axis=0)  # Add new row
+            img_validation_dset[row:(row+num_rows), :] = img  # Insert data into new row
 
-    img_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+    img_validation_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
                                 dtype=h5py.special_dtype(vlen=str))
-    img_test_dset.attrs.create("license", json_data["licence"],
+    img_validation_dset.attrs.create("license", json_data["licence"],
                                 dtype=h5py.special_dtype(vlen=str))
-    img_test_dset.attrs.create("reference", json_data["reference"],
+    img_validation_dset.attrs.create("reference", json_data["reference"],
                                 dtype=h5py.special_dtype(vlen=str))
-    img_test_dset.attrs.create("name", json_data["name"],
+    img_validation_dset.attrs.create("name", json_data["name"],
                                 dtype=h5py.special_dtype(vlen=str))
-    img_test_dset.attrs.create("description", json_data["description"],
+    img_validation_dset.attrs.create("description", json_data["description"],
                                 dtype=h5py.special_dtype(vlen=str))
-    img_test_dset.attrs.create("release", json_data["release"],
+    img_validation_dset.attrs.create("release", json_data["release"],
                                 dtype=h5py.special_dtype(vlen=str))
 
     # Save training set masks
@@ -245,16 +245,16 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         if first:
             first = False
-            msk_test_dset = hdf_file.create_dataset("msks_test",
+            msk_validation_dset = hdf_file.create_dataset("msks_validation",
                                                     msk.shape,
                                                     maxshape=(None, msk.shape[1],
                                                               msk.shape[2], msk.shape[3]),
                                                     dtype=float, compression="gzip")
-            msk_test_dset[:] = msk
+            msk_validation_dset[:] = msk
         else:
-            row = msk_test_dset.shape[0]  # Count current dataset rows
-            msk_test_dset.resize(row+num_rows, axis=0)  # Add new row
-            msk_test_dset[row:(row+num_rows), :] = msk  # Insert data into new row
+            row = msk_validation_dset.shape[0]  # Count current dataset rows
+            msk_validation_dset.resize(row+num_rows, axis=0)  # Add new row
+            msk_validation_dset[row:(row+num_rows), :] = msk  # Insert data into new row
 
     hdf_file.close()
     print("Finished processing.")

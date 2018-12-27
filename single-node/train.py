@@ -311,8 +311,8 @@ def unet_model(img_height=128,
         model.trainable = False
     else:
         metrics = ["accuracy", dice_coef]
-        loss = dice_coef_loss
-#        loss = combined_dice_ce_loss
+        # loss = dice_coef_loss
+        loss = combined_dice_ce_loss
 
         if args.trace:
             model.compile(optimizer=optimizer,
@@ -341,9 +341,9 @@ def train_and_predict(data_path, n_epoch, mode=1):
     df = h5py.File(os.path.join(data_path, args.data_filename), "r")
 
     imgs_train = df["imgs_train"]
-    imgs_test = df["imgs_test"]
+    imgs_validation = df["imgs_validation"]
     msks_train = df["msks_train"]
-    msks_test = df["msks_test"]
+    msks_validation = df["msks_validation"]
 
     print("-" * 30)
     print("Creating and compiling model...")
@@ -400,18 +400,18 @@ def train_and_predict(data_path, n_epoch, mode=1):
     if args.channels_first:  # NCHW
         imgs_train = np.swapaxes(imgs_train, 1, -1)
         msks_train = np.swapaxes(msks_train, 1, -1)
-        imgs_test = np.swapaxes(imgs_test, 1, -1)
-        msks_test = np.swapaxes(msks_test, 1, -1)
+        imgs_validation = np.swapaxes(imgs_validation, 1, -1)
+        msks_validation = np.swapaxes(msks_validation, 1, -1)
 
     print("Training image dimensions:   {}".format(imgs_train.shape))
     print("Training mask dimensions:    {}".format(msks_train.shape))
-    print("Validation image dimensions: {}".format(imgs_test.shape))
-    print("Validation mask dimensions:  {}".format(msks_test.shape))
+    print("Validation image dimensions: {}".format(imgs_validation.shape))
+    print("Validation mask dimensions:  {}".format(msks_validation.shape))
 
     history = model.fit(imgs_train, msks_train,
                         batch_size=args.batch_size,
                         epochs=n_epoch,
-                        validation_data=(imgs_test, msks_test),
+                        validation_data=(imgs_validation, msks_validation),
                         verbose=1, shuffle="batch",
                         callbacks=[model_checkpoint,
                                    tensorboard_checkpoint])
@@ -441,14 +441,15 @@ def train_and_predict(data_path, n_epoch, mode=1):
     start_inference = time.time()
     print("Evaluating model. Please wait...")
     loss, accuracy, metric = model.evaluate(
-        imgs_test,
-        msks_test,
+        imgs_validation,
+        msks_validation,
         batch_size=args.batch_size,
         verbose=1)
     elapsed_time = time.time() - start_inference
     print("{} images in {:.2f} seconds => {:.3f} images per "
           "second inference".format(
-        imgs_test.shape[0], elapsed_time, imgs_test.shape[0] / elapsed_time))
+        imgs_validation.shape[0], elapsed_time,
+        imgs_validation.shape[0] / elapsed_time))
     print("Mean Dice score for predictions = {:.4f}".format(metric))
 
     # Save final model without custom loss and metrics
@@ -472,7 +473,7 @@ def train_and_predict(data_path, n_epoch, mode=1):
     model.save(model_fn, include_optimizer=False)
 
     df.close()
-    
+
 if __name__ == "__main__":
 
     os.system("lscpu")

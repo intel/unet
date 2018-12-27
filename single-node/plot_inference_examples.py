@@ -68,13 +68,13 @@ def calc_dice(y_true, y_pred, smooth = 1.):
 
     return coef
 
-def plot_results(model, imgs_test, msks_test, img_no, png_directory):
+def plot_results(model, imgs_validation, msks_validation, img_no, png_directory):
     """
     Calculate the Dice and plot the predicted masks for image # img_no
     """
 
-    img = imgs_test[[img_no],]
-    msk = msks_test[[img_no],]
+    img = imgs_validation[[img_no],]
+    msk = msks_validation[[img_no],]
     pred_mask = model.predict(img)
 
     dice_score = calc_dice(pred_mask, msk)
@@ -109,8 +109,8 @@ if __name__ == "__main__":
 
     # Load data
     df = h5py.File(data_fn, "r")
-    imgs_test = df["imgs_test"]
-    msks_test = df["msks_test"]
+    imgs_validation = df["imgs_validation"]
+    msks_validation = df["msks_validation"]
 
     # Load model
     model = K.models.load_model(model_fn)
@@ -122,19 +122,19 @@ if __name__ == "__main__":
 
     # Plot some results
     # The plots will be saved to the png_directory
-    plot_results(model, imgs_test, msks_test, 28, png_directory) # Image #28
-    plot_results(model, imgs_test, msks_test, 40, png_directory) # Image #40
-    plot_results(model, imgs_test, msks_test, 61, png_directory) # Image #61
-    plot_results(model, imgs_test, msks_test, 4560, png_directory) # Image #4560
-    plot_results(model, imgs_test, msks_test, 400, png_directory) # Image #400
-    plot_results(model, imgs_test, msks_test, 1100, png_directory) # Image #1100
-    plot_results(model, imgs_test, msks_test, 5673, png_directory)
-    plot_results(model, imgs_test, msks_test, 4385, png_directory)
-    plot_results(model, imgs_test, msks_test, 5566, png_directory)
-    plot_results(model, imgs_test, msks_test, 4385, png_directory)
-    plot_results(model, imgs_test, msks_test, 6433, png_directory)
-    plot_results(model, imgs_test, msks_test, 7864, png_directory)
-    plot_results(model, imgs_test, msks_test, 8722, png_directory)
-    plot_results(model, imgs_test, msks_test, 8889, png_directory)
-    plot_results(model, imgs_test, msks_test, 9003, png_directory)
-    plot_results(model, imgs_test, msks_test, 10591, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 28, png_directory) # Image #28
+    plot_results(model, imgs_validation, msks_validation, 40, png_directory) # Image #40
+    plot_results(model, imgs_validation, msks_validation, 61, png_directory) # Image #61
+    plot_results(model, imgs_validation, msks_validation, 4560, png_directory) # Image #4560
+    plot_results(model, imgs_validation, msks_validation, 400, png_directory) # Image #400
+    plot_results(model, imgs_validation, msks_validation, 1100, png_directory) # Image #1100
+    plot_results(model, imgs_validation, msks_validation, 5673, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 4385, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 5566, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 4385, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 6433, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 7864, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 8722, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 8889, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 9003, png_directory)
+    plot_results(model, imgs_validation, msks_validation, 10591, png_directory)
