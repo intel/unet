@@ -20,3 +20,4 @@ Tips for improving model:
 * Predict multiple output masks.  In `convert_raw_to_hdf5.py` we have combined all of the ground truth masks into one single mask. However, more complex models predict each of the subclasses (edema, tumor core, necrosis) of the glioma. This will involve some modification of the output layer to the model (e.g. more output layers for the sigmoid mask or a softmax layer at the output instead of a sigmoid).
 
 ![prediction61](https://github.com/IntelAI/unet/blob/master/single-node/images/pred61.png)
+![prediction7864](https://github.com/IntelAI/unet/blob/master/single-node/images/pred7864.png)
