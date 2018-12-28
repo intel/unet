@@ -154,6 +154,7 @@ else:
 
 K.backend.set_image_data_format(data_format)
 
+
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -168,32 +169,28 @@ def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
 
     return tf.reduce_mean(coef)
 
-
-def dice_coef_loss(y_true, y_pred, axis=(1, 2), smooth=1.):
+def dice_coef_loss(target, prediction, axis=(1, 2, 3), smooth=1.):
     """
     Sorenson (Soft) Dice loss
     Using -log(Dice) as the loss since it is better behaved.
     Also, the log allows avoidance of the division which
     can help prevent underflow when the numbers are very small.
     """
-    intersection = tf.reduce_sum(y_pred * y_true, axis=axis)
-    p = tf.reduce_sum(y_pred, axis=axis)
-    t = tf.reduce_sum(y_true, axis=axis)
+    intersection = tf.reduce_sum(prediction * target, axis=axis)
+    p = tf.reduce_sum(prediction, axis=axis)
+    t = tf.reduce_sum(target, axis=axis)
     numerator = tf.reduce_mean(intersection + smooth)
     denominator = tf.reduce_mean(t + p + smooth)
     dice_loss = -tf.log(2.*numerator) + tf.log(denominator)
 
     return dice_loss
 
-
-def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.8):
+def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     """
     Combined Dice and Binary Cross Entropy Loss
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
-
-
 
 def unet_model(img_height=128,
                img_width=128,
@@ -229,7 +226,6 @@ def unet_model(img_height=128,
 
     # Transposed convolution parameters
     params_trans = dict(data_format=data_format,
-                        activation="relu",
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
@@ -337,23 +333,43 @@ def train_and_predict(data_path, n_epoch, mode=1):
     """
     Load data from HDF5 file
     """
-    import h5py
-    df = h5py.File(os.path.join(data_path, args.data_filename), "r")
 
-    imgs_train = df["imgs_train"]
-    imgs_validation = df["imgs_validation"]
-    msks_train = df["msks_train"]
-    msks_validation = df["msks_validation"]
+    def process_data(array):
+        # Data was saved as NHWC (channels last)
+        if args.channels_first:  # NCHW
+            return np.swapaxes(array, 1, 3)
+        else:
+            return array
+
+    imgs_train = K.utils.HDF5Matrix(os.path.join(data_path, args.data_filename),
+                                    "imgs_train", normalizer=process_data)
+    imgs_validation = K.utils.HDF5Matrix(os.path.join(data_path, args.data_filename),
+                                         "imgs_validation",
+                                         normalizer=process_data)
+    msks_train = K.utils.HDF5Matrix(os.path.join(data_path, args.data_filename),
+                                    "msks_train", normalizer=process_data)
+    msks_validation = K.utils.HDF5Matrix(os.path.join(data_path, args.data_filename),
+                                         "msks_validation",
+                                         normalizer=process_data)
 
     print("-" * 30)
     print("Creating and compiling model...")
     print("-" * 30)
 
-    img_height = imgs_train.shape[1]
-    img_width = imgs_train.shape[2]
-    input_no = imgs_train.shape[3]
-    output_no = msks_train.shape[3]
+    if args.channels_first:
+        img_height = imgs_train.shape[3]
+        img_width = imgs_train.shape[2]
+        input_no = imgs_train.shape[1]
+        output_no = msks_train.shape[1]
+    else:
+        img_height = imgs_train.shape[1]
+        img_width = imgs_train.shape[2]
+        input_no = imgs_train.shape[3]
+        output_no = msks_train.shape[3]
 
+    """
+    Define the model
+    """
     model = unet_model(img_height, img_width, input_no, output_no)
 
     if (args.use_upsampling):
@@ -396,12 +412,6 @@ def train_and_predict(data_path, n_epoch, mode=1):
     history = K.callbacks.History()
 
     print("Batch size = {}".format(args.batch_size))
-    # Data was saved as NHWC (channels last)
-    if args.channels_first:  # NCHW
-        imgs_train = np.swapaxes(imgs_train, 1, -1)
-        msks_train = np.swapaxes(msks_train, 1, -1)
-        imgs_validation = np.swapaxes(imgs_validation, 1, -1)
-        msks_validation = np.swapaxes(msks_validation, 1, -1)
 
     print("Training image dimensions:   {}".format(imgs_train.shape))
     print("Training mask dimensions:    {}".format(msks_train.shape))
