@@ -18,6 +18,11 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+"""
+This module loads the training and validation datasets.
+If you have custom datasets, you can load and preprocess them here.
+"""
+
 from argparser import args
 
 if args.keras_api:

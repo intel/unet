@@ -18,6 +18,11 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+"""
+This module contains all of the model definition code.
+You can try custom models by modifying the code here.
+"""
+
 from argparser import args
 import os
 import time
@@ -286,7 +291,7 @@ def save_inference_model(model, imgs_shape, msks_shape):
     model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
 
     # Model without Dice and custom metrics
-    model = unet_model(imgs_shape, msks_shape, final=True)
+    model = load_model(imgs_shape, msks_shape, final=True)
     model.load_weights(os.path.join(args.output_path, "weights.hdf5"))
 
     model_json = model.to_json()
@@ -301,3 +306,15 @@ def save_inference_model(model, imgs_shape, msks_shape):
           "for inference to {}".format(model_fn))
     print("Please use that version for inference.")
     model.save(model_fn, include_optimizer=False)
+
+
+def load_model(imgs_shape, msks_shape,
+               dropout=0.2,
+               final=False):
+
+    """
+    If you have other models, you can try them here
+    """
+    return unet_model(imgs_shape, msks_shape,
+                   dropout=dropout,
+                   final=final)

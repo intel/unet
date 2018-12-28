@@ -18,12 +18,18 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+"""
+This module loads the data from data.py, creates a TensorFlow/Keras model
+from model.py, trains the model on the data, and then saves the
+best model.
+"""
+
 import tensorflow as tf
 import time
 import os
 import settings    # Use the custom settings.py file for default parameters
 
-from model import unet_model, get_callbacks, evaluate_model, save_inference_model
+from model import load_model, get_callbacks, evaluate_model, save_inference_model
 from data import load_data
 
 from argparser import args
@@ -62,7 +68,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
     Step 2: Define the model
     """
-    model = unet_model(imgs_train.shape, msks_train.shape)
+    model = load_model(imgs_train.shape, msks_train.shape)
 
     model_filename, model_callbacks = get_callbacks()
 

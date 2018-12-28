@@ -17,6 +17,11 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+
+"""
+This module just reads parameters from the command line.
+"""
+
 import argparse
 import settings    # Use the custom settings.py file for default parameters
 import os

@@ -26,11 +26,28 @@ DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME="unet_model_for_inference.hdf5"
 
-EPOCHS = 30
-BATCH_SIZE = 128  # If the batch size is to small, then training is unstable
-LEARNING_RATE = 0.00005  # 0.00005
-PRINT_MODEL = True
+EPOCHS = 30  # Number of epochs to train
 
+"""
+If the batch size is too small, then training is unstable.
+I believe this is because we are using 2D slicewise model.
+There are more slices without tumor than with tumor in the
+dataset so the data may become imbalanced if we choose too
+small of a batch size. There are, of course, many ways
+to handle imbalance training samples, but if we have
+enough memory, it is easiest just to select a sufficiently
+large batch size to make sure we have a few slices with
+tumors in each batch.
+"""
+BATCH_SIZE = 128
+
+# Using Adam optimizer
+LEARNING_RATE = 0.00005  # 0.00005
+PRINT_MODEL = True  # Print the model
+
+# CPU specific parameters for multi-threading.
+# These can help take advantage of multi-core CPU systems
+# and significantly boosts training speed with MKL-DNN TensorFlow.
 BLOCKTIME = 1
 NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
@@ -38,4 +55,6 @@ NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
+# 28 DEC 2018: tf.keras has some bugs in the use of HDF5 and with the custom
+# loss function. Recommend to use Keras API when in doubt.
 USE_UPSAMPLING = True  # If true, then use bilinear interpolation. Otherwise, transposed convolution
