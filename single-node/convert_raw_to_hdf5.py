@@ -97,7 +97,7 @@ def normalize_img(img):
     Normalize the pixel values.
     This is one of the most important preprocessing steps.
     We need to make sure that the pixel values have a mean of 0
-    and a standard deviation of 1 t0 help the model to train
+    and a standard deviation of 1 to help the model to train
     faster and more accurately.
     """
 
@@ -227,18 +227,18 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             msk_train_dset[row:(row+num_rows), :] = msk
 
-        msk_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
-                                    dtype=h5py.special_dtype(vlen=str))
-        msk_train_dset.attrs.create("license", json_data["licence"],
-                                    dtype=h5py.special_dtype(vlen=str))
-        msk_train_dset.attrs.create("reference", json_data["reference"],
-                                    dtype=h5py.special_dtype(vlen=str))
-        msk_train_dset.attrs.create("name", json_data["name"],
-                                    dtype=h5py.special_dtype(vlen=str))
-        msk_train_dset.attrs.create("description", json_data["description"],
-                                    dtype=h5py.special_dtype(vlen=str))
-        msk_train_dset.attrs.create("release", json_data["release"],
-                                    dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("license", json_data["licence"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("reference", json_data["reference"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("name", json_data["name"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("description", json_data["description"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_train_dset.attrs.create("release", json_data["release"],
+                                dtype=h5py.special_dtype(vlen=str))
     # Save testing/validation set masks
 
     print("Step 4 of 4. Save validation set masks.")
@@ -267,17 +267,17 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             msk_validation_dset[row:(row+num_rows), :] = msk
 
-    msk_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+    msk_validation_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
                                dtype=h5py.special_dtype(vlen=str))
-    msk_test_dset.attrs.create("license", json_data["licence"],
+    msk_validation_dset.attrs.create("license", json_data["licence"],
                                dtype=h5py.special_dtype(vlen=str))
-    msk_test_dset.attrs.create("reference", json_data["reference"],
+    msk_validation_dset.attrs.create("reference", json_data["reference"],
                                dtype=h5py.special_dtype(vlen=str))
-    msk_test_dset.attrs.create("name", json_data["name"],
+    msk_validation_dset.attrs.create("name", json_data["name"],
                                dtype=h5py.special_dtype(vlen=str))
-    msk_test_dset.attrs.create("description", json_data["description"],
+    msk_validation_dset.attrs.create("description", json_data["description"],
                                dtype=h5py.special_dtype(vlen=str))
-    msk_test_dset.attrs.create("release", json_data["release"],
+    msk_validation_dset.attrs.create("release", json_data["release"],
                                dtype=h5py.special_dtype(vlen=str))
 
     hdf_file.close()

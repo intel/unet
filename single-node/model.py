@@ -27,7 +27,7 @@ from argparser import args
 import os
 import time
 
-import tensorflow as tf
+import tensorflow as tf # conda install -c anaconda tensorflow
 
 if args.keras_api:
     import keras as K

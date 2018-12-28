@@ -24,7 +24,7 @@ from model.py, trains the model on the data, and then saves the
 best model.
 """
 
-import tensorflow as tf
+import tensorflow as tf # conda install -c anaconda tensorflow
 import time
 import os
 import settings    # Use the custom settings.py file for default parameters
@@ -39,7 +39,11 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
-
+"""
+For best CPU speed set the number of intra and inter threads
+to take advantage of multi-core systems.
+See https://github.com/intel/mkl-dnn
+"""
 config = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
                         inter_op_parallelism_threads=args.num_inter_threads)
 
