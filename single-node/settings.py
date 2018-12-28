@@ -26,15 +26,10 @@ DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME="unet_model_for_inference.hdf5"
 
-EPOCHS = 20
+EPOCHS = 30
 BATCH_SIZE = 128  # If the batch size is to small, then training is unstable
 LEARNING_RATE = 0.00005  # 0.00005
 PRINT_MODEL = True
-
-# Mode 1: Use flair to identify the entire tumor
-# Mode 2: Use T1 Gd to identify the active tumor
-# Mode 3: Use T2 to identify the active core (necrosis, enhancing, non-enh)
-MODE = 1  # 1, 2, or 3
 
 BLOCKTIME = 1
 NUM_INTER_THREADS = 1
@@ -44,4 +39,3 @@ NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 USE_UPSAMPLING = True  # If true, then use bilinear interpolation. Otherwise, transposed convolution
-CREATE_TRACE_TIMELINE = False
