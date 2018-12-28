@@ -18,7 +18,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import psutil
+import psutil  # pip install psutil
 import os
 
 DATA_PATH = os.path.join("../../data/decathlon/144x144/")
@@ -51,7 +51,9 @@ PRINT_MODEL = True  # Print the model
 BLOCKTIME = 1
 NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
-NUM_INTRA_THREADS = psutil.cpu_count(logical=False)
+
+# Figure out how many physical cores we have available
+NUM_INTRA_THREADS = len(psutil.Process().cpu_affinity())
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras

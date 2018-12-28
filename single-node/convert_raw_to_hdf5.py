@@ -32,10 +32,10 @@ https://creativecommons.org/licenses/by-sa/4.0/
 """
 
 import os
-import nibabel as nib
+import nibabel as nib  # pip install nibabel
 import numpy as np
-from tqdm import tqdm
-import h5py
+from tqdm import tqdm  # pip install tqdm
+import h5py   # pip install h5py
 import json
 
 import argparse
@@ -156,6 +156,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     We've already split into training and validation subsets.
     Read in Nifti format files. Crop images and masks.
     Save to HDF5 format.
+    This code is will convert the 3D images and masks
+    into a stack of 2D slices.
     """
     hdf_file = h5py.File(filename, "w")
 
