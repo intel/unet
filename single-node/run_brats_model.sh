@@ -52,7 +52,7 @@ echo "======================================================================"
 echo "You need to download the dataset from http://medicaldecathlon.com"
 echo "Download the tar file 'Task01_BrainTumour.tar'"
 echo "Then extract the data from the tar file"
-echo "tar -vf Task01_BrainTumour.tar"
+echo "tar -xvf Task01_BrainTumour.tar"
 echo "Make sure to change the DECATHLON_DIR variable in this script"
 echo " to wherever you untarred the dataset."
 
