@@ -305,6 +305,7 @@ def save_inference_model(model, imgs_shape, msks_shape):
     print("Writing final model (without custom Dice metrics) "
           "for inference to {}".format(model_fn))
     print("Please use that version for inference.")
+    K.backend.set_learning_phase(0)
     model.save(model_fn, include_optimizer=False)
 
 

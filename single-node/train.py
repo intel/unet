@@ -100,7 +100,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
     Step 5: Save the best model for inference
     """
-
+    
     print("-" * 30)
     print("Saving the model for inference ...")
     print("-" * 30)

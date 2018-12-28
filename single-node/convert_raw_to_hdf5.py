@@ -18,6 +18,19 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+"""
+Converts the Medical Decathlon raw Nifti files into
+single HDF5 file for easier use in TensorFlow/Keras.
+
+You'll need to download the raw dataset from
+the Medical Decathlon website (http://medicaldecathlon.com),
+extract the data (untar), and run this script.
+
+The raw dataset has the CC-BY-SA 4.0 license.
+https://creativecommons.org/licenses/by-sa/4.0/
+
+"""
+
 import os
 import nibabel as nib
 import numpy as np
@@ -29,7 +42,7 @@ import argparse
 
 parser = argparse.ArgumentParser(
     description="Convert Decathlon raw Nifti data "
-    "(http://medicaldecathlon.com/) "
+    "(http://medicaldecathlon.com) "
     "files to Numpy data files",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -105,23 +118,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     Save to HDF5 format.
     """
     hdf_file = h5py.File(filename, "w")
-
-    # Save information about the Decathlon dataset
-    dt = h5py.special_dtype(vlen=str)
-    license = hdf_file.create_dataset("license", (100,), dtype=dt)
-    license = json_data["licence"] # sic
-
-    dataset_name = hdf_file.create_dataset("name", (100,), dtype=dt)
-    dataset_name = json_data["name"]
-
-    description = hdf_file.create_dataset("description", (200,), dtype=dt)
-    description = json_data["description"]
-
-    reference = hdf_file.create_dataset("reference", (100,), dtype=dt)
-    reference = json_data["reference"]
-
-    release = hdf_file.create_dataset("release", (50,), dtype=dt)
-    release = json_data["release"]
 
     # Save training set images
     print("Step 1 of 4. Save training set images.")
@@ -229,6 +225,18 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             msk_train_dset.resize(row+num_rows, axis=0)  # Add new row
             msk_train_dset[row:(row+num_rows), :] = msk  # Insert data into new row
 
+        msk_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                    dtype=h5py.special_dtype(vlen=str))
+        msk_train_dset.attrs.create("license", json_data["licence"],
+                                    dtype=h5py.special_dtype(vlen=str))
+        msk_train_dset.attrs.create("reference", json_data["reference"],
+                                    dtype=h5py.special_dtype(vlen=str))
+        msk_train_dset.attrs.create("name", json_data["name"],
+                                    dtype=h5py.special_dtype(vlen=str))
+        msk_train_dset.attrs.create("description", json_data["description"],
+                                    dtype=h5py.special_dtype(vlen=str))
+        msk_train_dset.attrs.create("release", json_data["release"],
+                                    dtype=h5py.special_dtype(vlen=str))
     # Save testing/validation set masks
 
     print("Step 4 of 4. Save validation set masks.")
@@ -255,6 +263,19 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             row = msk_validation_dset.shape[0]  # Count current dataset rows
             msk_validation_dset.resize(row+num_rows, axis=0)  # Add new row
             msk_validation_dset[row:(row+num_rows), :] = msk  # Insert data into new row
+
+    msk_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_test_dset.attrs.create("license", json_data["licence"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_test_dset.attrs.create("reference", json_data["reference"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_test_dset.attrs.create("name", json_data["name"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_test_dset.attrs.create("description", json_data["description"],
+                                dtype=h5py.special_dtype(vlen=str))
+    msk_test_dset.attrs.create("release", json_data["release"],
+                                dtype=h5py.special_dtype(vlen=str))
 
     hdf_file.close()
     print("Finished processing.")
