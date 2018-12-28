@@ -18,6 +18,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+import numpy as np
 """
 This module loads the training and validation datasets.
 If you have custom datasets, you can load and preprocess them here.
@@ -30,11 +31,11 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
-import numpy as np
 
 """
 Load data from HDF5 file
 """
+
 
 def process_data(array):
     """
@@ -47,6 +48,7 @@ def process_data(array):
         return np.swapaxes(array, 1, 3)
     else:
         return array
+
 
 def load_data(hdf5_data_filename):
     """

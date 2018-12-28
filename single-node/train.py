@@ -45,6 +45,7 @@ config = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
 
 sess = tf.Session(config=config)
 
+
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
     Create a model, load the data, and train it.
@@ -100,11 +101,12 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
     Step 5: Save the best model for inference
     """
-    
+
     print("-" * 30)
     print("Saving the model for inference ...")
     print("-" * 30)
     save_inference_model(model, imgs_train.shape, msks_train.shape)
+
 
 if __name__ == "__main__":
 

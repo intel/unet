@@ -63,6 +63,7 @@ parser.add_argument("--split", type=float, default=0.85,
 
 args = parser.parse_args()
 
+
 def crop_center(img, cropx, cropy, cropz):
     """
     Take a center crop of the images.
@@ -110,7 +111,6 @@ def normalize_img(img):
 
 def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
                              filename, dataDir, json_data):
-
     """
     Go through the Decathlon dataset.json file.
     We've already split into training and validation subsets.
@@ -143,8 +143,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
         else:
             row = img_train_dset.shape[0]  # Count current dataset rows
             img_train_dset.resize(row+num_rows, axis=0)  # Add new row
-            img_train_dset[row:(row+num_rows), :] = img  # Insert data into new row
-
+            # Insert data into new row
+            img_train_dset[row:(row+num_rows), :] = img
 
     img_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
                                 dtype=h5py.special_dtype(vlen=str))
@@ -176,28 +176,29 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
         if first:
             first = False
             img_validation_dset = hdf_file.create_dataset("imgs_validation",
-                                                    img.shape,
-                                                    maxshape=(None, img.shape[1],
-                                                              img.shape[2], img.shape[3]),
-                                                    dtype=float, compression="gzip")
+                                                          img.shape,
+                                                          maxshape=(None, img.shape[1],
+                                                                    img.shape[2], img.shape[3]),
+                                                          dtype=float, compression="gzip")
             img_validation_dset[:] = img
         else:
             row = img_validation_dset.shape[0]  # Count current dataset rows
             img_validation_dset.resize(row+num_rows, axis=0)  # Add new row
-            img_validation_dset[row:(row+num_rows), :] = img  # Insert data into new row
+            # Insert data into new row
+            img_validation_dset[row:(row+num_rows), :] = img
 
     img_validation_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
     img_validation_dset.attrs.create("license", json_data["licence"],
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
     img_validation_dset.attrs.create("reference", json_data["reference"],
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
     img_validation_dset.attrs.create("name", json_data["name"],
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
     img_validation_dset.attrs.create("description", json_data["description"],
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
     img_validation_dset.attrs.create("release", json_data["release"],
-                                dtype=h5py.special_dtype(vlen=str))
+                                     dtype=h5py.special_dtype(vlen=str))
 
     # Save training set masks
     print("Step 3 of 4. Save training set masks.")
@@ -223,7 +224,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
         else:
             row = msk_train_dset.shape[0]  # Count current dataset rows
             msk_train_dset.resize(row+num_rows, axis=0)  # Add new row
-            msk_train_dset[row:(row+num_rows), :] = msk  # Insert data into new row
+            # Insert data into new row
+            msk_train_dset[row:(row+num_rows), :] = msk
 
         msk_train_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
                                     dtype=h5py.special_dtype(vlen=str))
@@ -254,32 +256,34 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
         if first:
             first = False
             msk_validation_dset = hdf_file.create_dataset("msks_validation",
-                                                    msk.shape,
-                                                    maxshape=(None, msk.shape[1],
-                                                              msk.shape[2], msk.shape[3]),
-                                                    dtype=float, compression="gzip")
+                                                          msk.shape,
+                                                          maxshape=(None, msk.shape[1],
+                                                                    msk.shape[2], msk.shape[3]),
+                                                          dtype=float, compression="gzip")
             msk_validation_dset[:] = msk
         else:
             row = msk_validation_dset.shape[0]  # Count current dataset rows
             msk_validation_dset.resize(row+num_rows, axis=0)  # Add new row
-            msk_validation_dset[row:(row+num_rows), :] = msk  # Insert data into new row
+            # Insert data into new row
+            msk_validation_dset[row:(row+num_rows), :] = msk
 
     msk_test_dset.attrs.create("modalities", tuple(json_data["modality"].values()),
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
     msk_test_dset.attrs.create("license", json_data["licence"],
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
     msk_test_dset.attrs.create("reference", json_data["reference"],
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
     msk_test_dset.attrs.create("name", json_data["name"],
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
     msk_test_dset.attrs.create("description", json_data["description"],
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
     msk_test_dset.attrs.create("release", json_data["release"],
-                                dtype=h5py.special_dtype(vlen=str))
+                               dtype=h5py.special_dtype(vlen=str))
 
     hdf_file.close()
     print("Finished processing.")
     print("HDF5 saved to {}".format(filename))
+
 
 if __name__ == "__main__":
 
@@ -302,7 +306,6 @@ if __name__ == "__main__":
     if os.path.exists(filename):
         print("Removing existing data file: {}".format(filename))
         os.remove(filename)
-
 
     """
     Get the training file names from the data directory.
@@ -327,7 +330,7 @@ if __name__ == "__main__":
     print("Dataset description: ", experiment_data["description"])
     print("Dataset release:     ", experiment_data["release"])
     print("Dataset reference:   ", experiment_data["reference"])
-    print("Dataset license:     ", experiment_data["licence"]) # sic
+    print("Dataset license:     ", experiment_data["licence"])  # sic
     print("="*30)
     print("*"*30)
 
@@ -339,12 +342,11 @@ if __name__ == "__main__":
     np.random.seed(816)
     numFiles = experiment_data["numTraining"]
     idxList = np.arange(numFiles)  # List of file indices
-    randomList = np.random.random((numFiles)) # List of random numbers
+    randomList = np.random.random((numFiles))  # List of random numbers
     # Random number go from 0 to 1. So anything above
     # args.train_split is in the validation list.
     trainList = idxList[randomList < args.split]
     validateList = idxList[randomList >= args.split]
-
 
     convert_raw_data_to_hdf5(trainList, validateList,
                              experiment_data["training"],

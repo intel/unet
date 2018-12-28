@@ -59,9 +59,10 @@ echo " to wherever you untarred the dataset."
 if [[ ! -f ${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json ]] ; then
     echo " "
     echo "ERROR:"
-    echo "File '${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json' is not there, aborting."
-    echo "Please download the Decathlon dataset, extract it, and point this script "
-    echo "to that directory."
+    echo "File '${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json' " \
+         "is not there, aborting."
+    echo "Please download the Decathlon dataset, extract it, " \
+         "and point this script to that directory."
     exit
 fi
 

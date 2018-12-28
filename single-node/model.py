@@ -67,6 +67,7 @@ def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
 
     return tf.reduce_mean(coef)
 
+
 def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice loss
@@ -83,12 +84,14 @@ def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
 
     return dice_loss
 
+
 def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     """
     Combined Dice and Binary Cross Entropy Loss
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
+
 
 def unet_model(imgs_shape, msks_shape,
                dropout=0.2,
@@ -237,20 +240,21 @@ def get_callbacks():
     # Tensorboard callbacks
     if (args.use_upsampling):
         tensorboard_filename = os.path.join(args.output_path,
-                                 "keras_tensorboard_upsampling"
-                                 "_batch{}/{}".format(
-                                 args.batch_size, directoryName))
+                                            "keras_tensorboard_upsampling"
+                                            "_batch{}/{}".format(
+                                                args.batch_size, directoryName))
     else:
         tensorboard_filename = os.path.join(args.output_path,
-                                 "keras_tensorboard_transposed"
-                                 "_batch{}/{}".format(
-                                 args.batch_size, directoryName))
+                                            "keras_tensorboard_transposed"
+                                            "_batch{}/{}".format(
+                                                args.batch_size, directoryName))
 
     tensorboard_checkpoint = K.callbacks.TensorBoard(
         log_dir=tensorboard_filename,
         write_graph=True, write_images=True)
 
     return model_fn, [model_checkpoint, tensorboard_checkpoint]
+
 
 def evaluate_model(model_fn, imgs_validation, msks_validation):
     """
@@ -274,11 +278,12 @@ def evaluate_model(model_fn, imgs_validation, msks_validation):
     elapsed_time = time.time() - start_inference
     print("{} images in {:.2f} seconds => {:.3f} images per "
           "second inference".format(
-        imgs_validation.shape[0], elapsed_time,
-        imgs_validation.shape[0] / elapsed_time))
+              imgs_validation.shape[0], elapsed_time,
+              imgs_validation.shape[0] / elapsed_time))
     print("Mean Dice score for predictions = {:.4f}".format(metric))
 
     return model
+
 
 def save_inference_model(model, imgs_shape, msks_shape):
     """
@@ -312,10 +317,9 @@ def save_inference_model(model, imgs_shape, msks_shape):
 def load_model(imgs_shape, msks_shape,
                dropout=0.2,
                final=False):
-
     """
     If you have other models, you can try them here
     """
     return unet_model(imgs_shape, msks_shape,
-                   dropout=dropout,
-                   final=final)
+                      dropout=dropout,
+                      final=final)
