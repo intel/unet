@@ -482,7 +482,6 @@ def train_and_predict(data_path, n_epoch, mode=1):
     print("Please use that version for inference.")
     model.save(model_fn, include_optimizer=False)
 
-    df.close()
 
 if __name__ == "__main__":
 
