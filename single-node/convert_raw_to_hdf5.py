@@ -126,6 +126,29 @@ def attach_attributes(dset, json_data):
     dset.attrs.create("release", json_data["release"],
                                 dtype=h5py.special_dtype(vlen=str))
 
+def preprocess_inputs(img):
+    """
+    Process the input images
+    """
+    img = crop_center(img, args.resize, args.resize, args.resize)
+    img = normalize_img(img)
+
+    img = np.swapaxes(np.array(img), 0, -2)
+
+    return img
+
+def preprocess_labels(msk):
+    """
+    Process the ground truth labels
+    """
+
+    msk = crop_center(msk, args.resize, args.resize, args.resize)
+
+    msk[msk > 1] = 1  # Combine all masks
+    msk = np.expand_dims(np.swapaxes(np.array(msk), 0, -1), -1)
+
+    return msk
+
 def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
                              filename, dataDir, json_data):
     """
@@ -143,10 +166,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
         img = np.array(nib.load(data_filename).dataobj)
-        img = crop_center(img, args.resize, args.resize, args.resize)
-        img = normalize_img(img)
-
-        img = np.swapaxes(np.array(img), 0, -2)
+        img = preprocess_inputs(img)
         num_rows = img.shape[0]
 
         if first:
@@ -173,10 +193,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
         # Nibabel should read the file as X,Y,Z,C
         data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
         img = np.array(nib.load(data_filename).dataobj)
-        img = crop_center(img, args.resize, args.resize, args.resize)
-        img = normalize_img(img)
+        img = preprocess_inputs(img)
 
-        img = np.swapaxes(np.array(img), 0, -2)
         num_rows = img.shape[0]
 
         if first:
@@ -202,10 +220,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
         msk = np.array(nib.load(data_filename).dataobj)
-        msk = crop_center(msk, args.resize, args.resize, args.resize)
-
-        msk[msk > 1] = 1  # Combine all masks
-        msk = np.expand_dims(np.swapaxes(np.array(msk), 0, -1), -1)
+        msk = preprocess_labels(msk)
         num_rows = msk.shape[0]
 
         if first:
@@ -232,10 +247,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
         msk = np.array(nib.load(data_filename).dataobj)
-        msk = crop_center(msk, args.resize, args.resize, args.resize)
+        msk = preprocess_labels(msk)
 
-        msk[msk > 1] = 1  # Combine all masks
-        msk = np.expand_dims(np.swapaxes(np.array(msk), 0, -1), -1)
         num_rows = msk.shape[0]
 
         if first:
