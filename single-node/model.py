@@ -105,10 +105,11 @@ def unet_model(imgs_shape, msks_shape,
     Convolution.
     """
 
-    if args.use_upsampling and not final:
-        print("Using UpSampling2D")
-    else:
-        print("Using Transposed Deconvolution")
+    if not final:
+        if args.use_upsampling:
+            print("Using UpSampling2D")
+        else:
+            print("Using Transposed Deconvolution")
 
     num_chan_out = msks_shape[-1]
 
@@ -312,6 +313,13 @@ def save_inference_model(model, imgs_shape, msks_shape):
     print("Please use that version for inference.")
     K.backend.set_learning_phase(0)
     model.save(model_fn, include_optimizer=False)
+
+    # See if experimental TensorFlow module works
+    # For TF >= 1.12, we're supposed to be able to directly
+    # save Keras models to TensorFlow serving. This will be
+    # great if it works.
+    #saved_model_path = tf.contrib.saved_model.save_keras_model(model, "./saved_models")
+    #print("Wrote TF serving model to ", saved_model_path)
 
 
 def load_model(imgs_shape, msks_shape,

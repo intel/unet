@@ -53,7 +53,8 @@ NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
 
 # Figure out how many physical cores we have available
-NUM_INTRA_THREADS = len(psutil.Process().cpu_affinity())
+# Set floor to at least 2 threads
+NUM_INTRA_THREADS = max(len(psutil.Process().cpu_affinity()),2)
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras

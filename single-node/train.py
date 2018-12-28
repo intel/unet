@@ -84,14 +84,18 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Fitting model with training data ...")
     print("-" * 30)
 
-    history = K.callbacks.History()
-
     history = model.fit(imgs_train, msks_train,
                         batch_size=batch_size,
                         epochs=n_epoch,
                         validation_data=(imgs_validation, msks_validation),
                         verbose=1, shuffle="batch",
                         callbacks=model_callbacks)
+
+    # Append training log
+    # with open("training.log","a+") as fp:
+    #     fp.write("{}: {}\n".format(datetime.datetime.now(),
+    #                              history.history["val_dice_coef"]))
+
 
     """
     Step 4: Evaluate the best model

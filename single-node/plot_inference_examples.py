@@ -18,20 +18,9 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-
-# """
-# BEGIN - Limit Tensoflow to only use specific GPU
-# """
-# import os
-
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"   # 0,1,2,3
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3" # Supress Tensforflow debug messages
-
-# # """
-# # END - Limit Tensoflow to only use specific GPU
-# # """
-
+"""
+Takes a trained model and performs inference on a few validation examples.
+"""
 import os
 
 import numpy as np

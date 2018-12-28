@@ -46,6 +46,9 @@ INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 
 MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 
+NUM_EPOCHS=30  # Number of epochs to train
+LEARNING_RATE=0.00005  # 0.00005  Adam optimizer
+
 clear
 echo "Script to train Decathlon Brain Tumor Segmentation (BraTS) U-Net model"
 echo "======================================================================"
@@ -88,7 +91,10 @@ echo "*****************************************"
 echo "Run U-Net training on BraTS Decathlon dataset"
 # Run training script
 # The settings.py file contains the model training.
-python train.py --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
+python train.py \
+        --epochs $NUM_EPOCHS  \
+        --learningrate $LEARNING_RATE \
+        --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME
