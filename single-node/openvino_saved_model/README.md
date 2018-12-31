@@ -25,10 +25,10 @@ The CONDA_PREFIX should be something like /home/bduser/anaconda3/envs/tf112_mkl_
 It refers to where your Conda packages are installed for this environment.
 It'd be nice if there were an easier way to find freeze_graph.py
 
-`python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py \
-       --input_saved_model_dir saved_2dunet_model_protobuf/ \
-       --output_node_names "PredictionMask/Sigmoid" \
-       --output_graph saved_model.pb \ 
+`python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py 
+       --input_saved_model_dir saved_2dunet_model_protobuf/ 
+       --output_node_names "PredictionMask/Sigmoid" 
+       --output_graph saved_model.pb  
        --output_dir frozen_model
 `
 
