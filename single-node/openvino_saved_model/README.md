@@ -2,6 +2,8 @@
 
 ### How to freeze a saved TensorFlow/Keras model and convert it to OpenVINO format
 
+1. Convert your Keras model to TensorFlow saved model fomat.
+
 Use the tf.train.Saver model to save the model. The script
 https://github.com/IntelAI/unet/blob/master/single-node/helper_scripts/convert_keras_to_tensorflow_checkpoint.py
 will do this for you and  should tell you the correct output_node_names. It defaults to saving the model in the directory `saved_2dunet_model_protobuf`.
@@ -15,6 +17,9 @@ Model input shape =  (?, 144, 144, 4)
 Model output name =  PredictionMask/Sigmoid
 Model output shape =  (?, 144, 144, 1)
 ```
+2. Freeze the TensorFlow saved format model.
+
+This strips any remaining training nodes and turns variables into constants.
 
 The CONDA_PREFIX should be something like /home/bduser/anaconda3/envs/tf112_mkl_p36.
 It refers to where your Conda packages are installed for this environment.
@@ -26,11 +31,11 @@ It'd be nice if there were an easier way to find freeze_graph.py
        --output_graph saved_model.pb \ 
        --output_dir frozen_model
 `
+3. Use the OpenVINO model optimizer to convert the frozen TensorFlow model to OpenVINO IR format.
 
-Once you have a frozen model, you can use the OpenVino model optimizer
-to create the OpenVino version.
+Once you have a frozen model, you can use the OpenVino model optimizer to create the OpenVINO version.
 
-First, set the OpenVino environment:
+First, set the OpenVINO environment:
 
 `source /opt/intel/computer_vision_sdk/bin/setupvars.sh`
 
