@@ -31,6 +31,7 @@ It'd be nice if there were an easier way to find freeze_graph.py
        --output_graph saved_model.pb \ 
        --output_dir frozen_model
 `
+
 3. Use the OpenVINO model optimizer to convert the frozen TensorFlow model to OpenVINO IR format.
 
 Once you have a frozen model, you can use the OpenVino model optimizer to create the OpenVINO version.
