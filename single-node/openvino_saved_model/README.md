@@ -10,9 +10,9 @@ will do this for you and  should tell you the correct output_node_names. It defa
 ```
 Saving the model to directory saved_2dunet_model_protobuf
 TensorFlow protobuf version of model is saved.
-Model input name =  input
+Model input name =  MRImages
 Model input shape =  (?, 144, 144, 4)
-Model output name =  predictionmask/Sigmoid
+Model output name =  PredictionMask/Sigmoid
 Model output shape =  (?, 144, 144, 1)
 ```
 
