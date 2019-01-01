@@ -25,6 +25,8 @@ from time import time
 import h5py
 from openvino.inference_engine import IENetwork, IEPlugin
 
+imgs_to_use = [61]
+
 def dice_score(pred, truth):
     """
     Sorensen Dice score
@@ -45,18 +47,19 @@ def evaluate_model(res, input_data, label_data, args):
     # Processing output blob
     log.info("Processing U-Net model")
     idx = 0
+    
     for batch, prediction in enumerate(res):
 
-        dice = dice_score(prediction, label_data[idx,:,:,0])
-        log.info("{}: Dice score = {:.4f}".format(idx, dice))
+        dice = dice_score(prediction, label_data[idx,0,:,:])
+        log.info("{}: Dice score = {:.4f}".format(imgs_to_use[idx], dice))
 
         if args.plot:
             if idx==0:  plt.figure(figsize=(10,10))
             plt.subplot(args.batch_size, 3, 1+idx*3)
-            plt.imshow(prediction[0,:,:])
+            plt.imshow(prediction[0])
             if idx==0:  plt.title("Prediction")
             plt.subplot(args.batch_size, 3, 2+idx*3)
-            plt.imshow(label_data[idx,:,:,0])
+            plt.imshow(label_data[idx,0,:,:])
             if idx==0: plt.title("Ground truth")
             plt.subplot(args.batch_size, 3, 3+idx*3)
             plt.imshow(input_data[idx,0,:,:], cmap="bone")
@@ -66,7 +69,7 @@ def evaluate_model(res, input_data, label_data, args):
 
     if args.plot:
         plt.suptitle("U-Net Model Predictions")
-        plt.show()
+        plt.savefig("output.png")
 
 def load_data(batch_size):
     """
@@ -74,9 +77,9 @@ def load_data(batch_size):
     """
 
     df = h5py.File("../../../data/decathlon/144x144/Task01_BrainTumour.h5", "r")
-    imgs_to_use = [4548]
-    input_data = df["imgs_test"][imgs_to_use]
-    msks_data = df["msks_test"][imgs_to_use]
+
+    input_data = df["imgs_validation"][imgs_to_use,]
+    msks_data = df["msks_validation"][imgs_to_use,]
 
     input_data = input_data.transpose((0,3,1,2))
     msks_data = msks_data.transpose((0,3,1,2))
@@ -112,7 +115,7 @@ def build_argparser():
     parser.add_argument("-l", "--cpu_extension",
                         help="MKLDNN (CPU)-targeted custom layers. "
                              "Absolute path to a shared library with "
-                             "the kernels impl.", type=str, default=None)
+                             "the kernels impl.", type=str)
     parser.add_argument("-pp", "--plugin_dir", help="Path to a plugin folder",
                         type=str, default=None)
     parser.add_argument("-d", "--device",
