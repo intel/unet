@@ -17,7 +17,7 @@ Steps:
 ![prediction28](https://github.com/IntelAI/unet/blob/master/single-node/images/pred28.png)
 
 Tips for improving model:
-* The feature maps have been reduced so that the model will train using under 12GB of memory.  If you have more memory to use, consider increasing the `fms = 16` on line 236 in `train.py` to something larger (e.g. `fms = 32` or even `fms = 64`. This will increase the complexity of the model (which will also increase its memory footprint but decrease its execution speed).
+* The feature maps have been reduced so that the model will train using under 12GB of memory.  If you have more memory to use, consider increasing the feature maps using the commandline argument `--featuremaps`. This will increase the complexity of the model (which will also increase its memory footprint but decrease its execution speed).
 * Consider different loss functions.  The default loss function here is a weighted sum of `-log(Dice)` and `binary_crossentropy`. Different loss functions yield different loss curves and may result in better accuracy. However, you may need to adjust the `learning_rate` and number of epochs to train as you experiment with different loss functions.
 * Predict multiple output masks.  In `convert_raw_to_hdf5.py` we have combined all of the ground truth masks into one single mask. However, more complex models predict each of the subclasses (edema, tumor core, necrosis) of the glioma. This will involve some modification of the output layer to the model (e.g. more output layers for the sigmoid mask or a softmax layer at the output instead of a sigmoid).
 

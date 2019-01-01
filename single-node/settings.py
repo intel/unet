@@ -43,6 +43,9 @@ BATCH_SIZE = 128
 
 # Using Adam optimizer
 LEARNING_RATE = 0.00005  # 0.00005
+WEIGHT_DICE_LOSS = 0.9  # Combined loss weight for dice versus BCE
+
+FEATURE_MAPS = 16 # 32 is a good number, but requires about 16 GB of memory
 PRINT_MODEL = True  # Print the model
 
 # CPU specific parameters for multi-threading.

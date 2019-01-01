@@ -49,6 +49,13 @@ MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 NUM_EPOCHS=30  # Number of epochs to train
 LEARNING_RATE=0.00005  # 0.00005  Adam optimizer
 
+# 32 feature maps is preferable, but uses about 16 GB of memory.
+# I've tried to reduce this to 16 feature maps in order for the
+# training to run using less memory.
+# You can attempt to turn knobs on feature maps, learning rate,
+# and batch size to get better model performance.
+FEATURE_MAPS=16  # Number of feature maps in model
+
 clear
 echo "Script to train Decathlon Brain Tumor Segmentation (BraTS) U-Net model"
 echo "======================================================================"
@@ -97,7 +104,8 @@ python train.py \
         --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
-        --inference_filename $INFERENCE_FILENAME
+        --inference_filename $INFERENCE_FILENAME \
+        --featuremaps $FEATURE_MAPS
 
 echo " "
 echo "*****************************************"

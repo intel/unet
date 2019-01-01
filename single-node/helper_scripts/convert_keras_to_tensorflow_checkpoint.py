@@ -97,5 +97,5 @@ except:
     os.mkdir(args.output_directory)
 
 save_path = saver.save(sess, os.path.join(
-    args.output_directory, "unet_model.ckpt"))
+    args.output_directory, "saved_model.ckpt"))
 print("Checkpoint saved in path: {}".format(save_path))

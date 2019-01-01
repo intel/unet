@@ -105,3 +105,22 @@ builder.add_meta_graph_and_variables(
     })
 builder.save()
 print("TensorFlow protobuf version of model is saved.")
+
+print("Model input name = ", model.input.op.name)
+print("Model input shape = ", model.input.shape)
+print("Model output name = ", model.output.op.name)
+print("Model output shape = ", model.output.shape)
+
+from distutils.sysconfig import get_python_lib
+packages_directory=get_python_lib()
+
+print()
+print()
+print("="*30)
+print("To freeze this model, run the commands:")
+print("mkdir frozen_model")
+print("python {}/tensorflow/python/tools/freeze_graph.py "
+       "--input_saved_model_dir {} "
+       "--output_node_names {} "
+       "--output_graph frozen_model/saved_model_frozen.pb".format(packages_directory,
+       args.output_directory, model.output.op.name))

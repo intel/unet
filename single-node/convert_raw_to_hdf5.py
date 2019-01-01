@@ -108,23 +108,19 @@ def normalize_img(img):
 
     return img
 
-def attach_attributes(dset, json_data):
+def attach_attributes(df, json_data, name):
     """
-    Attach attributes to the dataframe
+    Save the json data
     """
 
-    dset.attrs.create("modalities", tuple(json_data["modality"].values()),
-                                dtype=h5py.special_dtype(vlen=str))
-    dset.attrs.create("license", json_data["licence"],
-                                dtype=h5py.special_dtype(vlen=str))
-    dset.attrs.create("reference", json_data["reference"],
-                                dtype=h5py.special_dtype(vlen=str))
-    dset.attrs.create("name", json_data["name"],
-                                dtype=h5py.special_dtype(vlen=str))
-    dset.attrs.create("description", json_data["description"],
-                                dtype=h5py.special_dtype(vlen=str))
-    dset.attrs.create("release", json_data["release"],
-                                dtype=h5py.special_dtype(vlen=str))
+    if type(json_data) is str:
+        length = 1
+    else:
+        length = len(json_data)
+
+    dt = h5py.special_dtype(vlen=str)
+    dset = df.create_dataset(name, (length,), dtype=dt)
+    dset[:] = json_data
 
 def preprocess_inputs(img):
     """
@@ -161,12 +157,39 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     """
     hdf_file = h5py.File(filename, "w")
 
+    # Save the dataset attributes
+    attach_attributes(hdf_file, str(json_data["modality"]), "modalities")
+    attach_attributes(hdf_file, json_data["licence"], "license")
+    attach_attributes(hdf_file, json_data["reference"], "reference")
+    attach_attributes(hdf_file, json_data["name"], "name")
+    attach_attributes(hdf_file, json_data["description"], "description")
+    attach_attributes(hdf_file, json_data["release"], "release")
+
+    # Training filenames
+    train_image_files = []
+    train_label_files = []
+    for idx in trainIdx:
+        train_image_files.append(fileIdx[idx]["image"])
+        train_label_files.append(fileIdx[idx]["label"])
+
+    # Validation filenames
+    validate_image_files = []
+    validate_label_files = []
+    for idx in validateIdx:
+        validate_image_files.append(fileIdx[idx]["image"])
+        validate_label_files.append(fileIdx[idx]["label"])
+
+    attach_attributes(hdf_file, train_image_files, "training_input_files")
+    attach_attributes(hdf_file, train_label_files, "training_label_files")
+    attach_attributes(hdf_file, validate_image_files, "validation_input_files")
+    attach_attributes(hdf_file, validate_label_files, "validation_label_files")
+
     # Save training set images
     print("Step 1 of 4. Save training set images.")
     first = True
-    for idx in tqdm(trainIdx):
+    for idx in tqdm(train_image_files):
 
-        data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
+        data_filename = os.path.join(dataDir, idx)
         img = np.array(nib.load(data_filename).dataobj)
         img = preprocess_inputs(img)
         num_rows = img.shape[0]
@@ -185,15 +208,14 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             img_train_dset[row:(row+num_rows), :] = img
 
-        attach_attributes(img_train_dset, json_data)
 
     # Save validation set images
     print("Step 2 of 4. Save validation set images.")
     first = True
-    for idx in tqdm(validateIdx):
+    for idx in tqdm(validate_image_files):
 
         # Nibabel should read the file as X,Y,Z,C
-        data_filename = os.path.join(dataDir, fileIdx[idx]["image"])
+        data_filename = os.path.join(dataDir, idx)
         img = np.array(nib.load(data_filename).dataobj)
         img = preprocess_inputs(img)
 
@@ -213,14 +235,13 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             img_validation_dset[row:(row+num_rows), :] = img
 
-    attach_attributes(img_validation_dset, json_data)
 
     # Save training set masks
     print("Step 3 of 4. Save training set masks.")
     first = True
-    for idx in tqdm(trainIdx):
+    for idx in tqdm(train_label_files):
 
-        data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
+        data_filename = os.path.join(dataDir, idx)
         msk = np.array(nib.load(data_filename).dataobj)
         msk = preprocess_labels(msk)
         num_rows = msk.shape[0]
@@ -239,15 +260,14 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             msk_train_dset[row:(row+num_rows), :] = msk
 
-    attach_attributes(msk_train_dset, json_data)
 
     # Save testing/validation set masks
 
     print("Step 4 of 4. Save validation set masks.")
     first = True
-    for idx in tqdm(validateIdx):
+    for idx in tqdm(validate_label_files):
 
-        data_filename = os.path.join(dataDir, fileIdx[idx]["label"])
+        data_filename = os.path.join(dataDir, idx)
         msk = np.array(nib.load(data_filename).dataobj)
         msk = preprocess_labels(msk)
 
@@ -267,7 +287,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             msk_validation_dset[row:(row+num_rows), :] = msk
 
-    attach_attributes(msk_validation_dset, json_data)
 
     hdf_file.close()
     print("Finished processing.")

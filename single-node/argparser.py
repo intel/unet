@@ -64,6 +64,16 @@ parser.add_argument(
     default=settings.LEARNING_RATE,
     help="learningrate")
 parser.add_argument(
+    "--weight_dice_loss",
+    type=float,
+    default=settings.WEIGHT_DICE_LOSS,
+    help="Weight for the Dice loss compared to crossentropy")
+parser.add_argument(
+    "--featuremaps",
+    type=int,
+    default=settings.FEATURE_MAPS,
+    help="How many feature maps in the model.")
+parser.add_argument(
     "--keras_api",
     help="use keras instead of tf.keras",
     action="store_true",

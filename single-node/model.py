@@ -85,7 +85,8 @@ def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
     return dice_loss
 
 
-def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
+def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1.,
+                          weight=args.weight_dice_loss):
     """
     Combined Dice and Binary Cross Entropy Loss
     """
@@ -113,7 +114,7 @@ def unet_model(imgs_shape, msks_shape,
 
     num_chan_out = msks_shape[-1]
 
-    inputs = K.layers.Input(imgs_shape[1:], name="mrimages")
+    inputs = K.layers.Input(imgs_shape[1:], name="MRImages")
 
     # Convolution parameters
     params = dict(kernel_size=(3, 3), activation="relu",
@@ -125,7 +126,7 @@ def unet_model(imgs_shape, msks_shape,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    fms = 16
+    fms = args.featuremaps  #32 or 16 depending on your memory size
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=fms, **params)(inputs)
     conv1 = K.layers.Conv2D(name="conv1b", filters=fms, **params)(conv1)
@@ -151,7 +152,8 @@ def unet_model(imgs_shape, msks_shape,
     conv5 = K.layers.Conv2D(name="conv5b", filters=fms*16, **params)(conv5)
 
     if args.use_upsampling:
-        up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
+        up = K.layers.UpSampling2D(name="up6", size=(2, 2),
+                                   interpolation="bilinear")(conv5)
     else:
         up = K.layers.Conv2DTranspose(name="transconv6", filters=fms*8,
                                       **params_trans)(conv5)
@@ -161,7 +163,8 @@ def unet_model(imgs_shape, msks_shape,
     conv6 = K.layers.Conv2D(name="conv6b", filters=fms*8, **params)(conv6)
 
     if args.use_upsampling:
-        up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
+        up = K.layers.UpSampling2D(name="up7", size=(2, 2),
+                                   interpolation="bilinear")(conv6)
     else:
         up = K.layers.Conv2DTranspose(name="transconv7", filters=fms*4,
                                       **params_trans)(conv6)
@@ -171,7 +174,8 @@ def unet_model(imgs_shape, msks_shape,
     conv7 = K.layers.Conv2D(name="conv7b", filters=fms*4, **params)(conv7)
 
     if args.use_upsampling:
-        up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
+        up = K.layers.UpSampling2D(name="up8", size=(2, 2),
+                                   interpolation="bilinear")(conv7)
     else:
         up = K.layers.Conv2DTranspose(name="transconv8", filters=fms*2,
                                       **params_trans)(conv7)
@@ -181,7 +185,8 @@ def unet_model(imgs_shape, msks_shape,
     conv8 = K.layers.Conv2D(name="conv8b", filters=fms*2, **params)(conv8)
 
     if args.use_upsampling:
-        up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
+        up = K.layers.UpSampling2D(name="up9", size=(2, 2),
+                                   interpolation="bilinear")(conv8)
     else:
         up = K.layers.Conv2DTranspose(name="transconv9", filters=fms,
                                       **params_trans)(conv8)
@@ -190,7 +195,7 @@ def unet_model(imgs_shape, msks_shape,
     conv9 = K.layers.Conv2D(name="conv9a", filters=fms, **params)(concat4)
     conv9 = K.layers.Conv2D(name="conv9b", filters=fms, **params)(conv9)
 
-    prediction = K.layers.Conv2D(name="predictionmask",
+    prediction = K.layers.Conv2D(name="PredictionMask",
                                  filters=num_chan_out, kernel_size=(1, 1),
                                  data_format=data_format,
                                  activation="sigmoid")(conv9)
