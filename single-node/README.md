@@ -15,7 +15,7 @@ Steps:
 
 ![run_brats_help](https://github.com/IntelAI/unet/blob/master/single-node/images/run_brats_usage.png)
 
-7. The bash script should pre-process the Decathlon data and store it in a new HDF5 file (`convert_raw_to_hdf5.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the validation set within 20 epochs.
+7. The bash script should pre-process the Decathlon data and store it in a new HDF5 file (`convert_raw_to_hdf5.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the validation set within 30 epochs.
 
 ![prediction28](https://github.com/IntelAI/unet/blob/master/single-node/images/pred28.png)
 
