@@ -77,9 +77,9 @@ if [[ ! -f ${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json ]] ; then
 fi
 
 echo " "
-echo "*****************************************"
+echo "******************************************"
 echo "Step 1 of 3: Convert raw data to HDF5 file"
-echo "*****************************************"
+echo "******************************************"
 
 echo "Converting Decathlon raw data to HDF5 file."
 # Run Python script to convert to a single HDF5 file
@@ -91,9 +91,9 @@ python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
         --save_path $DECATHLON_DIR --resize=$IMG_SIZE
 
 echo " "
-echo "*****************************************"
+echo "***********************************"
 echo "Step 2 of 3: Train U-Net on dataset"
-echo "*****************************************"
+echo "***********************************"
 
 echo "Run U-Net training on BraTS Decathlon dataset"
 # Run training script
@@ -108,9 +108,9 @@ python train.py \
         --featuremaps $FEATURE_MAPS
 
 echo " "
-echo "*****************************************"
+echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
-echo "*****************************************"
+echo "****************************************"
 
 python plot_inference_examples.py  \
         --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
