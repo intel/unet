@@ -186,14 +186,25 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     """
     Print shapes of raw data
     """
+    print("Data shapes")
+    print("===========")
+    print("n.b. All tensors converted to stacks of 2D slices.")
+    print("If you want true 3D tensors, then modify this code appropriately.")
     data_filename = os.path.join(dataDir, train_image_files[0])
     img = np.array(nib.load(data_filename).dataobj)
-    print("Image shape = ", img.shape)
+    print("Raw Image shape     = ", img.shape)
+    crop_shape = preprocess_inputs(img).shape[1:]
+    print("Cropped Image shape = (?, {}, {}, {})".format(crop_shape[0],
+                                                         crop_shape[1],
+                                                         crop_shape[2]))
 
     data_filename = os.path.join(dataDir, train_label_files[0])
     msk = np.array(nib.load(data_filename).dataobj)
-    print("Masks shape = ", msk.shape)
-
+    print("Raw Masks shape     = ", msk.shape)
+    crop_shape = preprocess_labels(msk).shape[1:]
+    print("Cropped Masks shape = (?, {}, {}, {})".format(crop_shape[0],
+                                                         crop_shape[1],
+                                                         crop_shape[2]))
 
     # Save training set images
     print("Step 1 of 4. Save training set images.")
