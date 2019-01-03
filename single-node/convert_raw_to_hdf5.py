@@ -183,6 +183,18 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     attach_attributes(hdf_file, validate_image_files, "validation_input_files")
     attach_attributes(hdf_file, validate_label_files, "validation_label_files")
 
+    """
+    Print shapes of raw data
+    """
+    data_filename = os.path.join(dataDir, train_image_files[0])
+    img = np.array(nib.load(data_filename).dataobj)
+    print("Image shape = ", img.shape)
+
+    data_filename = os.path.join(dataDir, train_label_files[0])
+    msk = np.array(nib.load(data_filename).dataobj)
+    print("Masks shape = ", msk.shape)
+
+
     # Save training set images
     print("Step 1 of 4. Save training set images.")
     first = True
