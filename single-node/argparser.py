@@ -82,6 +82,10 @@ parser.add_argument("--channels_first", help="use channels first data format",
                     action="store_true", default=settings.CHANNELS_FIRST)
 parser.add_argument("--print_model", help="print the model",
                     action="store_true", default=settings.PRINT_MODEL)
+parser.add_argument("--use_dropout", help="print the model",
+                    action="store_true", default=settings.USE_DROPOUT)
+parser.add_argument("--use_augmentation", help="print the model",
+                    action="store_true", default=settings.USE_AUGMENTATION)
 
 args = parser.parse_args()
 

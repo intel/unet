@@ -31,16 +31,44 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
-
 """
 Load data from HDF5 file
 """
 
+class AugumentedHDF5Matrix(K.utils.HDF5Matrix):
+    """
+    Wraps HDF5Matrix with some image augumentation.
+    """
+
+    def __init__(self, image_datagen, seed, *args, **kwargs):
+        self.image_datagen = image_datagen
+        self.seed = seed
+        self.idx = 0
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, key):
+        data = super().__getitem__(key)
+        self.idx += 1
+        if len(data.shape) == 3:
+            img = self.image_datagen.random_transform(
+                data, seed=self.seed + self.idx)
+            if args.channels_first:  # NCHW
+                return np.swapaxes(img, 1, 3)
+            else:
+                return img
+        else:  # Need to test the code below. Usually only 3D tensors expected
+            img = np.array([
+                self.image_datagen.random_transform(
+                    x, seed=self.seed + self.idx) for x in data
+            ])
+            if args.channels_first:  # NCHW
+                return np.swapaxes(img, 1, 3)
+            else:
+                return img
 
 def process_data(array):
     """
-    You can process (e.g. augment) the data as it loads
-    by using this function.
+    Standard data processing. No augmentation.
     """
 
     # Data was saved as NHWC (channels last)
@@ -49,21 +77,39 @@ def process_data(array):
     else:
         return array
 
-
 def load_data(hdf5_data_filename):
     """
     Load the data from the HDF5 file using the Keras HDF5 wrapper.
     """
 
     # Training dataset
-    imgs_train = K.utils.HDF5Matrix(hdf5_data_filename,
-                                    "imgs_train",
-                                    normalizer=process_data)
-    msks_train = K.utils.HDF5Matrix(hdf5_data_filename,
-                                    "msks_train",
-                                    normalizer=process_data)
+    # Make sure both input and label start with the same random seed
+    # Otherwise they won't get the same random transformation
+    if args.use_augmentation:
+
+        # Keras image preprocessing performs randomized rotations/flips
+        image_datagen = K.preprocessing.image.ImageDataGenerator(
+            zca_whitening=True, # Do ZCA pre-whitening to consider richer features
+            shear_range=2, # Up to 2 degree random shear
+            horizontal_flip=True,
+            vertical_flip=True)
+
+        imgs_train = AugumentedHDF5Matrix(image_datagen, 816,
+                                          hdf5_data_filename,
+                                          "imgs_train")
+        msks_train = AugumentedHDF5Matrix(image_datagen, 816,
+                                          hdf5_data_filename,
+                                          "msks_train")
+    else:
+        imgs_train = K.utils.HDF5Matrix(hdf5_data_filename,
+                                             "imgs_train",
+                                             normalizer=process_data)
+        msks_train = K.utils.HDF5Matrix(hdf5_data_filename,
+                                             "msks_train",
+                                             normalizer=process_data)
 
     # Validation dataset
+    # No data augmentation
     imgs_validation = K.utils.HDF5Matrix(hdf5_data_filename,
                                          "imgs_validation",
                                          normalizer=process_data)

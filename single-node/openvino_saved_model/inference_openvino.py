@@ -25,7 +25,7 @@ from time import time
 import h5py
 from openvino.inference_engine import IENetwork, IEPlugin
 
-imgs_to_use = [61]
+imgs_to_use = [8722]
 
 def dice_score(pred, truth):
     """
@@ -78,8 +78,8 @@ def load_data(batch_size):
 
     df = h5py.File("../../../data/decathlon/144x144/Task01_BrainTumour.h5", "r")
 
-    input_data = df["imgs_validation"][imgs_to_use,]
-    msks_data = df["msks_validation"][imgs_to_use,]
+    input_data = df["imgs_validation"][imgs_to_use,:,:,:]
+    msks_data = df["msks_validation"][imgs_to_use,:,:,:]
 
     input_data = input_data.transpose((0,3,1,2))
     msks_data = msks_data.transpose((0,3,1,2))
@@ -145,8 +145,8 @@ def main():
     model_xml, model_bin = load_model(args.device == "MYRIAD")
 
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
-    net = IENetwork(model=model_xml, weights=model_bin)
-
+    #net = IENetwork(model=model_xml, weights=model_bin)
+    net = IENetwork.from_ir(model=model_xml, weights=model_bin)
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
