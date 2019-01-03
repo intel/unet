@@ -63,7 +63,6 @@ parser.add_argument("--split", type=float, default=0.85,
 
 args = parser.parse_args()
 
-
 def crop_center(img, cropx, cropy, cropz):
     """
     Take a center crop of the images.
@@ -71,10 +70,7 @@ def crop_center(img, cropx, cropy, cropz):
     z dimension.
     """
 
-    if len(img.shape) == 4:
-        x, y, z, c = img.shape
-    else:
-        x, y, z = img.shape
+    x, y, z, c = img.shape
 
     # Make sure starting index is >= 0
     startx = max(x//2-(cropx//2), 0)
@@ -86,11 +82,7 @@ def crop_center(img, cropx, cropy, cropz):
     endy = min(starty + cropy, y)
     endz = min(startz + cropz, z)
 
-    if len(img.shape) == 4:
-        return img[startx:endx, starty:endy, startz:endz, :]
-    else:
-        return img[startx:endx, starty:endy, startz:endz]
-
+    return img[startx:endx, starty:endy, startz:endz, :]
 
 def normalize_img(img):
     """
@@ -126,6 +118,9 @@ def preprocess_inputs(img):
     """
     Process the input images
     """
+    if len(img.shape) != 4:  # Make sure 4D
+        img = np.expand_dims(img, -1)
+
     img = crop_center(img, args.resize, args.resize, args.resize)
     img = normalize_img(img)
 
@@ -137,11 +132,14 @@ def preprocess_labels(msk):
     """
     Process the ground truth labels
     """
+    if len(msk.shape) != 4: # Make sure 4D
+        msk = np.expand_dims(msk, -1)
 
     msk = crop_center(msk, args.resize, args.resize, args.resize)
 
+    # Combining all masks assumes that a mask value of 0 is the background
     msk[msk > 1] = 1  # Combine all masks
-    msk = np.expand_dims(np.swapaxes(np.array(msk), 0, -1), -1)
+    msk = np.swapaxes(np.array(msk), 0, -2)
 
     return msk
 
@@ -164,6 +162,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     attach_attributes(hdf_file, json_data["name"], "name")
     attach_attributes(hdf_file, json_data["description"], "description")
     attach_attributes(hdf_file, json_data["release"], "release")
+    attach_attributes(hdf_file, json_data["tensorImageSize"], "tensorImageSize")
 
     # Training filenames
     train_image_files = []
@@ -191,6 +190,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
 
         data_filename = os.path.join(dataDir, idx)
         img = np.array(nib.load(data_filename).dataobj)
+
         img = preprocess_inputs(img)
         num_rows = img.shape[0]
 
@@ -198,9 +198,12 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             first = False
             img_train_dset = hdf_file.create_dataset("imgs_train",
                                                      img.shape,
-                                                     maxshape=(None, img.shape[1],
-                                                               img.shape[2], img.shape[3]),
-                                                     dtype=float, compression="gzip")
+                                                     maxshape=(None,
+                                                               img.shape[1],
+                                                               img.shape[2],
+                                                               img.shape[3]),
+                                                     dtype=float,
+                                                     compression="gzip")
             img_train_dset[:] = img
         else:
             row = img_train_dset.shape[0]  # Count current dataset rows
@@ -225,9 +228,12 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             first = False
             img_validation_dset = hdf_file.create_dataset("imgs_validation",
                                                           img.shape,
-                                                          maxshape=(None, img.shape[1],
-                                                                    img.shape[2], img.shape[3]),
-                                                          dtype=float, compression="gzip")
+                                                          maxshape=(None,
+                                                                    img.shape[1],
+                                                                    img.shape[2],
+                                                                    img.shape[3]),
+                                                          dtype=float,
+                                                          compression="gzip")
             img_validation_dset[:] = img
         else:
             row = img_validation_dset.shape[0]  # Count current dataset rows
@@ -250,9 +256,12 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             first = False
             msk_train_dset = hdf_file.create_dataset("msks_train",
                                                      msk.shape,
-                                                     maxshape=(None, msk.shape[1],
-                                                               msk.shape[2], msk.shape[3]),
-                                                     dtype=float, compression="gzip")
+                                                     maxshape=(None,
+                                                               msk.shape[1],
+                                                               msk.shape[2],
+                                                               msk.shape[3]),
+                                                     dtype=float,
+                                                     compression="gzip")
             msk_train_dset[:] = msk
         else:
             row = msk_train_dset.shape[0]  # Count current dataset rows
@@ -277,9 +286,12 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             first = False
             msk_validation_dset = hdf_file.create_dataset("msks_validation",
                                                           msk.shape,
-                                                          maxshape=(None, msk.shape[1],
-                                                                    msk.shape[2], msk.shape[3]),
-                                                          dtype=float, compression="gzip")
+                                                          maxshape=(None,
+                                                                    msk.shape[1],
+                                                                    msk.shape[2],
+                                                                    msk.shape[3]),
+                                                          dtype=float,
+                                                          compression="gzip")
             msk_validation_dset[:] = msk
         else:
             row = msk_validation_dset.shape[0]  # Count current dataset rows
@@ -336,6 +348,7 @@ if __name__ == "__main__":
     print("="*30)
     print("Dataset name:        ", experiment_data["name"])
     print("Dataset description: ", experiment_data["description"])
+    print("Tensor image size:   ", experiment_data["tensorImageSize"])
     print("Dataset release:     ", experiment_data["release"])
     print("Dataset reference:   ", experiment_data["reference"])
     print("Dataset license:     ", experiment_data["licence"])  # sic
@@ -344,7 +357,8 @@ if __name__ == "__main__":
 
     """
     Randomize the file list. Then separate into training and
-    validation (testing) lists.
+    validation lists. We won't use the testing set since we
+    don't have ground truth masks for this.
     """
     # Set the random seed so that always get same random mix
     np.random.seed(816)
