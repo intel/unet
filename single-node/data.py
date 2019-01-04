@@ -18,6 +18,24 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+"""
+For BraTS (Task 1):
+
+INPUT CHANNELS:  "modality": {
+	 "0": "FLAIR",
+	 "1": "T1w",
+	 "2": "t1gd",
+	 "3": "T2w"
+ },
+LABEL_CHANNELS: "labels": {
+	 "0": "background",
+	 "1": "edema",
+	 "2": "non-enhancing tumor",
+	 "3": "enhancing tumour"
+ }
+
+"""
+
 import numpy as np
 """
 This module loads the training and validation datasets.

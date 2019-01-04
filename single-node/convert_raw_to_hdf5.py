@@ -29,6 +29,21 @@ extract the data (untar), and run this script.
 The raw dataset has the CC-BY-SA 4.0 license.
 https://creativecommons.org/licenses/by-sa/4.0/
 
+For BraTS (Task 1):
+
+INPUT CHANNELS:  "modality": {
+	 "0": "FLAIR",
+	 "1": "T1w",
+	 "2": "t1gd",
+	 "3": "T2w"
+ },
+LABEL_CHANNELS: "labels": {
+	 "0": "background",
+	 "1": "edema",
+	 "2": "non-enhancing tumor",
+	 "3": "enhancing tumour"
+ }
+
 """
 
 import os
@@ -117,6 +132,14 @@ def attach_attributes(df, json_data, name):
 def preprocess_inputs(img):
     """
     Process the input images
+
+    For BraTS subset:
+    INPUT CHANNELS:  "modality": {
+    	 "0": "FLAIR", T2-weighted-Fluid-Attenuated Inversion Recovery MRI
+    	 "1": "T1w",  T1-weighted MRI
+    	 "2": "t1gd", T1-gadolinium contrast MRI
+    	 "3": "T2w"   T2-weighted MRI
+     }
     """
     if len(img.shape) != 4:  # Make sure 4D
         img = np.expand_dims(img, -1)
@@ -131,6 +154,15 @@ def preprocess_inputs(img):
 def preprocess_labels(msk):
     """
     Process the ground truth labels
+
+    For BraTS subset:
+    LABEL_CHANNELS: "labels": {
+    	 "0": "background",  No tumor
+    	 "1": "edema",       Swelling around tumor
+    	 "2": "non-enhancing tumor",  Tumor that isn't enhanced by Gadolinium contrast
+    	 "3": "enhancing tumour"  Gadolinium contrast enhanced regions
+     }
+
     """
     if len(msk.shape) != 4: # Make sure 4D
         msk = np.expand_dims(msk, -1)
