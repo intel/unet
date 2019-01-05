@@ -149,6 +149,8 @@ def preprocess_inputs(img):
 
     img = np.swapaxes(np.array(img), 0, -2)
 
+    #img = img[:,:,:,[0]]  # Just get the FLAIR channel
+
     return img
 
 def preprocess_labels(msk):

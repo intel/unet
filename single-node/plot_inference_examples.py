@@ -66,6 +66,7 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
     img = imgs_validation[[img_no], ]
     msk = msks_validation[[img_no], ]
+
     pred_mask = model.predict(img)
 
     dice_score = calc_dice(pred_mask, msk)
@@ -75,7 +76,7 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
     plt.figure(figsize=(15, 15))
     plt.subplot(1, 3, 1)
-    plt.imshow(img[0, :, :, 2], cmap="bone", origin="lower")
+    plt.imshow(img[0, :, :, 0], cmap="bone", origin="lower")
     plt.axis("off")
     plt.title("MRI Input", fontsize=20)
     plt.subplot(1, 3, 2)

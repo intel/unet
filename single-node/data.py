@@ -18,20 +18,21 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+from argparser import args
 """
 For BraTS (Task 1):
 
 INPUT CHANNELS:  "modality": {
-	 "0": "FLAIR",
-	 "1": "T1w",
-	 "2": "t1gd",
-	 "3": "T2w"
+     "0": "FLAIR",
+     "1": "T1w",
+     "2": "t1gd",
+     "3": "T2w"
  },
 LABEL_CHANNELS: "labels": {
-	 "0": "background",
-	 "1": "edema",
-	 "2": "non-enhancing tumor",
-	 "3": "enhancing tumour"
+     "0": "background",
+     "1": "edema",
+     "2": "non-enhancing tumor",
+     "3": "enhancing tumour"
  }
 
 """
@@ -42,7 +43,6 @@ This module loads the training and validation datasets.
 If you have custom datasets, you can load and preprocess them here.
 """
 
-from argparser import args
 
 if args.keras_api:
     import keras as K
@@ -53,13 +53,16 @@ else:
 Load data from HDF5 file
 """
 
-class AugumentedHDF5Matrix(K.utils.HDF5Matrix):
+
+class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
     """
-    Wraps HDF5Matrix with some image augumentation.
+    Wraps HDF5Matrix in preprocessing code.
+    Performs image augmentation if needed.
     """
 
-    def __init__(self, image_datagen, seed, *args, **kwargs):
+    def __init__(self, image_datagen, use_augmentation, seed, *args, **kwargs):
         self.image_datagen = image_datagen
+        self.use_augmentation = use_augmentation
         self.seed = seed
         self.idx = 0
         super().__init__(*args, **kwargs)
@@ -68,32 +71,29 @@ class AugumentedHDF5Matrix(K.utils.HDF5Matrix):
         data = super().__getitem__(key)
         self.idx += 1
         if len(data.shape) == 3:
-            img = self.image_datagen.random_transform(
-                data, seed=self.seed + self.idx)
+            if self.use_augmentation:
+                img = self.image_datagen.random_transform(
+                    data, seed=self.seed + self.idx)
+            else:
+                img = data
+
             if args.channels_first:  # NCHW
                 return np.swapaxes(img, 1, 3)
             else:
                 return img
         else:  # Need to test the code below. Usually only 3D tensors expected
-            img = np.array([
-                self.image_datagen.random_transform(
-                    x, seed=self.seed + self.idx) for x in data
-            ])
+            if self.use_augmentation:
+                img = np.array([
+                    self.image_datagen.random_transform(
+                        x, seed=self.seed + self.idx) for x in data
+                ])
+            else:
+                img = np.array([x for x in data])
+
             if args.channels_first:  # NCHW
                 return np.swapaxes(img, 1, 3)
             else:
                 return img
-
-def process_data(array):
-    """
-    Standard data processing. No augmentation.
-    """
-
-    # Data was saved as NHWC (channels last)
-    if args.channels_first:  # NCHW
-        return np.swapaxes(array, 1, 3)
-    else:
-        return array
 
 def load_data(hdf5_data_filename):
     """
@@ -103,37 +103,42 @@ def load_data(hdf5_data_filename):
     # Training dataset
     # Make sure both input and label start with the same random seed
     # Otherwise they won't get the same random transformation
-    if args.use_augmentation:
 
-        # Keras image preprocessing performs randomized rotations/flips
-        image_datagen = K.preprocessing.image.ImageDataGenerator(
-            zca_whitening=True, # Do ZCA pre-whitening to consider richer features
-            shear_range=2, # Up to 2 degree random shear
-            horizontal_flip=True,
-            vertical_flip=True)
+    image_datagen = K.preprocessing.image.ImageDataGenerator(
+        zca_whitening=True, # Do ZCA pre-whitening to consider richer features
+        shear_range=2, # Up to 2 degree random shear
+        horizontal_flip=True,
+        vertical_flip=True)
 
-        imgs_train = AugumentedHDF5Matrix(image_datagen, 816,
-                                          hdf5_data_filename,
-                                          "imgs_train")
-        msks_train = AugumentedHDF5Matrix(image_datagen, 816,
-                                          hdf5_data_filename,
-                                          "msks_train")
-    else:
-        imgs_train = K.utils.HDF5Matrix(hdf5_data_filename,
-                                             "imgs_train",
-                                             normalizer=process_data)
-        msks_train = K.utils.HDF5Matrix(hdf5_data_filename,
-                                             "msks_train",
-                                             normalizer=process_data)
+    msk_datagen = K.preprocessing.image.ImageDataGenerator(
+        shear_range=2, # Up to 2 degree random shear
+        horizontal_flip=True,
+        vertical_flip=True)
+
+    random_seed = 816
+    imgs_train = PreprocessHDF5Matrix(image_datagen,
+                                      args.use_augmentation,
+                                      random_seed,
+                                      hdf5_data_filename,
+                                      "imgs_train")
+    msks_train = PreprocessHDF5Matrix(msk_datagen,
+                                      args.use_augmentation,
+                                      random_seed,
+                                      hdf5_data_filename,
+                                      "msks_train")
 
     # Validation dataset
     # No data augmentation
-    imgs_validation = K.utils.HDF5Matrix(hdf5_data_filename,
-                                         "imgs_validation",
-                                         normalizer=process_data)
-    msks_validation = K.utils.HDF5Matrix(hdf5_data_filename,
-                                         "msks_validation",
-                                         normalizer=process_data)
+    imgs_validation = PreprocessHDF5Matrix(image_datagen,
+                                      False, # Don't augment
+                                      816,
+                                      hdf5_data_filename,
+                                      "imgs_validation")
+    msks_validation = PreprocessHDF5Matrix(image_datagen,
+                                      False, # Don't augment
+                                      816,
+                                      hdf5_data_filename,
+                                      "msks_validation")
 
     print("Batch size = {}".format(args.batch_size))
 

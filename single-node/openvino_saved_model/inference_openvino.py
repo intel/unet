@@ -25,8 +25,6 @@ from time import time
 import h5py
 from openvino.inference_engine import IENetwork, IEPlugin
 
-imgs_to_use = [8722]
-
 def dice_score(pred, truth):
     """
     Sorensen Dice score
@@ -47,42 +45,52 @@ def evaluate_model(res, input_data, label_data, args):
     # Processing output blob
     log.info("Processing U-Net model")
     idx = 0
-    
+
     for batch, prediction in enumerate(res):
 
         dice = dice_score(prediction, label_data[idx,0,:,:])
-        log.info("{}: Dice score = {:.4f}".format(imgs_to_use[idx], dice))
+        log.info("{}: Dice score = {:.4f}".format(args.image, dice))
 
         if args.plot:
             if idx==0:  plt.figure(figsize=(10,10))
+
             plt.subplot(args.batch_size, 3, 1+idx*3)
-            plt.imshow(prediction[0])
-            if idx==0:  plt.title("Prediction")
-            plt.subplot(args.batch_size, 3, 2+idx*3)
-            plt.imshow(label_data[idx,0,:,:])
-            if idx==0: plt.title("Ground truth")
-            plt.subplot(args.batch_size, 3, 3+idx*3)
-            plt.imshow(input_data[idx,0,:,:], cmap="bone")
+            plt.imshow(input_data[idx,0,:,:], cmap="bone", origin="lower")
             if idx==0: plt.title("MRI")
+
+            plt.subplot(args.batch_size, 3, 2+idx*3)
+            plt.imshow(label_data[idx,0,:,:], origin="lower")
+            if idx==0: plt.title("Ground truth")
+
+            plt.subplot(args.batch_size, 3, 3+idx*3)
+            plt.imshow(prediction[0], origin="lower")
+            if idx==0:  plt.title("Prediction")
+
+            plt.tight_layout()
 
         idx += 1
 
     if args.plot:
-        plt.suptitle("U-Net Model Predictions")
-        plt.savefig("output.png")
+        filename = "openvino_prediction_{}.png".format(args.image)
+        plt.savefig(filename,
+                    bbox_inches="tight", pad_inches=0)
+        print("Saved file: {}".format(filename))
 
-def load_data(batch_size):
+def load_data(img_number, batch_size):
     """
     Modify this to load your data and labels
     """
 
-    df = h5py.File("../../../data/decathlon/144x144/Task01_BrainTumour.h5", "r")
+    # df = h5py.File("../../../data/decathlon/144x144/Task01_BrainTumour.h5", "r")
+    #
+    # input_data = df["imgs_validation"][[img_number]]
+    # msks_data = df["msks_validation"][[img_number]]
 
-    input_data = df["imgs_validation"][imgs_to_use,:,:,:]
-    msks_data = df["msks_validation"][imgs_to_use,:,:,:]
+    input_data = np.load("imgs.npy")
+    msks_data = np.load("msks.npy")
 
     input_data = input_data.transpose((0,3,1,2))
-    msks_data = msks_data.transpose((0,3,1,2))
+    #msks_data = msks_data.transpose((0,3,1,2))
 
     log.info("Batch size is {} images.".format(batch_size))
 
@@ -108,6 +116,8 @@ def build_argparser():
     parser = ArgumentParser()
     parser.add_argument("-bz", "--batch_size",
                         help="Batch size", default=1, type=int)
+    parser.add_argument("-i", "--image",
+                        help="Image number", default=10591, type=int)
     parser.add_argument("-number_iter", "--number_iter",
                         help="Number of iterations", default=5, type=int)
     parser.add_argument("-perf_counts", "--perf_counts",
@@ -169,7 +179,7 @@ def main():
     net.batch_size = args.batch_size
 
     # Load data
-    input_data, label_data = load_data(args.batch_size)
+    input_data, label_data = load_data(args.image, args.batch_size)
 
     # Loading model to the plugin
     exec_net = plugin.load(network=net)
