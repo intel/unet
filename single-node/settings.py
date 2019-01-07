@@ -42,7 +42,7 @@ tumors in each batch.
 BATCH_SIZE = 128
 
 # Using Adam optimizer
-LEARNING_RATE = 0.00005  # 0.00005
+LEARNING_RATE = 0.0001 #0.00005  # 0.00005
 WEIGHT_DICE_LOSS = 0.9  # Combined loss weight for dice versus BCE
 
 FEATURE_MAPS = 32 # 32 is a good number, but requires about 16 GB of memory
@@ -63,6 +63,6 @@ CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 # 28 DEC 2018: tf.keras has some bugs in the use of HDF5 and with the custom
 # loss function. Recommend to use Keras API when in doubt.
-USE_UPSAMPLING = False  # If true, then use bilinear interpolation. Otherwise, transposed convolution
+USE_UPSAMPLING = True  # If true, then use bilinear interpolation. Otherwise, transposed convolution
 USE_AUGMENTATION = True # Use data augmentation during training
-USE_DROPOUT = False  # Use spatial dropout in model
+USE_DROPOUT = True  # Use spatial dropout in model

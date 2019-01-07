@@ -106,6 +106,7 @@ python train.py \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
         --featuremaps $FEATURE_MAPS
+        --use_augmentation --use_dropout
 
 echo " "
 echo "****************************************"
