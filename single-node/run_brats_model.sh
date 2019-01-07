@@ -47,7 +47,7 @@ INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
 MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 
 NUM_EPOCHS=30  # Number of epochs to train
-LEARNING_RATE=0.00005  # 0.00005  Adam optimizer
+LEARNING_RATE=0.0001  # 0.00005  Adam optimizer
 
 # 32 feature maps is preferable, but uses about 16 GB of memory.
 # I've tried to reduce this to 16 feature maps in order for the
@@ -105,7 +105,7 @@ python train.py \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
-        --featuremaps $FEATURE_MAPS
+        --featuremaps $FEATURE_MAPS \
         --use_augmentation --use_dropout
 
 echo " "
