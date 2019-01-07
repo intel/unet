@@ -107,7 +107,7 @@ python train.py \
         --inference_filename $INFERENCE_FILENAME \
         --featuremaps $FEATURE_MAPS \
         --use_augmentation --use_dropout
-
+        
 echo " "
 echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
