@@ -56,7 +56,7 @@ K.backend.set_image_data_format(data_format)
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
-    2 * (|T \cap  P|) / (|T| + |P|)
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }    
     where T is ground truth mask and P is the prediction mask
     """
     intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
