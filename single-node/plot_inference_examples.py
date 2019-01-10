@@ -25,7 +25,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras as K
+import keras as K
 import settings
 import argparse
 import h5py
