@@ -10,7 +10,7 @@ Steps:
 2. Untar the "Task01_BrainTumour.tar" file (e.g. `tar -xvf Task01_BrainTumour.tar`)
 3. Create a Conda environment with TensorFlow 1.12. Command: `conda create -c anaconda -n decathlon pip python=3.6 tensorflow keras tqdm h5py psutil`
 4. Enable the new environment. Command: `conda activate decathlon`
-5. Install the package `nibabel`. Command: `pip install nibabel`
+5. Install the package [nibabel](http://nipy.org/nibabel/). Command: `pip install nibabel`
 6. Run the command `bash run_brats_model.sh DECATHLON_ROOT_DIRECTORY`, where DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 ![run_brats_help](https://github.com/IntelAI/unet/blob/master/single-node/images/run_brats_usage.png)
