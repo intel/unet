@@ -56,7 +56,7 @@ K.backend.set_image_data_format(data_format)
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
-    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }    
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
     where T is ground truth mask and P is the prediction mask
     """
     intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
@@ -230,10 +230,7 @@ def get_callbacks():
     Define any callbacks for the training
     """
 
-    if (args.use_upsampling):
-        model_fn = os.path.join(args.output_path, "unet_model_upsampling.hdf5")
-    else:
-        model_fn = os.path.join(args.output_path, "unet_model_transposed.hdf5")
+    model_fn = os.path.join(args.output_path, args.inference_filename)
 
     print("Writing model to '{}'".format(model_fn))
 
@@ -293,42 +290,6 @@ def evaluate_model(model_fn, imgs_validation, msks_validation):
     print("Mean Dice score for predictions = {:.4f}".format(metric))
 
     return model
-
-
-def save_inference_model(model, imgs_shape, msks_shape):
-    """
-    Save the model without the training nodes and custom loss
-    functions so that it can be used for inference only.
-    """
-
-    # Save final model without custom loss and metrics
-    # This way we can easily re-load it into Keras for inference
-    model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
-
-    # Model without Dice and custom metrics
-    model = load_model(imgs_shape, msks_shape, final=True)
-    model.load_weights(os.path.join(args.output_path, "weights.hdf5"))
-
-    model_json = model.to_json()
-    with open(os.path.join(args.output_path, "model.json"), "w") as json_file:
-        json_file.write(model_json)
-
-    model.save_weights(os.path.join(args.output_path, "weights.hdf5"))
-
-    model_fn = os.path.join(args.output_path, args.inference_filename)
-
-    print("Writing final model (without custom Dice metrics) "
-          "for inference to {}".format(model_fn))
-    print("Please use that version for inference.")
-    K.backend.set_learning_phase(0)
-    model.save(model_fn, include_optimizer=False)
-
-    # See if experimental TensorFlow module works
-    # For TF >= 1.12, we're supposed to be able to directly
-    # save Keras models to TensorFlow serving. This will be
-    # great if it works.
-    #saved_model_path = tf.contrib.saved_model.save_keras_model(model, "./saved_models")
-    #print("Wrote TF serving model to ", saved_model_path)
 
 
 def load_model(imgs_shape, msks_shape,

@@ -64,5 +64,5 @@ USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 # 28 DEC 2018: tf.keras has some bugs in the use of HDF5 and with the custom
 # loss function. Recommend to use Keras API when in doubt.
 USE_UPSAMPLING = True  # If true, then use bilinear interpolation. Otherwise, transposed convolution
-USE_AUGMENTATION = True # Use data augmentation during training
-USE_DROPOUT = True  # Use spatial dropout in model
+USE_AUGMENTATION = False # Use data augmentation during training
+USE_DROPOUT = False  # Use spatial dropout in model

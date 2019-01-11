@@ -22,13 +22,11 @@
 Takes a trained model and performs inference on a few validation examples.
 """
 import os
-
+import sys
 import numpy as np
 import tensorflow as tf
 import keras as K
-import settings
 import argparse
-import h5py
 
 import matplotlib.pyplot as plt
 
@@ -36,13 +34,7 @@ parser = argparse.ArgumentParser(
     description="Inference example for trained 2D U-Net model on BraTS.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--data_path", default=settings.DATA_PATH,
-                    help="the path to the data")
-parser.add_argument("--data_filename", default=settings.DATA_FILENAME,
-                    help="the HDF5 data filename")
-parser.add_argument("--output_path", default=settings.OUT_PATH,
-                    help="the folder to save the model and checkpoints")
-parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
+parser.add_argument("--inference_filename", default="../output/unet_model_for_inference.hdf5",
                     help="the Keras inference model filename")
 
 args = parser.parse_args()
@@ -98,14 +90,11 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1.,
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
 
-def plot_results(model, imgs_validation, msks_validation, img_no, png_directory):
+
+def plot_results(model, img, msk, img_no, png_directory):
     """
     Calculate the Dice and plot the predicted masks for image # img_no
     """
-
-    img = imgs_validation[[img_no], ]
-    msk = msks_validation[[img_no], ]
-
     pred_mask = model.predict(img)
 
     dice_score = calc_dice(pred_mask, msk)
@@ -136,30 +125,34 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
 if __name__ == "__main__":
 
-    data_fn = os.path.join(args.data_path, args.data_filename)
-    model_fn = os.path.join(args.output_path, args.inference_filename)
-
     # Load data
-    df = h5py.File(data_fn, "r")
-    imgs_validation = df["imgs_validation"]
-    msks_validation = df["msks_validation"]
+    # You can create this Numpy datafile by running the create_validation_sample.py script
+    try:
+    	data_file = np.load("validation_data.npz")
+    except IOError:
+        print("Can't find {}. Please run `python create_validation_sample.py` to generate the sample datafile.".format("validation_data.npz"))
+        sys.exit()
+        
+    imgs_validation = data_file["imgs_validation"]
+    msks_validation = data_file["msks_validation"]
+    img_indicies = data_file["indicies_validation"]
 
+    print("Using Keras model: {}".format(args.inference_filename))
+    
     # Load model
-    model = K.models.load_model(model_fn, custom_objects={
+    model = K.models.load_model(args.inference_filename, custom_objects={
         "combined_dice_ce_loss": combined_dice_ce_loss,
         "dice_coef_loss": dice_coef_loss,
         "dice_coef": dice_coef})
 
     # Create output directory for images
-    png_directory = "inference_examples"
+    png_directory = "inference_examples_keras"
     if not os.path.exists(png_directory):
         os.makedirs(png_directory)
 
     # Plot some results
     # The plots will be saved to the png_directory
-    # Just picking some random samples.
-    indicies_validation = [40,61,400,1100,4385,5566,5673,6433,7864,8899,9003,9722,10591]
-
-    for idx in indicies_validation:
-        plot_results(model, imgs_validation, msks_validation,
-                     idx, png_directory)
+    for idx, img_index in enumerate(img_indicies):
+    	plot_results(model, imgs_validation[[idx],],
+    		     msks_validation[[idx],],
+                 img_index, png_directory)

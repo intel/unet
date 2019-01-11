@@ -35,10 +35,13 @@ def dice_score(pred, truth):
 
     return numerator / denominator
 
-def evaluate_model(res, input_data, label_data, args):
+def evaluate_model(res, input_data, label_data, img_number, args, batch_size):
     """
     Evaluate the model results
     """
+    png_directory = "inference_examples_openvino"
+    if not os.path.exists(png_directory):
+        os.makedirs(png_directory)
 
     import matplotlib.pyplot as plt
 
@@ -49,20 +52,20 @@ def evaluate_model(res, input_data, label_data, args):
     for batch, prediction in enumerate(res):
 
         dice = dice_score(prediction, label_data[idx,0,:,:])
-        log.info("{}: Dice score = {:.4f}".format(args.image, dice))
+        log.info("Image #{}: Dice score = {:.4f}".format(img_number, dice))
 
         if args.plot:
-            if idx==0:  plt.figure(figsize=(10,10))
+            if idx==0:  plt.figure(figsize=(15,15))
 
-            plt.subplot(args.batch_size, 3, 1+idx*3)
+            plt.subplot(batch_size, 3, 1+idx*3)
             plt.imshow(input_data[idx,0,:,:], cmap="bone", origin="lower")
             if idx==0: plt.title("MRI")
 
-            plt.subplot(args.batch_size, 3, 2+idx*3)
+            plt.subplot(batch_size, 3, 2+idx*3)
             plt.imshow(label_data[idx,0,:,:], origin="lower")
             if idx==0: plt.title("Ground truth")
 
-            plt.subplot(args.batch_size, 3, 3+idx*3)
+            plt.subplot(batch_size, 3, 3+idx*3)
             plt.imshow(prediction[0], origin="lower")
             if idx==0:  plt.title("Prediction")
 
@@ -71,30 +74,27 @@ def evaluate_model(res, input_data, label_data, args):
         idx += 1
 
     if args.plot:
-        filename = "openvino_prediction_{}.png".format(args.image)
+        filename = os.path.join(png_directory, "pred{}.png".format(img_number))
         plt.savefig(filename,
                     bbox_inches="tight", pad_inches=0)
         print("Saved file: {}".format(filename))
 
-def load_data(img_number, batch_size):
+def load_data():
     """
     Modify this to load your data and labels
     """
 
-    # df = h5py.File("../../../data/decathlon/144x144/Task01_BrainTumour.h5", "r")
-    #
-    # input_data = df["imgs_validation"][[img_number]]
-    # msks_data = df["msks_validation"][[img_number]]
+    # Load data
+    # You can create this Numpy datafile by running the create_validation_sample.py script
+    data_file = np.load("validation_data.npz")
+    imgs_validation = data_file["imgs_validation"]
+    msks_validation = data_file["msks_validation"]
+    img_indicies = data_file["indicies_validation"]
 
-    input_data = np.load("imgs.npy")
-    msks_data = np.load("msks.npy")
+    input_data = imgs_validation.transpose((0,3,1,2))
+    msks_data = msks_validation.transpose((0,3,1,2))
 
-    input_data = input_data.transpose((0,3,1,2))
-    #msks_data = msks_data.transpose((0,3,1,2))
-
-    log.info("Batch size is {} images.".format(batch_size))
-
-    return input_data, msks_data
+    return input_data, msks_data, img_indicies
 
 def load_model(fp16=False):
     """
@@ -114,10 +114,6 @@ def load_model(fp16=False):
 
 def build_argparser():
     parser = ArgumentParser()
-    parser.add_argument("-bz", "--batch_size",
-                        help="Batch size", default=1, type=int)
-    parser.add_argument("-i", "--image",
-                        help="Image number", default=10591, type=int)
     parser.add_argument("-number_iter", "--number_iter",
                         help="Number of iterations", default=5, type=int)
     parser.add_argument("-perf_counts", "--perf_counts",
@@ -147,7 +143,7 @@ def main():
     # Plugin initialization for specified device and
     #     load extensions library if specified
     plugin = IEPlugin(device=args.device, plugin_dirs=args.plugin_dir)
-    if args.cpu_extension and 'CPU' in args.device:
+    if args.cpu_extension and "CPU" in args.device:
         plugin.add_cpu_extension(args.cpu_extension)
 
     # Read IR
@@ -155,8 +151,8 @@ def main():
     model_xml, model_bin = load_model(args.device == "MYRIAD")
 
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
-    #net = IENetwork(model=model_xml, weights=model_bin)
-    net = IENetwork.from_ir(model=model_xml, weights=model_bin)
+    net = IENetwork(model=model_xml, weights=model_bin)
+    #net = IENetwork.from_ir(model=model_xml, weights=model_bin)
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
@@ -176,10 +172,11 @@ def main():
     input_blob = next(iter(net.inputs))
     out_blob = next(iter(net.outputs))
 
-    net.batch_size = args.batch_size
+    batch_size, n_channels, height, width = net.inputs[input_blob].shape
+    net.batch_size = batch_size
 
     # Load data
-    input_data, label_data = load_data(args.image, args.batch_size)
+    input_data, label_data, img_indicies = load_data()
 
     # Loading model to the plugin
     exec_net = plugin.load(network=net)
@@ -190,12 +187,12 @@ def main():
     infer_time = []
     for i in range(args.number_iter):
         t0 = time()
-        res = exec_net.infer(inputs={input_blob: input_data})
+        res = exec_net.infer(inputs={input_blob: input_data[[0]]})
         infer_time.append((time() - t0) * 1000)
 
     average_inference = np.average(np.asarray(infer_time))
     log.info("Average running time of one batch: {:.5f} ms".format(average_inference))
-    log.info("Images per second = {:.3f}".format(args.batch_size * 1000.0 / average_inference))
+    log.info("Images per second = {:.3f}".format(batch_size * 1000.0 / average_inference))
     if args.perf_counts:
         perf_counts = exec_net.requests[0].get_perf_counts()
         log.info("Performance counters:")
@@ -211,8 +208,18 @@ def main():
                                                                  stats["status"],
                                                                  stats["real_time"]))
 
-    res_out = res[out_blob]
-    evaluate_model(res_out, input_data, label_data, args)
+    # Go through the sample validation dataset to plot predictions
+    for idx, img_number in enumerate(img_indicies):
+
+        res = exec_net.infer(inputs={input_blob: input_data[[idx],:n_channels]})
+        res_out = res[out_blob]
+        evaluate_model(res_out,
+                       input_data[[idx]],
+                       label_data[[idx]],
+                       img_number,
+                       args,
+                       batch_size)
+
 
     del exec_net
     del plugin

@@ -29,7 +29,7 @@ import time
 import os
 import settings    # Use the custom settings.py file for default parameters
 
-from model import load_model, get_callbacks, evaluate_model, save_inference_model
+from model import load_model, get_callbacks, evaluate_model
 from data import load_data
 
 from argparser import args
@@ -105,16 +105,6 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("-" * 30)
 
     model = evaluate_model(model_filename, imgs_validation, msks_validation)
-
-    """
-    Step 5: Save the best model for inference
-    """
-
-    print("-" * 30)
-    print("Saving the model for inference ...")
-    print("-" * 30)
-    save_inference_model(model, imgs_train.shape, msks_train.shape)
-
 
 if __name__ == "__main__":
 

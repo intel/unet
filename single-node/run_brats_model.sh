@@ -42,7 +42,7 @@ DECATHLON_DIR=${1:-"../../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
 IMG_SIZE=${3:-144}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
-INFERENCE_FILENAME=${6:-"unet_model_for_inference.hdf5"}
+INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
 
 MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 
@@ -106,8 +106,12 @@ python train.py \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
         --featuremaps $FEATURE_MAPS \
-        --use_augmentation --use_dropout
-        
+        --print_model \
+        --keras_api \
+        --use_upsampling \
+        --use_augmentation \
+        --use_dropout
+
 echo " "
 echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
