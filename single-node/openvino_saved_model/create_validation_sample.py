@@ -31,12 +31,12 @@ parser = argparse.ArgumentParser(
     description="Generates NumPy data file with subsample of validation set",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--datafile", required=True,
+parser.add_argument("--hdf5_datafile", required=True,
                     help="the name and path of the HDF5 dataset")
 
 args = parser.parse_args()
 
-with h5py.File(args.datafile, "r") as df:
+with h5py.File(args.hdf5_datafile, "r") as df:
 
     indicies_validation = [40,61,400,1100,4385,5566,5673,6433,7864,8899,9003,9722,10591]
     imgs_validation = df["imgs_validation"][indicies_validation,]
