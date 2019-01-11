@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser(
     description="Inference example for trained 2D U-Net model on BraTS.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--inference_filename", default="../output/unet_model_for_inference.hdf5",
+parser.add_argument("--inference_filename", default="../output/unet_model_for_decathlon.hdf5",
                     help="the Keras inference model filename")
 
 args = parser.parse_args()

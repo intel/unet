@@ -15,6 +15,17 @@
  limitations under the License.
 """
 
+"""
+OpenVINO Python Inference Script
+This will load the OpenVINO version of the model (IR)
+and perform inference on a few validation samples
+from the Decathlon dataset.
+
+You'll need the extension library to handle the Resize_Bilinear operations.
+
+python inference_openvino.py -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so
+
+"""
 
 import sys
 import os
@@ -111,13 +122,39 @@ def load_model(fp16=False):
 
     return model_xml, model_bin
 
+def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_blob, args):
+
+    # Start sync inference
+    log.info("Starting inference ({} iterations)".format(args.number_iter))
+    infer_time = []
+    for i in range(args.number_iter):
+        t0 = time()
+        res = exec_net.infer(inputs={input_blob: input_data[[0],:n_channels]})
+        infer_time.append((time() - t0) * 1000)
+
+    average_inference = np.average(np.asarray(infer_time))
+    log.info("Average running time of one batch: {:.5f} ms".format(average_inference))
+    log.info("Images per second = {:.3f}".format(batch_size * 1000.0 / average_inference))
+
+    perf_counts = exec_net.requests[0].get_perf_counts()
+    log.info("Performance counters:")
+    log.info("{:<70} {:<15} {:<15} {:<15} {:<10}".format("name",
+                                                         "layer_type",
+                                                         "exec_type",
+                                                         "status",
+                                                         "real_time, us"))
+    for layer, stats in perf_counts.items():
+        log.info("{:<70} {:<15} {:<15} {:<15} {:<10}".format(layer,
+                                                             stats["layer_type"],
+                                                             stats["exec_type"],
+                                                             stats["status"],
+                                                             stats["real_time"]))
+
 
 def build_argparser():
     parser = ArgumentParser()
     parser.add_argument("-number_iter", "--number_iter",
                         help="Number of iterations", default=5, type=int)
-    parser.add_argument("-perf_counts", "--perf_counts",
-                        help="Performance counts", default=1, type=int)
     parser.add_argument("-l", "--cpu_extension",
                         help="MKLDNN (CPU)-targeted custom layers. "
                              "Absolute path to a shared library with "
@@ -132,7 +169,10 @@ def build_argparser():
                         type=str)
     parser.add_argument("-plot", "--plot", help="Plot results",
                         default=False, action="store_true")
+    parser.add_argument("-stats", "--stats", help="Plot the runtime statistics",
+                        default=False, action="store_true")
     return parser
+
 
 def main():
 
@@ -152,7 +192,8 @@ def main():
 
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
-    #net = IENetwork.from_ir(model=model_xml, weights=model_bin)
+    #net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
+
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
@@ -163,14 +204,17 @@ def main():
             log.error("Please try to specify cpu extensions library path "
                       "in sample's command line parameters using -l "
                       "or --cpu_extension command line argument")
+            log.error("On CPU this is usually -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so")
+            log.error("You may need to build the OpenVINO samples directory for this library to be created on your system.")
+            log.error("e.g. bash ${INTEL_CVSDK_DIR}/inference_engine/samples/build_samples.sh will trigger the library to be built.")
+            log.error("Replace 'centos_7.4' with the pathname on your computer e.g. ('ubuntu_16.04')")
             sys.exit(1)
 
     assert len(net.inputs.keys()) == 1, "Sample supports only single input topologies"
     assert len(net.outputs) == 1, "Sample supports only single output topologies"
 
-    log.info("Preparing input blobs")
-    input_blob = next(iter(net.inputs))
-    out_blob = next(iter(net.outputs))
+    input_blob = next(iter(net.inputs))  # Name of the input layer
+    out_blob = next(iter(net.outputs))   # Name of the output layer
 
     batch_size, n_channels, height, width = net.inputs[input_blob].shape
     net.batch_size = batch_size
@@ -182,31 +226,10 @@ def main():
     exec_net = plugin.load(network=net)
     del net
 
-    # Start sync inference
-    log.info("Starting inference ({} iterations)".format(args.number_iter))
-    infer_time = []
-    for i in range(args.number_iter):
-        t0 = time()
-        res = exec_net.infer(inputs={input_blob: input_data[[0]]})
-        infer_time.append((time() - t0) * 1000)
-
-    average_inference = np.average(np.asarray(infer_time))
-    log.info("Average running time of one batch: {:.5f} ms".format(average_inference))
-    log.info("Images per second = {:.3f}".format(batch_size * 1000.0 / average_inference))
-    if args.perf_counts:
-        perf_counts = exec_net.requests[0].get_perf_counts()
-        log.info("Performance counters:")
-        log.info("{:<70} {:<15} {:<15} {:<15} {:<10}".format("name",
-                                                             "layer_type",
-                                                             "exec_type",
-                                                             "status",
-                                                             "real_time, us"))
-        for layer, stats in perf_counts.items():
-            log.info("{:<70} {:<15} {:<15} {:<15} {:<10}".format(layer,
-                                                                 stats["layer_type"],
-                                                                 stats["exec_type"],
-                                                                 stats["status"],
-                                                                 stats["real_time"]))
+    if args.stats:
+        # Print the latency and throughput for inference
+        print_stats(exec_net, input_data, n_channels,
+                    batch_size, input_blob, out_blob, args)
 
     # Go through the sample validation dataset to plot predictions
     for idx, img_number in enumerate(img_indicies):
