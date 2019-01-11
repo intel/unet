@@ -24,7 +24,7 @@ import os
 DATA_PATH = os.path.join("../../data/decathlon/144x144/")
 DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
-INFERENCE_FILENAME="unet_model_for_inference.hdf5"
+INFERENCE_FILENAME="unet_model_for_decathlon.hdf5"
 
 EPOCHS = 30  # Number of epochs to train
 
