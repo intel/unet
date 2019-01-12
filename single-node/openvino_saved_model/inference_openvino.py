@@ -33,7 +33,6 @@ from argparse import ArgumentParser
 import numpy as np
 import logging as log
 from time import time
-import h5py
 from openvino.inference_engine import IENetwork, IEPlugin
 
 def dice_score(pred, truth):
