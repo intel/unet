@@ -5,7 +5,7 @@
 1. Convert your Keras model to TensorFlow saved model fomat.
 
 Use the tf.train.Saver model to save the model. The script
-https://github.com/IntelAI/unet/blob/master/single-node/helper_scripts/convert_keras_to_tensorflow_checkpoint.py
+https://github.com/IntelAI/unet/blob/master/single-node/helper_scripts/convert_keras_to_tensorflow_serving_model.py
 will do this for you and  should tell you the correct output_node_names. It defaults to saving the model in the directory `saved_2dunet_model_protobuf`.
 
 ```
