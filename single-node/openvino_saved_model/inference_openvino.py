@@ -163,6 +163,7 @@ def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_bl
 
 
 def build_argparser():
+
     parser = ArgumentParser()
     parser.add_argument("-number_iter", "--number_iter",
                         help="Number of iterations", default=5, type=int)
@@ -208,6 +209,11 @@ def main():
     net = IENetwork(model=model_xml, weights=model_bin)
     #net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
 
+    """
+    This code checks to see if all of the graphs in the IR are
+    compatible with OpenVINO. If not, then you'll need to probably
+    try to load in an extension library from ${INTEL_CVSDK_DIR}/inference_engine/lib
+    """
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
@@ -227,6 +233,9 @@ def main():
     assert len(net.inputs.keys()) == 1, "Sample supports only single input topologies"
     assert len(net.outputs) == 1, "Sample supports only single output topologies"
 
+    """
+    Ask OpenVINO for input and output tensor names and sizes
+    """
     input_blob = next(iter(net.inputs))  # Name of the input layer
     out_blob = next(iter(net.outputs))   # Name of the output layer
 
