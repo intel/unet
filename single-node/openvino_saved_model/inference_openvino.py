@@ -45,7 +45,7 @@ def dice_score(pred, truth):
 
     return numerator / denominator
 
-def evaluate_model(res, input_data, label_data, img_number, args, batch_size):
+def evaluate_model(predictions, input_data, label_data, img_indicies, args):
     """
     Evaluate the model results
     """
@@ -57,37 +57,48 @@ def evaluate_model(res, input_data, label_data, img_number, args, batch_size):
 
     # Processing output blob
     log.info("Processing U-Net model")
-    idx = 0
+    number_imgs = predictions.shape[0]
+    num_rows_per_image = args.rows_per_image
+    row = 0
 
-    for batch, prediction in enumerate(res):
+    for idx in range(number_imgs):
 
-        dice = dice_score(prediction, label_data[idx,0,:,:])
-        log.info("Image #{}: Dice score = {:.4f}".format(img_number, dice))
+        dice = dice_score(predictions[idx,0,:,:], label_data[idx,0,:,:])
+        log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
 
-        if args.plot:
-            if idx==0:  plt.figure(figsize=(15,15))
+        if row==0:  plt.figure(figsize=(15,15))
 
-            plt.subplot(batch_size, 3, 1+idx*3)
-            plt.imshow(input_data[idx,0,:,:], cmap="bone", origin="lower")
-            if idx==0: plt.title("MRI")
+        plt.subplot(num_rows_per_image, 3, 1+row*3)
+        plt.imshow(input_data[idx,0,:,:], cmap="bone", origin="lower")
+        plt.axis("off")
+        if row==0: plt.title("MRI")
 
-            plt.subplot(batch_size, 3, 2+idx*3)
-            plt.imshow(label_data[idx,0,:,:], origin="lower")
-            if idx==0: plt.title("Ground truth")
+        plt.subplot(num_rows_per_image, 3, 2+row*3)
+        plt.imshow(label_data[idx,0,:,:], origin="lower")
+        plt.axis("off")
+        if row==0: plt.title("Ground truth")
 
-            plt.subplot(batch_size, 3, 3+idx*3)
-            plt.imshow(prediction[0], origin="lower")
-            if idx==0:  plt.title("Prediction")
+        plt.subplot(num_rows_per_image, 3, 3+row*3)
+        plt.imshow(predictions[idx,0,:,:], origin="lower")
+        plt.axis("off")
+        if row ==0:  plt.title("Prediction")
 
-            plt.tight_layout()
+        plt.tight_layout()
 
-        idx += 1
+        if (row == (num_rows_per_image-1)) or (idx == (number_imgs-1)):
 
-    if args.plot:
-        filename = os.path.join(png_directory, "pred{}.png".format(img_number))
-        plt.savefig(filename,
-                    bbox_inches="tight", pad_inches=0)
-        print("Saved file: {}".format(filename))
+            if num_rows_per_image==1:
+                fileidx = img_indicies[idx]
+            else:
+                fileidx = idx // num_rows_per_image
+            filename = os.path.join(png_directory,
+                            "pred{}.png".format(fileidx))
+            plt.savefig(filename,
+                        bbox_inches="tight", pad_inches=0)
+            print("Saved file: {}".format(filename))
+            row = 0
+        else:
+            row += 1
 
 def load_data():
     """
@@ -126,9 +137,10 @@ def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_bl
     # Start sync inference
     log.info("Starting inference ({} iterations)".format(args.number_iter))
     infer_time = []
+
     for i in range(args.number_iter):
         t0 = time()
-        res = exec_net.infer(inputs={input_blob: input_data[[0],:n_channels]})
+        res = exec_net.infer(inputs={input_blob: input_data[0:batch_size,:n_channels]})
         infer_time.append((time() - t0) * 1000)
 
     average_inference = np.average(np.asarray(infer_time))
@@ -168,6 +180,9 @@ def build_argparser():
                         type=str)
     parser.add_argument("-plot", "--plot", help="Plot results",
                         default=False, action="store_true")
+    parser.add_argument("-rows_per_image", "--rows_per_image",
+                        help="Number of rows per plot (when -plot = True)",
+                        default=4, type=int)
     parser.add_argument("-stats", "--stats", help="Plot the runtime statistics",
                         default=False, action="store_true")
     return parser
@@ -216,6 +231,7 @@ def main():
     out_blob = next(iter(net.outputs))   # Name of the output layer
 
     batch_size, n_channels, height, width = net.inputs[input_blob].shape
+    batch_size, n_out_channels, height_out, width_out = net.outputs[out_blob].shape
     net.batch_size = batch_size
 
     # Load data
@@ -230,18 +246,30 @@ def main():
         print_stats(exec_net, input_data, n_channels,
                     batch_size, input_blob, out_blob, args)
 
+    """
+    OpenVINO inference code
+    input_blob is the name (string) of the input tensor in the graph
+    out_blob is the name (string) of the output tensor in the graph
+    Essentially, this looks exactly like a feed_dict for TensorFlow inference
+    """
     # Go through the sample validation dataset to plot predictions
-    for idx, img_number in enumerate(img_indicies):
+    predictions = np.zeros((len(img_indicies), n_out_channels,
+                            height_out, width_out))
 
-        res = exec_net.infer(inputs={input_blob: input_data[[idx],:n_channels]})
-        res_out = res[out_blob]
-        evaluate_model(res_out,
-                       input_data[[idx]],
-                       label_data[[idx]],
-                       img_number,
-                       args,
-                       batch_size)
+    for idx in range(0, len(img_indicies), batch_size):
 
+        res = exec_net.infer(inputs={input_blob:
+                                     input_data[idx:(idx+batch_size),
+                                     :n_channels]})
+
+        # Save the predictions to array
+        predictions[idx:(idx+batch_size),] = res[out_blob]
+
+    if idx != (len(img_indicies)-1):  # Partial batch left in data
+        log.info("Partial batch left over in dataset.")
+
+    if args.plot:
+        evaluate_model(predictions, input_data, label_data, img_indicies, args)
 
     del exec_net
     del plugin
