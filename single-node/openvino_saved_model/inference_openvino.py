@@ -109,6 +109,11 @@ def load_data():
     msks_validation = data_file["msks_validation"]
     img_indicies = data_file["indicies_validation"]
 
+    """
+    OpenVINO uses channels first tensors (NCHW).
+    TensorFlow usually does channels last (NHWC).
+    So we need to transpose the axes.
+    """
     input_data = imgs_validation.transpose((0,3,1,2))
     msks_data = msks_validation.transpose((0,3,1,2))
 
