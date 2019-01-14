@@ -278,6 +278,9 @@ def main():
     if idx != (len(img_indicies)-1):  # Partial batch left in data
         log.info("Partial batch left over in dataset.")
 
+    """
+    Evaluate model with Dice metric
+    """
     for idx in range(img_indicies.shape[0]):
         dice = dice_score(predictions[idx,0,:,:], label_data[idx,0,:,:])
         log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
