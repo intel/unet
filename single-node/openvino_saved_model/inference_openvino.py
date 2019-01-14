@@ -134,6 +134,10 @@ def load_model(fp16=False):
     return model_xml, model_bin
 
 def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_blob, args):
+    """
+    Prints layer by layer inference times.
+    Good for profiling which ops are most costly in your model.
+    """
 
     # Start sync inference
     log.info("Starting inference ({} iterations)".format(args.number_iter))
