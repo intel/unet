@@ -85,11 +85,10 @@ def plot_predictions(predictions, input_data, label_data, img_indicies, args):
         if (row == (num_rows_per_image-1)) or (idx == (number_imgs-1)):
 
             if num_rows_per_image==1:
-                fileidx = img_indicies[idx]
+                fileidx = "pred{}.png".format(img_indicies[idx])
             else:
-                fileidx = idx // num_rows_per_image
-            filename = os.path.join(png_directory,
-                            "pred{}.png".format(fileidx))
+                fileidx = "pred_group{}".format(idx // num_rows_per_image)
+            filename = os.path.join(png_directory, fileidx)
             plt.savefig(filename,
                         bbox_inches="tight", pad_inches=0)
             print("Saved file: {}".format(filename))
