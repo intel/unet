@@ -47,7 +47,7 @@ def dice_score(pred, truth):
 
 def plot_predictions(predictions, input_data, label_data, img_indicies, args):
     """
-    Evaluate the model results
+    Plot the predictions with matplotlib and save to png files
     """
     png_directory = "inference_examples_openvino"
     if not os.path.exists(png_directory):
