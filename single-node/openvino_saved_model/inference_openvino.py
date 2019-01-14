@@ -45,7 +45,7 @@ def dice_score(pred, truth):
 
     return numerator / denominator
 
-def evaluate_model(predictions, input_data, label_data, img_indicies, args):
+def plot_predictions(predictions, input_data, label_data, img_indicies, args):
     """
     Evaluate the model results
     """
@@ -284,7 +284,7 @@ def main():
         log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
 
     if args.plot:
-        evaluate_model(predictions, input_data, label_data, img_indicies, args)
+        plot_predictions(predictions, input_data, label_data, img_indicies, args)
 
     del exec_net
     del plugin
