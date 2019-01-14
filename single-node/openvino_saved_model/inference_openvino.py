@@ -56,15 +56,12 @@ def evaluate_model(predictions, input_data, label_data, img_indicies, args):
     import matplotlib.pyplot as plt
 
     # Processing output blob
-    log.info("Processing U-Net model")
+    log.info("Plotting the predictions and saving to png files. Please wait...")
     number_imgs = predictions.shape[0]
     num_rows_per_image = args.rows_per_image
     row = 0
 
     for idx in range(number_imgs):
-
-        dice = dice_score(predictions[idx,0,:,:], label_data[idx,0,:,:])
-        log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
 
         if row==0:  plt.figure(figsize=(15,15))
 
@@ -262,10 +259,10 @@ def main():
     Essentially, this looks exactly like a feed_dict for TensorFlow inference
     """
     # Go through the sample validation dataset to plot predictions
-    predictions = np.zeros((len(img_indicies), n_out_channels,
+    predictions = np.zeros((img_indicies.shape[0], n_out_channels,
                             height_out, width_out))
 
-    for idx in range(0, len(img_indicies), batch_size):
+    for idx in range(0, img_indicies.shape[0], batch_size):
 
         res = exec_net.infer(inputs={input_blob:
                                      input_data[idx:(idx+batch_size),
@@ -276,6 +273,10 @@ def main():
 
     if idx != (len(img_indicies)-1):  # Partial batch left in data
         log.info("Partial batch left over in dataset.")
+
+    for idx in range(img_indicies.shape[0]):
+        dice = dice_score(predictions[idx,0,:,:], label_data[idx,0,:,:])
+        log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
 
     if args.plot:
         evaluate_model(predictions, input_data, label_data, img_indicies, args)
