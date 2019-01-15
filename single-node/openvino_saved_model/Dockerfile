@@ -5,7 +5,7 @@
 ## 2. For CPU - `docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino`
 FROM ubuntu:16.04
 
-ADD .. /app
+ADD . /app
 WORKDIR /app
 
 ARG INSTALL_DIR=/opt/intel/computer_vision_sdk
