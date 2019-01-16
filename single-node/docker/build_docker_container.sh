@@ -15,8 +15,10 @@
 # ----------------------------------------------------------------------------
 
 # Copy the model and scripts from the OpenVINO directory here
+echo "Copying the contents of openvino_saved_model directory here."
 cp -r ../openvino_saved_model/* .
 
+echo "Building Docker container"
 docker build -t unet_openvino \
        --build-arg HTTP_PROXY=${HTTP_PROXY} \
        --build-arg HTTPS_PROXY=${HTTPS_PROXY} \
@@ -25,3 +27,8 @@ docker build -t unet_openvino \
        --build-arg https_proxy=${https_proxy} \
        --build-arg no_proxy=${no_proxy} \
        .
+
+echo "Docker built successfully."
+echo "TO RUN BUILT DOCKER CONTAINER:"
+echo "1. For Neural Compute Stick 2 - 'docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino'"
+echo "2. For CPU - 'docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino'"
