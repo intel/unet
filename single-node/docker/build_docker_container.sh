@@ -15,7 +15,7 @@
 # ----------------------------------------------------------------------------
 
 # Copy the model and scripts from the OpenVINO directory here
-cp -r ../openvino_saved_model .
+cp -r ../openvino_saved_model/* .
 
 docker build -t unet_openvino \
        --build-arg HTTP_PROXY=${HTTP_PROXY} \
