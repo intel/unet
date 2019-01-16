@@ -1,4 +1,6 @@
 ## TO BUILD CONTAINER:
+## Make sure you have downloaded the Linux version of OpenVINO: https://software.intel.com/en-us/openvino-toolkit/choose-download/free-download-linux
+## Place the downloaded OpenVINO installer in the same directory as this Dockerfile.
 ## docker build -t unet_openvino --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg HTTPS_PROXY=${HTTPS_PROXY} --build-arg NO_PROXY=${NO_PROXY} --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg no_proxy=${no_proxy} .
 ## TO RUN BUILT CONTAINER:
 ## 1. For Neural Compute Stick 2 - `docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino`
@@ -12,10 +14,8 @@ ARG INSTALL_DIR=/opt/intel/computer_vision_sdk
 
 ENV PATH /opt/conda/bin:$PATH
 
-RUN apt-get update
-
 # Make sure programs are installed
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         autoconf \
         build-essential \
         curl \
@@ -85,10 +85,10 @@ RUN echo "udevadm trigger" >> ~/.bashrc
 RUN chmod a+x /app/run_unet_demo_cpu.sh
 RUN chmod a+x /app/run_unet_demo_movidius.sh
 
-RUN rm -rf l_openvino_toolkit*
-RUN rm Dockerfile
-RUN rm 97-myriad-usbboot.rules
-RUN rm inference_keras.py
-RUN rm README.md
+RUN find l_openvino_toolkit* --delete
+RUN find Dockerfile --delete
+RUN find 97-myriad-usbboot.rules --delete
+RUN find inference_keras.py --delete
+RUN find README.md --delete
 
 CMD ["/bin/bash"]
