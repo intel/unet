@@ -85,10 +85,10 @@ RUN echo "udevadm trigger" >> ~/.bashrc
 RUN chmod a+x /app/run_unet_demo_cpu.sh
 RUN chmod a+x /app/run_unet_demo_movidius.sh
 
-RUN find l_openvino_toolkit* --delete
-RUN find Dockerfile --delete
-RUN find 97-myriad-usbboot.rules --delete
-RUN find inference_keras.py --delete
-RUN find README.md --delete
+RUN rm -rf /app/l_openvino_toolkit*
+RUN rm -f /app/Dockerfile
+RUN rm -f /app/97-myriad-usbboot.rules
+RUN rm -f /app/inference_keras.py
+RUN rm -f /app/README.md 
 
 CMD ["/bin/bash"]
