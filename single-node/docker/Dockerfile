@@ -85,4 +85,10 @@ RUN echo "udevadm trigger" >> ~/.bashrc
 RUN chmod a+x /app/run_unet_demo_cpu.sh
 RUN chmod a+x /app/run_unet_demo_movidius.sh
 
+RUN rm -rf l_openvino_toolkit*
+RUN rm Dockerfile
+RUN rm 97-myriad-usbboot.rules
+RUN rm inference_keras.py
+RUN rm README.md
+
 CMD ["/bin/bash"]
