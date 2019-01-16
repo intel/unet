@@ -50,7 +50,7 @@ RUN wget --quiet \
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc
 
-RUN conda -y update -n base -c defaults conda
+RUN conda update -n base -c defaults conda
 
 # We need a python 3.5 environment for OpenVINO
 RUN conda -y create -n openvino python=3.5 pip h5py numpy matplotlib
