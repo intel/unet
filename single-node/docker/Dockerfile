@@ -53,7 +53,7 @@ RUN wget --quiet \
 RUN conda update -y -n base -c defaults conda
 
 # We need a python 3.5 environment for OpenVINO
-RUN conda create -n openvino python=3.5 pip h5py numpy matplotlib
+RUN conda create -y -n openvino python=3.5 pip h5py numpy matplotlib
 RUN echo "conda activate openvino" >> ~/.bashrc
 
 # Unzip the OpenVINO installer
