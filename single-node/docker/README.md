@@ -15,7 +15,7 @@ To run the Docker container:
 
 ```docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino```
 
-2. If you have a Neural Compute Stick, plug it into the USB port and run the Docker this way: 
+2. If you have a [Neural Compute Stick (NCS)](https://software.intel.com/en-us/neural-compute-stick), plug it into the USB port and run the Docker this way: 
 
 ```docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino```
 
