@@ -18,7 +18,7 @@ or (for NCS):
 
 ```./run_unet_demo_movidius.sh``` 
 
-The script will run the OpenVINO model on a few sample MRIs from the Medical Decathlon dataset. (These samples were generated during the OpenVINO [conversion step](https://github.com/IntelAI/unet/blob/master/single-node/openvino_saved_model/create_validation_sample.py).
+The script will run the OpenVINO model on a few sample MRIs from the Medical Decathlon dataset. (These samples were generated during the OpenVINO [conversion step #4](https://github.com/IntelAI/unet/blob/master/single-node/openvino_saved_model/create_validation_sample.py).
 It will show you the Dice scores and plot/save some PNG images into a subdirectory.
 
  
