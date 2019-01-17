@@ -91,5 +91,6 @@ RUN rm -f ${PWD}/97-myriad-usbboot.rules
 RUN rm -f ${PWD}/inference_keras.py
 RUN rm -f ${PWD}/README.md
 RUN rm -f ${PWD}/build_docker_container.sh
+RUN rm -f ${PWD}/create_validation_sample.py
 
 CMD ["/bin/bash"]
