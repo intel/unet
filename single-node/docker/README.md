@@ -8,7 +8,7 @@ To build the Docker container:
 
 A build log should begin printing. The build time will heavily depend on your local hardware. If it finishes succesfully, you should see something like this:
 
-[!docker build](https://github.com/IntelAI/unet/blob/master/single-node/images/docker_build.png)
+![docker build](https://github.com/IntelAI/unet/blob/master/single-node/images/docker_build.png)
 
 To run the Docker container:
 1. If the docker container has been successfully built, you can run it with the command: ```docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino```
