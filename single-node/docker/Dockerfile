@@ -78,17 +78,18 @@ RUN echo "source ${INSTALL_DIR}/bin/setupvars.sh" >> ~/.bashrc
 RUN useradd -G video -ms /bin/bash user
 
 # USB rules for Myriad
-RUN cp /app/97-myriad-usbboot.rules /etc/udev/rules.d/
+RUN cp ${PWD}/97-myriad-usbboot.rules /etc/udev/rules.d/
 RUN echo "udevadm control --reload-rules" >> ~/.bashrc
 RUN echo "udevadm trigger" >> ~/.bashrc
 
-RUN chmod a+x /app/run_unet_demo_cpu.sh
-RUN chmod a+x /app/run_unet_demo_movidius.sh
+RUN chmod a+x ${PWD}/run_unet_demo_cpu.sh
+RUN chmod a+x ${PWD}/run_unet_demo_movidius.sh
 
-RUN rm -rf /app/l_openvino_toolkit*
-RUN rm -f /app/Dockerfile
-RUN rm -f /app/97-myriad-usbboot.rules
-RUN rm -f /app/inference_keras.py
-RUN rm -f /app/README.md 
+RUN rm -rf ${PWD}/l_openvino_toolkit*
+RUN rm -f ${PWD}/Dockerfile
+RUN rm -f ${PWD}/97-myriad-usbboot.rules
+RUN rm -f ${PWD}/inference_keras.py
+RUN rm -f ${PWD}/README.md
+RUN rm -f ${PWD}/build_docker_container.sh
 
 CMD ["/bin/bash"]
