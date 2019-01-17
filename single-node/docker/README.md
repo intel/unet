@@ -12,8 +12,11 @@ A build log should begin printing. The build time will heavily depend on your lo
 
 To run the Docker container:
 1. If the docker container has been successfully built, you can run it with the command: 
+
 ```docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino```
+
 2. If you have a Neural Compute Stick, plug it into the USB port and run the Docker this way: 
+
 ```docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino```
 
 Once the Docker starts you'll be in a new shell. To run the OpenVINO inference script type:
