@@ -68,6 +68,10 @@ python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_mode
 
 4. Run the script `python create_validation_sample.py` which will select a few samples from the HDF5 datafile and save them to a separate NumPy datafile called `validation_data.npz`. The inference scripts will use this NumPy file.
 
+For example:
+
+```python create_validation_sample.py --hdf5_datafile ../../../data/decathlon/144x144/Task01_BrainTumour.h5```
+
 5. The scripts `inference_keras.py` and `inference_openvino.py` load the `validation_data.npz` data file and run inference. Add the `--plot` argument to the command line and the script will plot figures for each prediction.
 
 NOTE: The baseline model uses UpSampling2D (Bilinear Interpolation). This is supported on OpenVINO via a shared TensorFlow MKL-DNN library. To build the library run the script:
