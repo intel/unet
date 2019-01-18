@@ -16,7 +16,7 @@
 
 # Copy the model and scripts from the OpenVINO directory here
 echo "Copying the contents of openvino_saved_model directory here."
-cp -r ../openvino/* .
+rsync -av ../openvino/* . --exclude=README.md
 
 echo "Building Docker container"
 docker build -t unet_openvino \
