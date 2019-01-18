@@ -14,8 +14,8 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-if [ -d "openvino_saved_model" ]; then
-  cd openvino_saved_model
+if [ -d "openvino" ]; then
+  cd openvino
 fi
 
 if [ -f /etc/redhat-release ]; then
