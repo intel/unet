@@ -34,7 +34,7 @@ python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freez
 
 3. Use the OpenVINO model optimizer to convert the frozen TensorFlow model to OpenVINO IR format.
 
-Once you have a frozen model, you can use the OpenVino model optimizer to create the OpenVINO version.
+Once you have a frozen model, you can use the OpenVINO model optimizer to create the OpenVINO version.
 
 Change the directory to `openvino`:
 
@@ -42,7 +42,7 @@ Change the directory to `openvino`:
 cd openvino
 ```
 
-We've written a bash script to do this for you:
+We've written a bash script to do OpenVINO model conversion for you:
 
 ```./create_openvino_model.sh```
 
