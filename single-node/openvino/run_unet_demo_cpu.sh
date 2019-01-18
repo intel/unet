@@ -14,8 +14,8 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-if [ -d "openvino_saved_model" ]; then
-  cd openvino_saved_model
+if [ -d "openvino" ]; then
+  cd openvino
 fi
 
 if [ -f /etc/redhat-release ]; then
@@ -29,4 +29,4 @@ if [ -f /etc/lsb-release ]; then
 fi
 
 python inference_openvino.py -l ${OPENVINO_LIB}/libcpu_extension_avx2.so \
-       --plot --stats
+       --plot 
