@@ -18,8 +18,8 @@ FROZEN_MODEL="../frozen_model/saved_model_frozen.pb"
 
 if [ ! -f $FROZEN_MODEL ]; then
    echo "File $FROZEN_MODEL doesn't exist."
-   echo "Please make sure you have a trained model and then run the script: "
-   "'python helper_scripts/convert_keras_to_tensorflow_serving_model.py --input_filename output/unet_model_for_decathlon.hdf5'"
+   echo "Please make sure you have a trained model and then run the script: " 
+   echo "'python helper_scripts/convert_keras_to_tensorflow_serving_model.py --input_filename output/unet_model_for_decathlon.hdf5'"
    echo "The directions at the end of the script will show you the commands to"
    echo "create a frozen model."
    exit 1
