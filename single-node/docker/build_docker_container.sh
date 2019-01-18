@@ -28,7 +28,12 @@ docker build -t unet_openvino \
        --build-arg no_proxy=${no_proxy} \
        .
 
-echo "Docker built successfully."
-echo "TO RUN BUILT DOCKER CONTAINER:"
-echo "1. For Neural Compute Stick 2 - 'docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino'"
-echo "2. For CPU - 'docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino'"
+if [ $? -eq 0 ]; then
+    echo "Docker built successfully."
+    echo "TO RUN BUILT DOCKER CONTAINER:"
+    echo "1. For Neural Compute Stick 2 - 'docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino'"
+    echo "2. For CPU - 'docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino'"
+else
+    echo "DOCKER BUILD FAILED."
+fi
+
