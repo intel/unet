@@ -111,5 +111,6 @@ RUN rm -f ${APP_DIR}/inference_keras.py
 RUN rm -f ${APP_DIR}/README.md
 RUN rm -f ${APP_DIR}/build_docker_container.sh
 RUN rm -f ${APP_DIR}/create_validation_sample.py
+RUN rm -rf ${APP_DIR}/create_openvino_model.sh
 
 CMD ["/bin/bash"]
