@@ -36,16 +36,33 @@ python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freez
 
 Once you have a frozen model, you can use the OpenVino model optimizer to create the OpenVINO version.
 
-First, set the OpenVINO environment:
+Change the directory to `openvino`:
+
+```
+cd openvino
+```
+
+We've written a bash script to do this for you:
+
+```./create_openvino_model.sh```
+
+If you'd like to try it manually, the steps are:
+
+First, set the OpenVINO environment (this assumes you've already downloaded and installed [OpenVINO](https://software.intel.com/en-us/openvino-toolkit/choose-download) on your computer):
 
 ```
 source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 ```
 
-Then,
+Then to create a FP32 precision model,
 
 ```
-cd openvino
+python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_model ../frozen_model/saved_model_frozen.pb --input_shape=[1,144,144,4] --data_type FP32  --output_dir models/FP32  --model_name saved_model
+```
+
+For the Neural Compute Stick you'll need to create a FP16 model like this:
+
+```
 python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_model ../frozen_model/saved_model_frozen.pb --input_shape=[1,144,144,4] --data_type FP32  --output_dir models/FP32  --model_name saved_model
 ```
 
