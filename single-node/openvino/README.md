@@ -45,6 +45,7 @@ source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 Then,
 
 ```
+cd openvino
 python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_model ../frozen_model/saved_model_frozen.pb --input_shape=[1,144,144,4] --data_type FP32  --output_dir models/FP32  --model_name saved_model
 ```
 
