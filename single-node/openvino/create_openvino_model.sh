@@ -26,7 +26,7 @@ if [ ! -f $FROZEN_MODEL ]; then
 fi
 
 # Setup the OpenVINO environment variables
-source /opt/intel/computer_vision_sdk/bin/setups_vars.sh
+source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 
 # For CPU
 python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py \
