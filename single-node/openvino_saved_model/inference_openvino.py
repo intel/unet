@@ -103,7 +103,7 @@ def load_data():
 
     # Load data
     # You can create this Numpy datafile by running the create_validation_sample.py script
-    data_file = np.load("validation_data.npz")
+    data_file = np.load("data/validation_data.npz")
     imgs_validation = data_file["imgs_validation"]
     msks_validation = data_file["msks_validation"]
     img_indicies = data_file["indicies_validation"]
@@ -125,9 +125,9 @@ def load_model(fp16=False):
     log.info("Loading U-Net model to the plugin")
 
     if fp16:  # Floating point 16 is for Myriad X
-        model_xml = "./FP16/saved_model.xml"
+        model_xml = "./models/FP16/saved_model.xml"
     else:     # FP32 for most devices
-        model_xml = "./FP32/saved_model.xml"
+        model_xml = "./models/FP32/saved_model.xml"
 
     model_bin = os.path.splitext(model_xml)[0] + ".bin"
 

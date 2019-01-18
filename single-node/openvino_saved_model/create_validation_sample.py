@@ -42,7 +42,7 @@ with h5py.File(args.hdf5_datafile, "r") as df:
     imgs_validation = df["imgs_validation"][indicies_validation,]
     msks_validation = df["msks_validation"][indicies_validation,]
 
-    np.savez("validation_data.npz",
+    np.savez("data/validation_data.npz",
              imgs_validation=imgs_validation,
              msks_validation=msks_validation,
              indicies_validation=indicies_validation)

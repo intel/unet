@@ -127,10 +127,11 @@ if __name__ == "__main__":
 
     # Load data
     # You can create this Numpy datafile by running the create_validation_sample.py script
+    sample_datafile = os.path.join("data", "validation_data.npz")
     try:
-    	data_file = np.load("validation_data.npz")
+    	data_file = np.load(sample_datafile)
     except IOError:
-        print("Can't find {}. Please run `python create_validation_sample.py` to generate the sample datafile.".format("validation_data.npz"))
+        print("Can't find {}. Please run `python create_validation_sample.py` to generate the sample datafile.".format(sample_datafile))
         sys.exit()
         
     imgs_validation = data_file["imgs_validation"]

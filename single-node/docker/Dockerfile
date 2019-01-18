@@ -7,10 +7,11 @@
 ## 2. For CPU - `docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino`
 FROM ubuntu:16.04
 
-ADD . /app
-WORKDIR /app
+ENV APP_DIR /app
+ADD . ${APP_DIR}
+WORKDIR ${APP_DIR}
 
-ARG INSTALL_DIR=/opt/intel/computer_vision_sdk
+ARG OPENVINO_DIR=/opt/intel/computer_vision_sdk
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -37,6 +38,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         usbutils \
         wget \
+        libgtk2.0-dev \
+        libcanberra-gtk-module \
+        libgflags-dev \
+        vim \
         && apt-get clean all
 
 # Install miniconda
@@ -57,40 +62,54 @@ RUN conda create -y -n openvino python=3.5 pip h5py numpy matplotlib
 RUN echo "conda activate openvino" >> ~/.bashrc
 
 # Unzip the OpenVINO installer
-RUN cd /app && tar -xvzf l_openvino_toolkit*
+RUN cd ${APP_DIR} && tar -xvzf l_openvino_toolkit*
 
 # installing OpenVINO dependencies
-RUN cd /app/l_openvino_toolkit* && \
+RUN cd ${APP_DIR}/l_openvino_toolkit* && \
     ./install_cv_sdk_dependencies.sh
 
 # installing OpenVINO itself
-RUN cd /app/l_openvino_toolkit* && \
+RUN cd ${APP_DIR}/l_openvino_toolkit* && \
     sed -i 's/decline/accept/g' silent.cfg && \
     ./install.sh --silent silent.cfg
 
 # Setup the OpenVINO environment
-RUN /bin/bash -c "source $INSTALL_DIR/bin/setupvars.sh"
+RUN /bin/bash -c "source ${OPENVINO_DIR}/bin/setupvars.sh"
 
 # Build the samples so that we have libraries
-RUN /bin/bash -c "$INSTALL_DIR/inference_engine/samples/build_samples.sh"
+RUN /bin/bash -c "${OPENVINO_DIR}/inference_engine/samples/build_samples.sh"
 
-RUN echo "source ${INSTALL_DIR}/bin/setupvars.sh" >> ~/.bashrc
+RUN echo "source ${OPENVINO_DIR}/bin/setupvars.sh" >> ~/.bashrc
 RUN useradd -G video -ms /bin/bash user
 
 # USB rules for Myriad
-RUN cp ${PWD}/97-myriad-usbboot.rules /etc/udev/rules.d/
+RUN cp ${APP_DIR}/97-myriad-usbboot.rules /etc/udev/rules.d/
 RUN echo "udevadm control --reload-rules" >> ~/.bashrc
 RUN echo "udevadm trigger" >> ~/.bashrc
 
-RUN chmod a+x ${PWD}/run_unet_demo_cpu.sh
-RUN chmod a+x ${PWD}/run_unet_demo_movidius.sh
+RUN chmod a+x ${APP_DIR}/run_unet_demo_cpu.sh
+RUN chmod a+x ${APP_DIR}/run_unet_demo_ncs.sh
 
-RUN rm -rf ${PWD}/l_openvino_toolkit*
-RUN rm -f ${PWD}/Dockerfile
-RUN rm -f ${PWD}/97-myriad-usbboot.rules
-RUN rm -f ${PWD}/inference_keras.py
-RUN rm -f ${PWD}/README.md
-RUN rm -f ${PWD}/build_docker_container.sh
-RUN rm -f ${PWD}/create_validation_sample.py
+#Steps to build C++ code
+RUN cd ${APP_DIR}/src/
+RUN git clone https://github.com/rogersce/cnpy.git
+RUN mv cnpy ${APP_DIR}/src/ && \
+    cd ${APP_DIR}/src/cnpy && \
+    mkdir -p build && \
+    cd ${APP_DIR}/src/cnpy/build  \
+    && cmake ${APP_DIR}/src/cnpy/ \
+    && make && make install
+RUN cd ${APP_DIR}/project && \
+    qmake -makefile && make && cd ../build
+RUN cp /usr/local/lib/libcnpy.so ${OPENVINO_DIR}/inference_engine/lib/ubuntu_16.04/intel64
+
+# Cleanup
+RUN rm -rf ${APP_DIR}/l_openvino_toolkit*
+RUN rm -f ${APP_DIR}/Dockerfile
+RUN rm -f ${APP_DIR}/97-myriad-usbboot.rules
+RUN rm -f ${APP_DIR}/inference_keras.py
+RUN rm -f ${APP_DIR}/README.md
+RUN rm -f ${APP_DIR}/build_docker_container.sh
+RUN rm -f ${APP_DIR}/create_validation_sample.py
 
 CMD ["/bin/bash"]
