@@ -27,19 +27,11 @@ OBJECTS_DIR =  ../build
 
 SOURCES += ../src/main.cpp \
     ../src/brainunetopenvino.cpp
-#home/baishali/docker_unet_openvino
 
 HEADERS +=  ../include/brainunetopenvino.h
 
 
 INCLUDEPATH += " ../src/cnpy/"   #to read the numpy arrays in c++
-
-
-#INCLUDEPATH += "/opt/intel/computer_vision_sdk_2018.3.343/deployment_tools/inference_engine/include/"
-#LIBS += -L"/opt/intel/computer_vision_sdk_2018.3.343/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/"
-#LIBS += -L"/opt/intel/computer_vision_sdk_2018.3.343/deployment_tools/inference_engine/external/mkltiny_lnx/lib/"
-
-#LIBS += -L"/opt/intel/deeplearning_deploymenttoolkit_2018.0.9688.0/deployment_tools/inference_engine/external/mkltiny_lnx/lib/libiomp5.so"
 
 INCLUDEPATH += "/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/include/"
 INCLUDEPATH += "/opt/intel/computer_vision_sdk/opencv/include/"
