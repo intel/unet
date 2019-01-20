@@ -224,6 +224,104 @@ def unet_model(imgs_shape, msks_shape,
 
     return model
 
+def autofocus_layer(inputs, fms):
+    """
+    Variation on the AutoFocus Layer
+    https://github.com/yaq007/Autofocus-Layer
+    https://arxiv.org/pdf/1805.08403.pdf
+    """
+
+    # Convolution parameters
+    params = dict(kernel_size=(5, 5), activation=None,
+                  padding="same", data_format=data_format,
+                  kernel_initializer="he_uniform")
+
+    # Spatial Pyramid with 4 dilation rates
+    conv_r1 = K.layers.Conv2D(filters=fms, **params)(inputs)
+    conv_r1 = K.layers.BatchNormalization()(conv_r1)
+    conv_r1 = K.layers.Activation("relu")(conv_r1)
+
+    conv_r2 = K.layers.Conv2D(dilation_rate=(2,2), filters=fms, **params)(inputs)
+    conv_r2 = K.layers.BatchNormalization()(conv_r2)
+    conv_r2 = K.layers.Activation("relu")(conv_r2)
+
+    conv_r3 = K.layers.Conv2D(dilation_rate=(3,3), filters=fms, **params)(inputs)
+    conv_r3 = K.layers.BatchNormalization()(conv_r3)
+    conv_r3 = K.layers.Activation("relu")(conv_r3)
+
+    conv_r4 = K.layers.Conv2D(dilation_rate=(4,4), filters=fms, **params)(inputs)
+    conv_r4 = K.layers.BatchNormalization()(conv_r4)
+    conv_r4 = K.layers.Activation("relu")(conv_r4)
+
+    # Attentional layers for pyramid paths
+    atten = K.layers.Conv2D(filters=fms, **params)(inputs)
+    atten = K.layers.BatchNormalization()(atten)
+    atten = K.layers.Activation("relu")(atten)
+    atten = K.layers.Conv2D(filters=2*fms, **params)(atten)
+    atten = K.layers.Activation("relu")(atten)
+    atten1 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+                             padding="same", data_format=data_format,
+                             kernel_initializer="he_uniform")(atten)
+    atten2 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+                             padding="same", data_format=data_format,
+                             kernel_initializer="he_uniform")(atten)
+    atten3 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+                             padding="same", data_format=data_format,
+                             kernel_initializer="he_uniform")(atten)
+    atten4 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+                             padding="same", data_format=data_format,
+                             kernel_initializer="he_uniform")(atten)
+
+    # Elementwise multiply the attentional layer to the dilated layers
+    conv_r1 = K.layers.multiply([conv_r1, atten1])
+    conv_r2 = K.layers.multiply([conv_r2, atten2])
+    conv_r3 = K.layers.multiply([conv_r3, atten3])
+    conv_r4 = K.layers.multiply([conv_r4, atten4])
+
+    autofocus1 = K.layers.concatenate([conv_r1, conv_r2, conv_r3, conv_r4],
+                 axis=concat_axis)
+
+    return autofocus1
+
+def autofocus_model(imgs_shape, msks_shape,
+               dropout=0.2,
+               final=False):
+
+    num_chan_out = msks_shape[-1]
+
+    inputs = K.layers.Input(imgs_shape[1:], name="MRImages")
+
+    fms = args.featuremaps  #32 or 16 depending on your memory size
+
+    output = autofocus_layer(inputs, fms)
+
+    # Append as many autofocus layers as you'd like
+    output = autofocus_layer(output, fms*2)
+    output = autofocus_layer(output, fms)
+
+    prediction = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+                             padding="same", data_format=data_format,
+                             kernel_initializer="he_uniform")(output)
+
+    model = K.models.Model(inputs=[inputs], outputs=[prediction])
+
+    optimizer = K.optimizers.Adam(lr=args.learningrate)
+
+    if final:
+        model.trainable = False
+    else:
+        metrics = ["accuracy", dice_coef]
+        # loss = dice_coef_loss
+        loss = combined_dice_ce_loss
+
+        model.compile(optimizer=optimizer,
+                      loss=loss,
+                      metrics=metrics)
+
+        if args.print_model:
+            model.summary()
+
+    return model
 
 def get_callbacks():
     """
@@ -298,6 +396,9 @@ def load_model(imgs_shape, msks_shape,
     """
     If you have other models, you can try them here
     """
-    return unet_model(imgs_shape, msks_shape,
+    # return unet_model(imgs_shape, msks_shape,
+    #                   dropout=dropout,
+    #                   final=final)
+    return autofocus_model(imgs_shape, msks_shape,
                       dropout=dropout,
                       final=final)
