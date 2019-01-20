@@ -259,16 +259,16 @@ def autofocus_layer(inputs, fms):
     atten = K.layers.Activation("relu")(atten)
     atten = K.layers.Conv2D(filters=2*fms, **params)(atten)
     atten = K.layers.Activation("relu")(atten)
-    atten1 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+    atten1 = K.layers.Conv2D(kernel_size=(3,3), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
                              kernel_initializer="he_uniform")(atten)
-    atten2 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+    atten2 = K.layers.Conv2D(kernel_size=(3,3), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
                              kernel_initializer="he_uniform")(atten)
-    atten3 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+    atten3 = K.layers.Conv2D(kernel_size=(3,3), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
                              kernel_initializer="he_uniform")(atten)
-    atten4 = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
+    atten4 = K.layers.Conv2D(kernel_size=(3,3), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
                              kernel_initializer="he_uniform")(atten)
 
@@ -296,8 +296,9 @@ def autofocus_model(imgs_shape, msks_shape,
     output = autofocus_layer(inputs, fms)
 
     # Append as many autofocus layers as you'd like
-    output = autofocus_layer(output, fms*2)
-    output = autofocus_layer(output, fms)
+    # However, each new autofocus adds quite a lot of memory requirement
+    #output = autofocus_layer(output, fms*2)
+    #output = autofocus_layer(output, fms)
 
     prediction = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
