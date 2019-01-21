@@ -300,6 +300,12 @@ def autofocus_model(imgs_shape, msks_shape,
     #output = autofocus_layer(output, fms*2)
     #output = autofocus_layer(output, fms)
 
+    output = K.layers.Conv2D(kernel_size=(3,3), filters=fms, activation=None,
+    			     padding="same", data_format=data_format, 
+    			     kernel_initializer="he_uniform")(output)
+    output = K.layers.BatchNormalizing()(output)
+    output = K.layers.Activation("relu")(output)
+
     prediction = K.layers.Conv2D(kernel_size=(1,1), filters=1, activation="sigmoid",
                              padding="same", data_format=data_format,
                              kernel_initializer="he_uniform")(output)
