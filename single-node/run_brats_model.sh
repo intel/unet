@@ -46,8 +46,8 @@ INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
 
 MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
 
-NUM_EPOCHS=30  # Number of epochs to train
-LEARNING_RATE=0.0001  # 0.00005  Adam optimizer
+NUM_EPOCHS=20  # Number of epochs to train
+LEARNING_RATE=0.02   # For AutoFocus since there is batch normalization
 
 # 32 feature maps is preferable, but uses about 16 GB of memory.
 # I've tried to reduce this to 16 feature maps in order for the
