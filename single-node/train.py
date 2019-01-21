@@ -49,6 +49,7 @@ config = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
 
 sess = tf.Session(config=config)
 
+K.backend.set_session(sess)
 
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """

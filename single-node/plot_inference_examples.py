@@ -45,9 +45,21 @@ parser.add_argument("--output_path", default=settings.OUT_PATH,
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
                     help="the Keras inference model filename")
 
+parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
+		    type=int, help="Number of intra-op-parallelism threads")
+parser.add_argument("--interops_threads", default=settings.NUM_INTER_THREADS,
+  		    type=int, help="Number of inter-op-parallelism threads")
+  		    		    
 args = parser.parse_args()
 
-
+# Optimize CPU threads for TensorFlow
+config = tf.ConfigProto(
+    	inter_op_parallelism_threads=args.interop_threads,
+        intra_op_parallelism_threads=args.intraop_threads)
+        
+sess = tf.Session(config=config)        
+K.backend.set_session(sess)
+        
 def calc_dice(y_true, y_pred, smooth=1.):
     """
     Sorensen Dice coefficient
