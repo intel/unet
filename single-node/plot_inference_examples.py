@@ -29,6 +29,7 @@ import keras as K
 import settings
 import argparse
 import h5py
+from timeit import default_timer as timer
 
 import matplotlib.pyplot as plt
 
@@ -47,6 +48,15 @@ parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
 
 args = parser.parse_args()
 
+# Optimize CPU threads for TensorFlow
+config = tf.ConfigProto(
+        inter_op_parallelism_threads=1,
+        intra_op_parallelism_threads=28)
+        
+sess = tf.Session(config=config)
+        
+K.backend.set_session(sess)
+        
 
 def calc_dice(y_true, y_pred, smooth=1.):
     """
@@ -106,8 +116,12 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
     img = imgs_validation[[img_no], ]
     msk = msks_validation[[img_no], ]
 
+    start = timer()
     pred_mask = model.predict(img)
-
+    stop = timer()
+    
+    print("Inference time = {} ms".format(1000.0*(stop-start)))
+    
     dice_score = calc_dice(pred_mask, msk)
 
     print("Dice score for Image #{} = {:.4f}".format(img_no,
