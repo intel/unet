@@ -47,7 +47,7 @@ parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
 
 parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
 		    type=int, help="Number of intra-op-parallelism threads")
-parser.add_argument("--interops_threads", default=settings.NUM_INTER_THREADS,
+parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
   		    type=int, help="Number of inter-op-parallelism threads")
   		    		    
 args = parser.parse_args()
