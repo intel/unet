@@ -146,7 +146,8 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
     png_name = os.path.join(png_directory, "pred{}.png".format(img_no))
     plt.savefig(png_name, bbox_inches="tight", pad_inches=0)
     print("Saved png file to {}".format(png_name))
-
+    plt.clf()
+    plt.close()
 
 if __name__ == "__main__":
 
@@ -177,3 +178,5 @@ if __name__ == "__main__":
     for idx in indicies_validation:
         plot_results(model, imgs_validation, msks_validation,
                      idx, png_directory)
+
+    
