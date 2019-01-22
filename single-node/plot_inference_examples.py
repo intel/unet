@@ -145,6 +145,10 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
     plt.savefig(png_name, bbox_inches="tight", pad_inches=0)
     print("Saved png file to {}".format(png_name))
 
+    # Close to prevent memory leak
+    plt.clf()
+    plt.close()
+
 
 if __name__ == "__main__":
 
