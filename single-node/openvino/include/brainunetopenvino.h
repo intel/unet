@@ -49,11 +49,19 @@ using namespace InferenceEngine;
 
 #include "../src/cnpy/cnpy.h"
 
+struct array_dims {
+  size_t NH;
+  size_t NW;
+  size_t NC;
+  size_t NN;
+};
+
 class BrainUnetOpenVino {
 public:
-  double *loaded_data_masks;
-  double *loaded_data;
-  void loadNumpyData(cnpy::NpyArray &arr, cnpy::NpyArray &arr_msks);
+  array_dims input_shape;
+  array_dims output_shape;
+
+  void loadData(int img_index, std::vector<double> &temp_data, std::vector<double> &orig_gt_msks);
   void makeInference(int img_index, InferenceEngine::TargetDevice targetDevice);
 };
 
