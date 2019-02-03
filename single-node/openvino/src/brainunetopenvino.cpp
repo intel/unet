@@ -12,9 +12,8 @@ void BrainUnetOpenVino::loadNumpyData(cnpy::NpyArray &arr, cnpy::NpyArray &arr_m
 {
         //************************* reading nmpy images****************************/
 
-         arr=cnpy::npy_load("../data/imgs_validation.npy");
-         arr_msks=cnpy::npy_load("../data/msks_validation.npy");
-          //arr=cnpy::npz_load("../data/validation_data.npz");
+         arr=cnpy::npz_load("../data/validation_data.npz", "imgs_validation");
+         arr_msks=cnpy::npz_load("../data/validation_data.npz", "msks_validation");
          std::cout<<"Numpy arrays loaded"<<std::endl;
 }
 
@@ -25,7 +24,7 @@ void BrainUnetOpenVino::makeInference(int img_num, InferenceEngine::TargetDevice
     std::cout<<"Reading loaded Numpy arrays"<<std::endl;
     double* loaded_data = arr.data<double>();
     double* loaded_data_msks = arr_msks.data<double>();
-    int img_index=img_num-1;
+    int img_index=img_num;
    //make sure the loaded data matches the saved data
     int Nw= arr.shape[0];
     int Nx =arr.shape[1];

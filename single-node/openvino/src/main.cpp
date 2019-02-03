@@ -15,7 +15,7 @@
 
 using namespace InferenceEngine;
 using namespace std;
-int IMAGE_FILE_INDEX = 60;
+int IMAGE_FILE_INDEX = 1;
 InferenceEngine::TargetDevice PLUGIN_NAME = TargetDevice::eCPU;
 int image_file_index;
 InferenceEngine::TargetDevice plugin_name;

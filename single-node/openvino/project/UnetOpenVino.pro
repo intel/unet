@@ -1,10 +1,5 @@
-
-
-
-
 QT -= gui
 QT += widgets
-
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -24,12 +19,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 DESTDIR = ../build
 OBJECTS_DIR =  ../build
 
-
 SOURCES += ../src/main.cpp \
     ../src/brainunetopenvino.cpp
 
 HEADERS +=  ../include/brainunetopenvino.h
-
 
 INCLUDEPATH += " ../src/cnpy/"   #to read the numpy arrays in c++
 
@@ -54,9 +47,7 @@ LIBS +=-lopencv_highgui \
     -lopencv_objdetect \
     -lopencv_video
 
-
 INCLUDEPATH += "/usr/local/include/"
 LIBS += -L"/usr/local/lib/"
 LIBS += -lcnpy \
     -lz
-
