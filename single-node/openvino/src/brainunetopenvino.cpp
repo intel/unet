@@ -40,9 +40,9 @@ void BrainUnetOpenVino::loadData(int img_num, std::vector<double> &temp_data,
     img_index = 0;
   } else {
     if (img_num > input_shape.NN) {
-      img_index = input_shape.NN
+      img_index = input_shape.NN;
     } else {
-      img_index = img_num
+      img_index = img_num;
     }
   };
 
