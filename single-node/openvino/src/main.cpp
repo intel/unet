@@ -91,13 +91,10 @@ void parseArgs(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   std::cout << "Starting program" << std::endl;
   BrainUnetOpenVino brainunetobj;
-  cnpy::NpyArray arr;
-  cnpy::NpyArray arr_msks;
 
   try {
     parseArgs(argc, argv); // request users for default
-    brainunetobj.loadNumpyData(arr, arr_msks);
-    brainunetobj.makeInference(image_file_index, plugin_name, arr, arr_msks);
+    brainunetobj.makeInference(image_file_index, plugin_name);
 
   } catch (const std::exception& e) {
     std::cout << e.what() << std::endl;

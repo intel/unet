@@ -22,14 +22,20 @@ void BrainUnetOpenVino::loadNumpyData(cnpy::NpyArray &arr,
 }
 
 void BrainUnetOpenVino::makeInference(
-    int img_num, InferenceEngine::TargetDevice targetDevice,
-    cnpy::NpyArray &arr, cnpy::NpyArray &arr_msks) {
+    int img_num, InferenceEngine::TargetDevice targetDevice
+    ) {
   // reading numpy images
 
+  cnpy::NpyArray arr;
+  cnpy::NpyArray arr_msks;
+
+  BrainUnetOpenVino::loadNumpyData(arr, arr_msks);
+  
   std::cout << "Reading loaded Numpy arrays" << std::endl;
   double *loaded_data = arr.data<double>();
   double *loaded_data_msks = arr_msks.data<double>();
   int img_index = img_num;
+
   // make sure the loaded data matches the saved data
   int Nw = arr.shape[0];
   int Nx = arr.shape[1];

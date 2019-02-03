@@ -54,8 +54,7 @@ public:
   double *loaded_data_masks;
   double *loaded_data;
   void loadNumpyData(cnpy::NpyArray &arr, cnpy::NpyArray &arr_msks);
-  void makeInference(int img_index, InferenceEngine::TargetDevice targetDevice,
-                     cnpy::NpyArray &arr, cnpy::NpyArray &arr_msks);
+  void makeInference(int img_index, InferenceEngine::TargetDevice targetDevice);
 };
 
 #endif // BRAINUNETOPENVINO_H
