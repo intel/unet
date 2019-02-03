@@ -14,7 +14,6 @@ limitations under the License.
 #ifndef OPENVINO_H
 #define OPENVINO_H
 
-#include "../src/cnpy/cnpy.h"
 #include <chrono>
 #include <fstream>
 #include <functional>
@@ -32,11 +31,23 @@ limitations under the License.
 #include <inference_engine.hpp>
 #include <opencv2/opencv.hpp>
 
+using namespace InferenceEngine;
+
+#define M_IE_PLUGIN_PATH                                                       \
+  "/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/"      \
+  "ubuntu_16.04/intel64"
+
+
 #endif // OPENVINO_H
 
 #ifndef BRAINUNETOPENVINO_H
 #define BRAINUNETOPENVINO_H
-using namespace InferenceEngine;
+
+#define MODEL_DIR std::string("../models/")
+#define MODEL_FILENAME std::string("saved_model")
+#define DATA_FILENAME std::string("../data/validation_data.npz")
+
+#include "../src/cnpy/cnpy.h"
 
 class BrainUnetOpenVino {
 public:

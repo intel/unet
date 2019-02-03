@@ -12,23 +12,19 @@ limitations under the License.
 
 #include "../include/brainunetopenvino.h"
 
-#define M_IE_PLUGIN_PATH                                                       \
-  "/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/"      \
-  "ubuntu_16.04/intel64"
-
 void BrainUnetOpenVino::loadNumpyData(cnpy::NpyArray &arr,
                                       cnpy::NpyArray &arr_msks) {
-  //************************* reading nmpy images****************************/
+  // reading numpy images
 
-  arr = cnpy::npz_load("../data/validation_data.npz", "imgs_validation");
-  arr_msks = cnpy::npz_load("../data/validation_data.npz", "msks_validation");
+  arr = cnpy::npz_load(DATA_FILENAME, "imgs_validation");
+  arr_msks = cnpy::npz_load(DATA_FILENAME, "msks_validation");
   std::cout << "Numpy arrays loaded" << std::endl;
 }
 
 void BrainUnetOpenVino::makeInference(
     int img_num, InferenceEngine::TargetDevice targetDevice,
     cnpy::NpyArray &arr, cnpy::NpyArray &arr_msks) {
-  //************************* reading nmpy images****************************/
+  // reading numpy images
 
   std::cout << "Reading loaded Numpy arrays" << std::endl;
   double *loaded_data = arr.data<double>();
@@ -57,16 +53,13 @@ void BrainUnetOpenVino::makeInference(
     double t_msks = loaded_data_msks[i];
     orig_gt_msks.push_back(t_msks);
   }
-  std::cout << "Finished  reading Numpy arrays " << std::endl;
+  std::cout << "Finished reading Numpy arrays " << std::endl;
 
-  //***********Initialize Engin plugin, choose plugin type and set
-  //precission****************************//
+  // Initialize Engine plugin, choose plugin type and set precision
   InferenceEnginePluginPtr engine_ptr;
   engine_ptr =
-      PluginDispatcher({"/opt/intel/computer_vision_sdk/deployment_tools/"
-                        "inference_engine/lib/ubuntu_16.04/intel64",
-                        ""})
-          .getSuitablePlugin(targetDevice);
+      PluginDispatcher({M_IE_PLUGIN_PATH,""}).getSuitablePlugin(targetDevice);
+
   std::cout << "suitable plugin received" << std::endl;
   InferencePlugin plugin(engine_ptr);
   std::cout << "** Create InferenceEngine plugin." << std::endl;
@@ -78,11 +71,12 @@ void BrainUnetOpenVino::makeInference(
       target_precision = "FP16";
   }
   std::string network_model_path =
-      "../models/" + target_precision + "/saved_model.xml";
+      MODEL_DIR + target_precision + "/" + MODEL_FILENAME + ".xml";
   std::string network_weights_path =
-      "../models/" + target_precision + "/saved_model.bin";
+      "../models/" + target_precision + "/" + MODEL_FILENAME + ".bin";
   std::cout << network_weights_path << std::endl;
-  /**********************Load and read the networks**************************/
+
+  /******* Load and read the networks *****/
   CNNNetReader network_reader;
   network_reader.ReadNetwork(network_model_path);
   network_reader.ReadWeights(network_weights_path);
@@ -90,11 +84,12 @@ void BrainUnetOpenVino::makeInference(
   CNNNetwork network;
   network = network_reader.getNetwork();
   std::cout << "** Retrieved network." << std::endl;
-  // -----------------------------------------------------------------------------------------------------
-  // --------------------------- 3. Configure input & output
-  // ---------------------------------------------
-  // --------------------------- Prepare input blobs
-  // -----------------------------------------------------
+
+  // ----------------------------
+  //  3. Configure input & output
+  // ----------------------------
+  // -- Prepare input blobs
+  // ----------------------
   std::cout << "Preparing input blobs" << std::endl;
   /** Taking information about all topology inputs **/
   InputsDataMap input_info(network.getInputsInfo());
@@ -107,8 +102,8 @@ void BrainUnetOpenVino::makeInference(
   }
   std::cout << "** Input has been configured." << std::endl;
 
-  // --------------------------- Prepare output blobs
-  // ----------------------------------------------------
+  // -- Prepare output blobs
+  // -----------------------
   std::cout << "Preparing output blobs" << std::endl;
   OutputsDataMap output_info(network.getOutputsInfo());
   std::string firstOutputName;
@@ -126,21 +121,20 @@ void BrainUnetOpenVino::makeInference(
 
   std::cout << "** Output has been configured." << std::endl;
 
-  // --------------------------- 4. Loading model to the plugin
-  // ------------------------------------------
+  // 4. Loading model to the plugin
+  // ------------------------------
   // std::cout << "Loading model to the plugin" << std::endl;
   ExecutableNetwork executable_network = plugin.LoadNetwork(network, {});
   std::cout << "** Executable network has been created." << std::endl;
 
-  // --------------------------- 5. Create infer request
-  // -------------------------------------------------
+  // 5. Create infer request
+  // -----------------------
   InferRequest infer_request = executable_network.CreateInferRequest();
   std::cout << "** Inference request has been created." << std::endl;
 
-  // --------------------------- 6. Prepare input
-  // --------------------------------------------------------
+  // 6. Prepare input
+  // ----------------
   /** Iterate over all the input blobs **/
-  /** Iterating over all input blobs **/
   Blob::Ptr inputBlob;
   for (auto &item : input_info)
     inputBlob = infer_request.GetBlob(item.first);
@@ -156,16 +150,16 @@ void BrainUnetOpenVino::makeInference(
   }
   SizeVector inputShape = inputBlob->dims();
 
-  // --------------------------- 7. Do inference
-  // ---------------------------------------------------------
+  // 7. Do inference
+  // ---------------
   // start inference time
   auto start = std::chrono::high_resolution_clock::now();
   infer_request.Infer();
-  std::cout << "** Inference request has been started." << std::endl;
+  //std::cout << "** Inference request has been started." << std::endl;
 
-  // --------------------------- 8. Process output
-  // -------------------------------------------------------
-  std::cout << "Processing output blobs" << std::endl;
+  // 8. Process output
+  // -----------------
+  //std::cout << "Processing output blobs" << std::endl;
 
   const Blob::Ptr output_blob = infer_request.GetBlob(firstOutputName);
   const auto predicted_output_msk =
@@ -174,15 +168,13 @@ void BrainUnetOpenVino::makeInference(
   float inf_time =
       (std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
            .count());
-  std::cout << "Inference Done; inference time  " << inf_time << "\n";
+  std::cout << "Inference Done; inference time " << inf_time
+      << " msec" << std::endl;
 
-  //-----------------------------9. Compute some metrics from segmentation
-  //output and Display results----------------------------------------------
-
+  // 9. Compute some metrics from segmentation output and Display results
   // read corresponding GT and actual brain image from the image directories
   // change paths
 
-  std::string img_dir = "../data/";
   cv::Mat output_pred_img = cv::Mat(cv::Size(144, 144), CV_8UC1);
   cv::Mat output_GT_msks = cv::Mat(cv::Size(144, 144), CV_8UC1);
 
