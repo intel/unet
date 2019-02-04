@@ -99,7 +99,7 @@ RUN mv cnpy ${APP_DIR}/src/ && \
     && make && make install
 RUN cd ${APP_DIR}/project && \
     qmake -makefile && make && cd ../build
-RUN cp /usr/local/lib/libcnpy.so ${OPENVINO_DIR}/inference_engine/lib/ubuntu_16.04/intel64
+RUN cp /usr/local/lib/libcnpy.so ${OPENVINO_PLUGIN_PATH}
 
 # Cleanup
 RUN rm -rf ${APP_DIR}/l_openvino_toolkit*
