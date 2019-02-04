@@ -14,5 +14,15 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
+if [ -f /etc/redhat-release ]; then
+  # CentOS
+  PLUGIN_LIB=${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/
+fi
+
+if [ -f /etc/lsb-release ]; then
+  # Ubuntu
+  PLUGIN_LIB=${INTEL_CVSDK_DIR}/inference_engine/lib/ubuntu_16.04/intel64/
+fi
+
 cd build
-./UnetOpenVino
+./UnetOpenVino -d ${PLUGIN_LIB}

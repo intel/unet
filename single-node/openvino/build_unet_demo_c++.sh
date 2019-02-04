@@ -15,5 +15,6 @@
 # ----------------------------------------------------------------------------
 
 cd project
-qmake
-make -j8
+qmake    # Using Qt make system to generate the Makefile
+make clean  # Clean existing file
+make -j8 # Make C++ executable

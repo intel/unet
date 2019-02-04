@@ -26,13 +26,16 @@ void printUsage(const std::string &app_name = std::string()) {
   std::cout << "Usage:" << std::endl;
   if (!app_name.empty())
     std::cout << app_name << std::endl;
-  std::cout << "     [-h] [--h] [-help] [--help] : display this usage page. No "
+  std::cout << "     [-h] : display this usage page. No "
                "other commands accepted."
             << std::endl;
   std::cout
-      << "     [-p MYRIAD | myriad | CPU | cpu] : select plugin (defaults is "
+      << "     [-p MYRIAD | myriad | CPU | cpu] : select plugin (default is "
          "CPU)"
       << std::endl;
+  std::cout << "     [-d directory_for_openvino_plugins] "
+            << " (default is the environment variable OPENVINO_PLUGIN_PATH)"
+            << std::endl;
   std::cout
       << "     [-f filename] : specify the image number to be detected and "
          "recognized"
@@ -41,7 +44,7 @@ void printUsage(const std::string &app_name = std::string()) {
 }
 
 // Parses the command line to find the plugin to use.
-void parseArgs(int argc, char *argv[]) {
+int parseArgs(int argc, char *argv[], BrainUnetOpenVino &brainunetobj) {
 
   try {
 
@@ -49,14 +52,30 @@ void parseArgs(int argc, char *argv[]) {
     image_file_index = IMAGE_FILE_INDEX;
     plugin_name = CPU_PLUGIN;
 
+    // Check to see if environment variable is set.
+    // If so, then use it instead of the default
+    if (std::getenv("OPENVINO_PLUGIN_PATH")) {
+      brainunetobj.M_IE_PLUGIN_PATH = std::getenv("OPENVINO_PLUGIN_PATH");
+    } else {
+      brainunetobj.M_IE_PLUGIN_PATH = std::string(M_IE_PLUGIN);
+    };
+
     // Start parsing out parameters
     for (int i = 1; i < argc; i++) {
       std::string arg = argv[i];
 
       if (arg == "-h") { // users want to see help
         printUsage(argv[0]);
-        return;
+        return -1;
       }
+
+      if (arg == "-d") {
+        if (i + 1 < argc) {
+          i++;
+          brainunetobj.M_IE_PLUGIN_PATH = argv[i];
+        } else
+          throw i; // invalid parameter
+      }            // end if (-d)
 
       if (arg == "-i") {
         if (i + 1 < argc) {
@@ -79,24 +98,32 @@ void parseArgs(int argc, char *argv[]) {
         }
       }
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cout << e.what() << std::endl;
     std::cout << "Use parameter -h for a list of valid parameters."
               << std::endl;
 
     throw "ERROR parsing command line.";
   }
+
+  return 0;
+
 }
 
 int main(int argc, char *argv[]) {
-  std::cout << "Starting program" << std::endl;
+
   BrainUnetOpenVino brainunetobj;
 
   try {
-    parseArgs(argc, argv); // request users for default
-    brainunetobj.makeInference(image_file_index, plugin_name);
+    if (parseArgs(argc, argv, brainunetobj) != 0) {
+      return -1;
+    }; // request users for default
 
-  } catch (const std::exception& e) {
+    brainunetobj.loadData(image_file_index);
+    brainunetobj.doInference(plugin_name);
+    brainunetobj.plotResults();
+
+  } catch (const std::exception &e) {
     std::cout << e.what() << std::endl;
   }
 

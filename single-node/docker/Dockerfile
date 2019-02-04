@@ -7,11 +7,12 @@
 ## 2. For CPU - `docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino`
 FROM ubuntu:16.04
 
+ARG OPENVINO_DIR=/opt/intel/computer_vision_sdk
+ENV OPENVINO_PLUGIN_PATH ${OPENVINO_DIR}/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64
+
 ENV APP_DIR /app
 ADD . ${APP_DIR}
 WORKDIR ${APP_DIR}
-
-ARG OPENVINO_DIR=/opt/intel/computer_vision_sdk
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -86,9 +87,6 @@ RUN useradd -G video -ms /bin/bash user
 RUN cp ${APP_DIR}/97-myriad-usbboot.rules /etc/udev/rules.d/
 RUN echo "udevadm control --reload-rules" >> ~/.bashrc
 RUN echo "udevadm trigger" >> ~/.bashrc
-
-RUN chmod a+x ${APP_DIR}/run_unet_demo_cpu.sh
-RUN chmod a+x ${APP_DIR}/run_unet_demo_ncs.sh
 
 #Steps to build C++ code
 RUN cd ${APP_DIR}/src/

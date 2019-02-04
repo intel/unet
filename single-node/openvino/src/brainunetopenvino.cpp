@@ -12,18 +12,19 @@ limitations under the License.
 
 #include "../include/brainunetopenvino.h"
 
-void BrainUnetOpenVino::loadData(int img_num, std::vector<double> &temp_data,
-                                 std::vector<double> &orig_gt_msks) {
-  // reading numpy images
-  cnpy::NpyArray arr;
-  cnpy::NpyArray arr_msks;
+void BrainUnetOpenVino::loadData(int img_num) {
+  // Read the data from Numpy files
 
-  arr = cnpy::npz_load(DATA_FILENAME, "imgs_validation");
-  arr_msks = cnpy::npz_load(DATA_FILENAME, "msks_validation");
+  cnpy::NpyArray arr = cnpy::npz_load(DATA_FILENAME, "imgs_validation");
+  cnpy::NpyArray arr_msks = cnpy::npz_load(DATA_FILENAME, "msks_validation");
+  cnpy::NpyArray arr_indices =
+      cnpy::npz_load(DATA_FILENAME, "indicies_validation");
+
   std::cout << "Numpy arrays loaded" << std::endl;
 
   double *loaded_data = arr.data<double>();
   double *loaded_data_msks = arr_msks.data<double>();
+  long *loaded_indices = arr_indices.data<long>();
 
   input_shape.NN = arr.shape[0];
   input_shape.NH = arr.shape[1];
@@ -39,12 +40,14 @@ void BrainUnetOpenVino::loadData(int img_num, std::vector<double> &temp_data,
   if (img_num < 0) {
     img_index = 0;
   } else {
-    if (img_num > input_shape.NN) {
+    if (img_num > (int)input_shape.NN) {
       img_index = input_shape.NN;
     } else {
       img_index = img_num;
     }
   };
+
+  img_id = loaded_indices[img_index]; // Image index from original dataset
 
   std::cout << "Input Shape: H=" << input_shape.NH << ", W=" << input_shape.NW
             << ", C=" << input_shape.NC << ", N=" << input_shape.NN
@@ -59,25 +62,101 @@ void BrainUnetOpenVino::loadData(int img_num, std::vector<double> &temp_data,
       input_shape.NH * input_shape.NW * input_shape.NC * (img_index + 1);
   for (size_t i = start_i; i < end_i; ++i) {
     double t = loaded_data[i];
-    temp_data.push_back(t);
+    img_data.push_back(t);
   }
   // Store the gt masks from numpy array into 1-D array
   start_i = output_shape.NH * output_shape.NW * output_shape.NC * img_index;
   end_i = output_shape.NH * output_shape.NW * output_shape.NC * (img_index + 1);
   for (size_t i = start_i; i < end_i; ++i) {
     double t_msks = loaded_data_msks[i];
-    orig_gt_msks.push_back(t_msks);
+    msk_data.push_back(t_msks);
   }
   std::cout << "Finished reading Numpy arrays " << std::endl;
 }
 
-void BrainUnetOpenVino::makeInference(
-    int img_num, InferenceEngine::TargetDevice targetDevice) {
+void BrainUnetOpenVino::plotResults() {
+  /// Plot the Dice coefficient and the prediction
 
-  // reading numpy images
-  std::vector<double> temp_data;
-  std::vector<double> orig_gt_msks;
-  loadData(img_num, temp_data, orig_gt_msks);
+  const auto predicted_output_msk =
+      prediction_blob->buffer()
+          .as<PrecisionTrait<Precision::FP32>::value_type *>();
+
+  cv::Mat output_pred_img =
+      cv::Mat(cv::Size(input_shape.NH, input_shape.NH), CV_8UC1);
+  cv::Mat output_GT_msks =
+      cv::Mat(cv::Size(output_shape.NH, output_shape.NH), CV_8UC1);
+
+  int cnt = 0;
+  int predicted_cnt = 0;
+  int gt_cnt = 0;
+  float intersection = 0.0f;
+  float total_union = 0.0f;
+  float dice_coef = 0.0f;
+
+  for (size_t cnt = 0;
+       cnt < (output_shape.NH * output_shape.NW * output_shape.NC); ++cnt) {
+    if (predicted_output_msk[cnt] > 0.5) {
+      predicted_cnt++;
+      if (msk_data[cnt] > 0.0) {
+        gt_cnt++;
+        intersection = intersection + 1;
+      }
+
+      else {
+        total_union = total_union + 1;
+      }
+    } else {
+      if (msk_data[cnt] > 0.0) {
+        gt_cnt++;
+        total_union = total_union + 1;
+      }
+    }
+  }
+  cnt = 0;
+  for (size_t h = 0; h < output_shape.NH; ++h) {
+    for (size_t w = 0; w < output_shape.NW; ++w) {
+
+      // the threshold is currently set to 0.5
+      if (predicted_output_msk[cnt] > 0.5) {
+        output_pred_img.at<uchar>(h, w) = 255;
+        if (msk_data[cnt] > 0.0) {
+          output_GT_msks.at<uchar>(h, w) = 255;
+
+        } else {
+
+          output_GT_msks.at<uchar>(h, w) = 0;
+        }
+      }
+
+      else {
+        output_pred_img.at<uchar>(h, w) = 0;
+        if (msk_data[cnt] > 0.0) {
+          output_GT_msks.at<uchar>(h, w) = 255;
+        } else
+          output_GT_msks.at<uchar>(h, w) = 0;
+      }
+      cnt++;
+    }
+  }
+
+  // compute Dice coefficient
+  if (predicted_cnt == 0) {
+    std::cout << "No Tumor found "
+              << "\n";
+  } else {
+    dice_coef = ((2.0f * intersection) + 1) / (gt_cnt + predicted_cnt + 1);
+
+    std::cout << "Image index #" << img_id << std::endl;
+    std::cout << "Dice coefficient " << dice_coef << std::endl;
+  }
+  cv::imshow("Ground truth image", output_GT_msks);
+  cv::waitKey(0);
+  cv::imshow("Predicted mask image", output_pred_img);
+  cv::waitKey(0);
+}
+void BrainUnetOpenVino::doInference(
+    InferenceEngine::TargetDevice targetDevice) {
+  // Perform inference on data using OpenVINO model.
 
   // Initialize Engine plugin, choose plugin type and set precision
   InferenceEnginePluginPtr engine_ptr;
@@ -122,7 +201,12 @@ void BrainUnetOpenVino::makeInference(
   for (auto &item : input_info) {
     InputInfo::Ptr &input_data = item.second;
     input_data->setPrecision(Precision::FP32);
-    input_data->setLayout(Layout::NHWC);
+
+    if (CHANNEL_FORMAT == std::string("NHWC")) {
+      input_data->setLayout(Layout::NHWC);
+    } else {
+      input_data->setLayout(Layout::NCHW);
+    }
   }
   std::cout << "** Input has been configured." << std::endl;
 
@@ -140,7 +224,12 @@ void BrainUnetOpenVino::makeInference(
       throw std::logic_error("output data pointer is not valid");
     }
     output_data->setPrecision(Precision::FP32);
-    output_data->setLayout(Layout::NHWC);
+
+    if (CHANNEL_FORMAT == std::string("NHWC")) {
+      output_data->setLayout(Layout::NHWC);
+    } else {
+      output_data->setLayout(Layout::NCHW);
+    }
   }
 
   std::cout << "** Output has been configured." << std::endl;
@@ -169,7 +258,7 @@ void BrainUnetOpenVino::makeInference(
 
   for (size_t c1 = 0; c1 < (input_shape.NH * input_shape.NW * input_shape.NC);
        ++c1) {
-    blob_data[c1] = temp_data[c1];
+    blob_data[c1] = img_data[c1];
   }
   SizeVector inputShape = inputBlob->dims();
 
@@ -178,93 +267,16 @@ void BrainUnetOpenVino::makeInference(
   // start inference time
   auto start = std::chrono::high_resolution_clock::now();
   infer_request.Infer();
-  // std::cout << "** Inference request has been started." << std::endl;
 
   // 8. Process output
   // -----------------
-  // std::cout << "Processing output blobs" << std::endl;
+  prediction_blob = infer_request.GetBlob(firstOutputName);
 
-  const Blob::Ptr output_blob = infer_request.GetBlob(firstOutputName);
-  const auto predicted_output_msk =
-      output_blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
+  // Print inference time
   auto finish = std::chrono::high_resolution_clock::now();
   float inf_time =
       (std::chrono::duration_cast<std::chrono::milliseconds>(finish - start)
            .count());
-  std::cout << "Inference Done; inference time " << inf_time << " msec"
+  std::cout << "Inference Done. Inference time was " << inf_time << " msec"
             << std::endl;
-
-  // 9. Compute some metrics from segmentation output and Display results
-  // read corresponding GT and actual brain image from the image directories
-  // change paths
-
-  cv::Mat output_pred_img =
-      cv::Mat(cv::Size(input_shape.NH, input_shape.NH), CV_8UC1);
-  cv::Mat output_GT_msks =
-      cv::Mat(cv::Size(output_shape.NH, output_shape.NH), CV_8UC1);
-
-  int cnt = 0;
-  int predicted_cnt = 0;
-  int gt_cnt = 0;
-  float intersection = 0.0f;
-  float total_union = 0.0f;
-  float dice_coeff = 0.0f;
-  for (size_t cnt = 0;
-       cnt < (output_shape.NH * output_shape.NW * output_shape.NC); ++cnt) {
-    if (predicted_output_msk[cnt] > 0.5) {
-      predicted_cnt++;
-      if (orig_gt_msks[cnt] > 0.0) {
-        gt_cnt++;
-        intersection = intersection + 1;
-      }
-
-      else {
-        total_union = total_union + 1;
-      }
-    } else {
-      if (orig_gt_msks[cnt] > 0.0) {
-        gt_cnt++;
-        total_union = total_union + 1;
-      }
-    }
-  }
-  cnt = 0;
-  for (size_t h = 0; h < output_shape.NH; ++h) {
-    for (size_t w = 0; w < output_shape.NW; ++w) {
-
-      // the threshold is currently set to 0.5
-      if (predicted_output_msk[cnt] > 0.5) {
-        output_pred_img.at<uchar>(h, w) = 255;
-        if (orig_gt_msks[cnt] > 0.0) {
-          output_GT_msks.at<uchar>(h, w) = 255;
-
-        } else {
-
-          output_GT_msks.at<uchar>(h, w) = 0;
-        }
-      }
-
-      else {
-        output_pred_img.at<uchar>(h, w) = 0;
-        if (orig_gt_msks[cnt] > 0.0) {
-          output_GT_msks.at<uchar>(h, w) = 255;
-        } else
-          output_GT_msks.at<uchar>(h, w) = 0;
-      }
-      cnt++;
-    }
-  }
-
-  // compute Dice coefficient
-  if (predicted_cnt == 0) {
-    std::cout << "No Tumor found "
-              << "\n";
-  } else {
-    dice_coeff = ((2.0f * intersection) + 1) / (gt_cnt + predicted_cnt + 1);
-    std::cout << "dice_coeff  " << dice_coeff << "\n";
-  }
-  cv::imshow("GT image", output_GT_msks);
-  cv::waitKey(0);
-  cv::imshow("Predicted mask image", output_pred_img);
-  cv::waitKey(0);
 }
