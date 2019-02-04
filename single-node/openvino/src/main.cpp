@@ -37,8 +37,8 @@ void printUsage(const std::string &app_name = std::string()) {
             << " (default is the environment variable OPENVINO_PLUGIN_PATH)"
             << std::endl;
   std::cout
-      << "     [-f filename] : specify the image number to be detected and "
-         "recognized"
+      << "     [-i image_number] : specify the image number to be detected and "
+         "recognized (test data has 13 times (0-12))""
       << std::endl
       << std::endl;
 }
