@@ -81,74 +81,44 @@ void BrainUnetOpenVino::plotResults() {
       prediction_blob->buffer()
           .as<PrecisionTrait<Precision::FP32>::value_type *>();
 
+  // Calculate Dice
+  float predicted_cnt = 0;
+  float gt_cnt = 0;
+  float intersection = 0.0f;
+  float dice_coef = 0.0f;
+
+  for (size_t cnt = 0;
+       cnt < (output_shape.NH * output_shape.NW * output_shape.NC); ++cnt) {
+    predicted_cnt += predicted_output_msk[cnt];
+    gt_cnt += msk_data[cnt];
+    intersection += msk_data[cnt] * predicted_output_msk[cnt];
+  }
+
+  // Plot figures
   cv::Mat output_pred_img =
       cv::Mat(cv::Size(input_shape.NH, input_shape.NH), CV_8UC1);
   cv::Mat output_GT_msks =
       cv::Mat(cv::Size(output_shape.NH, output_shape.NH), CV_8UC1);
 
-  int cnt = 0;
-  int predicted_cnt = 0;
-  int gt_cnt = 0;
-  float intersection = 0.0f;
-  float total_union = 0.0f;
-  float dice_coef = 0.0f;
-
-  for (size_t cnt = 0;
-       cnt < (output_shape.NH * output_shape.NW * output_shape.NC); ++cnt) {
-    if (predicted_output_msk[cnt] > 0.5) {
-      predicted_cnt++;
-      if (msk_data[cnt] > 0.0) {
-        gt_cnt++;
-        intersection = intersection + 1;
-      }
-
-      else {
-        total_union = total_union + 1;
-      }
-    } else {
-      if (msk_data[cnt] > 0.0) {
-        gt_cnt++;
-        total_union = total_union + 1;
-      }
-    }
-  }
-  cnt = 0;
+  size_t cnt = 0;
   for (size_t h = 0; h < output_shape.NH; ++h) {
     for (size_t w = 0; w < output_shape.NW; ++w) {
 
       // the threshold is currently set to 0.5
-      if (predicted_output_msk[cnt] > 0.5) {
-        output_pred_img.at<uchar>(h, w) = 255;
-        if (msk_data[cnt] > 0.0) {
-          output_GT_msks.at<uchar>(h, w) = 255;
+      output_pred_img.at<uchar>(h, w) =
+          std::lround(255 * predicted_output_msk[cnt]);
+      output_GT_msks.at<uchar>(h, w) = std::lround(255 * msk_data[cnt]);
 
-        } else {
-
-          output_GT_msks.at<uchar>(h, w) = 0;
-        }
-      }
-
-      else {
-        output_pred_img.at<uchar>(h, w) = 0;
-        if (msk_data[cnt] > 0.0) {
-          output_GT_msks.at<uchar>(h, w) = 255;
-        } else
-          output_GT_msks.at<uchar>(h, w) = 0;
-      }
       cnt++;
     }
   }
 
   // compute Dice coefficient
-  if (predicted_cnt == 0) {
-    std::cout << "No Tumor found "
-              << "\n";
-  } else {
-    dice_coef = ((2.0f * intersection) + 1) / (gt_cnt + predicted_cnt + 1);
+  dice_coef = ((2.f * intersection) + 1.f) / (gt_cnt + predicted_cnt + 1.f);
 
-    std::cout << "Image index #" << img_id << std::endl;
-    std::cout << "Dice coefficient " << dice_coef << std::endl;
-  }
+  std::cout << "Image index #" << img_id << std::endl;
+  std::cout << "Dice coefficient " << dice_coef << std::endl;
+
   cv::imshow("Ground truth image", output_GT_msks);
   cv::waitKey(0);
   cv::imshow("Predicted mask image", output_pred_img);
@@ -167,11 +137,13 @@ void BrainUnetOpenVino::doInference(
   InferencePlugin plugin(engine_ptr);
   std::cout << "** Create InferenceEngine plugin." << std::endl;
   std::string target_precision;
-  if (targetDevice == TargetDevice::eCPU)
+  if (targetDevice == TargetDevice::eCPU) {
     target_precision = "FP32";
-  else {
+    PRECISION = "FP32";
+  } else {
     if (targetDevice == TargetDevice::eMYRIAD)
       target_precision = "FP16";
+    PRECISION = "FP16";
   }
   std::string network_model_path =
       MODEL_DIR + target_precision + "/" + MODEL_FILENAME + ".xml";
@@ -200,7 +172,12 @@ void BrainUnetOpenVino::doInference(
     throw std::logic_error("Sample supports topologies only with 1 input");
   for (auto &item : input_info) {
     InputInfo::Ptr &input_data = item.second;
-    input_data->setPrecision(Precision::FP32);
+
+    if (PRECISION == "FP16") {
+      input_data->setPrecision(Precision::FP16);
+    } else {
+      input_data->setPrecision(Precision::FP32);
+    }
 
     if (CHANNEL_FORMAT == std::string("NHWC")) {
       input_data->setLayout(Layout::NHWC);
@@ -223,7 +200,12 @@ void BrainUnetOpenVino::doInference(
     if (!output_data) {
       throw std::logic_error("output data pointer is not valid");
     }
-    output_data->setPrecision(Precision::FP32);
+
+    if (PRECISION == "FP16") {
+      output_data->setPrecision(Precision::FP16);
+    } else {
+      output_data->setPrecision(Precision::FP32);
+    }
 
     if (CHANNEL_FORMAT == std::string("NHWC")) {
       output_data->setLayout(Layout::NHWC);
@@ -253,7 +235,8 @@ void BrainUnetOpenVino::doInference(
     inputBlob = infer_request.GetBlob(item.first);
   // InferenceEngine::SizeVector blobSize =
   // inputBlob->getTensorDesc().getDims();
-  auto blob_data =
+
+  const auto blob_data =
       inputBlob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
 
   for (size_t c1 = 0; c1 < (input_shape.NH * input_shape.NW * input_shape.NC);
