@@ -30,7 +30,6 @@ INCLUDEPATH += "/opt/intel/computer_vision_sdk/deployment_tools/inference_engine
 INCLUDEPATH += "/opt/intel/computer_vision_sdk/opencv/include/"
 LIBS += -L"/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/"
 LIBS += -L"/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/external/omp/lib/"
-
 LIBS += -L"/opt/intel/computer_vision_sdk/inference_engine/lib/ubuntu_16.04/intel64/"
 LIBS += -lcpu_extension_avx2 -lcnpy
 LIBS += -L"/opt/intel/computer_vision_sdk/inference_engine/external/omp/lib/"

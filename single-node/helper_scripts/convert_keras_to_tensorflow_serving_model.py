@@ -34,6 +34,12 @@ parser.add_argument("--output_directory",
 
 args = parser.parse_args()
 
+def sensitivity(y_true, y_pred, axis=(1,2,3), smooth=1.):
+    return 1
+    
+def specificity(y_true, y_pred, axis=(1,2,3), smooth=1.):
+    return 1
+        
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -83,6 +89,8 @@ and add them to the dictionary below.
 """
 model = keras.models.load_model(args.input_filename, custom_objects={
                                 "dice_coef": dice_coef,
+                                "sensitivity": sensitivity,
+                                "specificity": specificity,
                                 "combined_dice_ce_loss": combined_dice_ce_loss,
                                 "dice_coef_loss": dice_coef_loss})
 

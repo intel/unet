@@ -14,7 +14,18 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-cd project
+# Clone CNPY project to read numpy files in C++
+cd src
+git clone https://github.com/rogersce/cnpy.git
+cd cnpy
+mkdir -p build
+cd build
+cmake ..
+make
+sudo make install
+
+# Build C++ project
+cd ../../../project
 qmake    # Using Qt make system to generate the Makefile
 make clean  # Clean existing file
 make -j8 # Make C++ executable

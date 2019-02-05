@@ -38,7 +38,7 @@ void printUsage(const std::string &app_name = std::string()) {
             << std::endl;
   std::cout
       << "     [-i image_number] : specify the image number to be detected and "
-         "recognized (test data has 13 times (0-12))""
+         "recognized (test data has 13 times (0-12))"
       << std::endl
       << std::endl;
 }
