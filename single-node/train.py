@@ -44,6 +44,11 @@ For best CPU speed set the number of intra and inter threads
 to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+os.environ["KMP_BLOCKTIME"] = "1"
+os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+
 config = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
                         inter_op_parallelism_threads=args.num_inter_threads)
 
