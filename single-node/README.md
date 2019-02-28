@@ -11,7 +11,7 @@ Steps:
 3. Create a Conda environment with TensorFlow 1.12. Command: `conda create -c anaconda -n decathlon pip python=3.6 tensorflow keras tqdm h5py psutil`
 4. Enable the new environment. Command: `conda activate decathlon`
 5. Install the package [nibabel](http://nipy.org/nibabel/). Command: `pip install nibabel`
-6. Run the command `bash run_brats_model.sh DECATHLON_ROOT_DIRECTORY`, where DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
+6. Run the command `bash run_brats_model.sh $DECATHLON_ROOT_DIRECTORY`, where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 ![run_brats_help](https://github.com/IntelAI/unet/blob/master/single-node/images/run_brats_usage.png)
 
@@ -29,3 +29,9 @@ Tips for improving model:
 
 ![prediction61](https://github.com/IntelAI/unet/blob/master/single-node/images/pred61.png)
 ![prediction7864](https://github.com/IntelAI/unet/blob/master/single-node/images/pred7864.png)
+
+REFERENCES:
+
+1. Menze BH, Jakab A, Bauer S, Kalpathy-Cramer J, Farahani K, Kirby J, Burren Y, Porz N, Slotboom J, Wiest R, Lanczi L, Gerstner E, Weber MA, Arbel T, Avants BB, Ayache N, Buendia P, Collins DL, Cordier N, Corso JJ, Criminisi A, Das T, Delingette H, Demiralp Γ, Durst CR, Dojat M, Doyle S, Festa J, Forbes F, Geremia E, Glocker B, Golland P, Guo X, Hamamci A, Iftekharuddin KM, Jena R, John NM, Konukoglu E, Lashkari D, Mariz JA, Meier R, Pereira S, Precup D, Price SJ, Raviv TR, Reza SM, Ryan M, Sarikaya D, Schwartz L, Shin HC, Shotton J, Silva CA, Sousa N, Subbanna NK, Szekely G, Taylor TJ, Thomas OM, Tustison NJ, Unal G, Vasseur F, Wintermark M, Ye DH, Zhao L, Zhao B, Zikic D, Prastawa M, Reyes M, Van Leemput K. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
+
+2. Bakas S, Akbari H, Sotiras A, Bilello M, Rozycki M, Kirby JS, Freymann JB, Farahani K, Davatzikos C. "Advancing The Cancer Genome Atlas glioma MRI collections with expert segmentation labels and radiomic features", Nature Scientific Data, 4:170117 (2017) DOI: 10.1038/sdata.2017.117
