@@ -35,6 +35,8 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
 where `$DECATHLON_ROOT_DIRECTORY` is the root directory where you un-tarred the Decathlon dataset.
 
+![commandline](https://github.com/IntelAI/unet/blob/master/3D/images/3d_commandline.png)
+
 NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel Xeon 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--patch_height=64 --patch_width=64 --patch_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--bz=4` for a batch size of 4).
 
 ### Steps to evaluate a pre-trained 3D U-Net model.
