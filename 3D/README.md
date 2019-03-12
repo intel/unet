@@ -1,6 +1,6 @@
 # 3D U-Net for Medical Decathlon Dataset
 
-![pred152_3D](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/BRATS_152_img3D.gif
+![pred152_3D](https://github.com/IntelAI/unet/tree/master/3D/images/BRATS_152_img3D.gif
 "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives").
 
 ## Trains a 3D U-Net on the brain tumor segmentation ([BraTS](https://www.med.upenn.edu/sbia/brats2017.html)) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset. 
@@ -61,11 +61,11 @@ replacing `--data_path` and `--saved_model` with your local paths/files.
 
 There are many programs that will display [Nifti](https://nifti.nimh.nih.gov/) 3D files.  For the images above and below, the red overlay is the prediction from the model and the blue overlay is the ground truth mask. Any purple voxels are true positives.
 
-![pred195](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/BRATS_195_img.gif "BRATS image #195:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+![pred195](https://github.com/IntelAI/unet/tree/master/3D/images/BRATS_195_img.gif "BRATS image #195:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
- ![pred152](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/BRATS_152.png "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+ ![pred152](https://github.com/IntelAI/unet/tree/master/3D/images/BRATS_152.png "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
- ![pred426](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/BRATS_426.png "BRATS image #426:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+ ![pred426](https://github.com/IntelAI/unet/tree/master/3D/images/BRATS_426.png "BRATS image #426:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
 ## Extra Credit - [Intel OpenVINO](https://software.intel.com/en-us/openvino-toolkit) model conversion
 
