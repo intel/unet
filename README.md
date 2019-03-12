@@ -1,5 +1,5 @@
 # Medical Decathlon Models
-# U-Net Biomedical Image Segmentation with Medical Decathlon.
+### U-Net Biomedical Image Segmentation with Medical Decathlon.
 
 This repository contains 2D and 3D U-Net scripts for training models using the [Medical Decathlon](http://medicaldecathlon.com/) dataset.
 
