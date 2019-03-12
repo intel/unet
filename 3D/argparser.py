@@ -23,7 +23,9 @@ num_data_loaders = 4
 num_prefetched_batches = 4
 
 parser = argparse.ArgumentParser(
-    description="Train 3D U-Net model", add_help=True)
+    description="Train 3D U-Net model", add_help=True,
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
 parser.add_argument("--bz",
                     type=int,
                     default=8,
