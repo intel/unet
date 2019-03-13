@@ -5,7 +5,7 @@
 
 ## Trains a 3D U-Net on the brain tumor segmentation ([BraTS](https://www.med.upenn.edu/sbia/brats2017.html)) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset. 
 
-This model can achieve Dice coefficient of > 0.85 on the whole tumor using just the FLAIR channel.
+This model can achieve Dice coefficient of > 0.85 on the whole tumor using just the [FLAIR](https://en.wikipedia.org/wiki/Fluid-attenuated_inversion_recovery) channel.
 
 ### Steps to train a new model:
 
