@@ -1,5 +1,7 @@
 # 2D U-Net for Medical Decathlon Dataset
 
+Please see our blog on the [IntelAI website](https://www.intel.ai/intel-neural-compute-stick-2-for-medical-imaging/)
+
 ![prediction4385](https://github.com/IntelAI/unet/blob/master/2D/images/pred4385.png)
 
 
