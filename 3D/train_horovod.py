@@ -15,6 +15,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
+from argparser import args
 from imports import *  # All of the common imports
 
 import os
@@ -27,14 +28,13 @@ from dataloader import DataGenerator
 import horovod.keras as hvd
 hvd.init()
 
-from argparser import args
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
 os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
-if (hvd.rank() == 0): # Only print on worker 0
+if (hvd.rank() == 0):  # Only print on worker 0
     print_summary = args.print_model
     verbose = 1
     os.system("lscpu")
@@ -65,16 +65,16 @@ K.backend.set_session(sess)
 
 
 model, opt = unet_3d(use_upsampling=args.use_upsampling,
-                n_cl_in=args.number_input_channels,
-                learning_rate=args.lr*hvd.size(),
-                n_cl_out=1,  # single channel (greyscale)
-                dropout=0.2,
-                print_summary=print_summary)
+                     n_cl_in=args.number_input_channels,
+                     learning_rate=args.lr*hvd.size(),
+                     n_cl_out=1,  # single channel (greyscale)
+                     dropout=0.2,
+                     print_summary=print_summary)
 
 opt = hvd.DistributedOptimizer(opt)
 
 model.compile(optimizer=opt,
-              #loss=[combined_dice_ce_loss],
+              # loss=[combined_dice_ce_loss],
               loss=[dice_coef_loss],
               metrics=[dice_coef, "accuracy",
                        sensitivity, specificity])
@@ -176,7 +176,8 @@ validation_generator = DataGenerator(False, args.data_path,
 # Fit the model
 # Do at least 3 steps for training and validation
 steps_per_epoch = max(3, training_generator.get_length()//(args.bz*hvd.size()))
-validation_steps = max(3,3*training_generator.get_length()//(args.bz*hvd.size()))
+validation_steps = max(
+    3, 3*training_generator.get_length()//(args.bz*hvd.size()))
 
 """
 Keras Data Pipeline using Sequence generator
@@ -201,11 +202,11 @@ model.fit_generator(training_generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=args.epochs, verbose=verbose,
                     validation_data=validation_generator,
-                    #validation_steps=validation_steps,
+                    # validation_steps=validation_steps,
                     callbacks=callbacks,
                     max_queue_size=args.num_prefetched_batches,
                     workers=args.num_data_loaders,
-                    use_multiprocessing=False) #True)
+                    use_multiprocessing=False)  # True)
 
 if hvd.rank() == 0:
     stop_time = datetime.datetime.now()

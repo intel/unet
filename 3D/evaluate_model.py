@@ -29,11 +29,11 @@ sess = tf.Session(config=config)
 K.backend.set_session(sess)
 
 model = K.models.load_model(args.saved_model,
-                            custom_objects={"dice_coef":dice_coef,
-                            "dice_coef_loss":dice_coef_loss,
-                            "sensitivity":sensitivity,
-                            "specificity":specificity,
-                            "combined_dice_ce_loss":combined_dice_ce_loss})
+                            custom_objects={"dice_coef": dice_coef,
+                                            "dice_coef_loss": dice_coef_loss,
+                                            "sensitivity": sensitivity,
+                                            "specificity": specificity,
+                                            "combined_dice_ce_loss": combined_dice_ce_loss})
 
 print("Loading images and masks from test set")
 
@@ -43,7 +43,7 @@ validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patc
                           "n_out_channels": 1,
                           "train_test_split": args.train_test_split,
                           "augment": False,
-                          "shuffle": False,"seed": args.random_seed}
+                          "shuffle": False, "seed": args.random_seed}
 validation_generator = DataGenerator(False, args.data_path,
                                      **validation_data_params)
 
@@ -79,17 +79,17 @@ for batch_idx in tqdm(range(validation_generator.num_batches),
     # display them on a 3D viewer.
     for idx in tqdm(range(preds.shape[0]), desc="Saving to Nifti file"):
 
-        img = nib.Nifti1Image(imgs[idx,:,:,:,0], np.eye(4))
+        img = nib.Nifti1Image(imgs[idx, :, :, :, 0], np.eye(4))
         img.to_filename(os.path.join(save_directory,
-                        "{}_img.nii.gz".format(fileIDs[idx])))
+                                     "{}_img.nii.gz".format(fileIDs[idx])))
 
-        msk = nib.Nifti1Image(msks[idx,:,:,:,0], np.eye(4))
+        msk = nib.Nifti1Image(msks[idx, :, :, :, 0], np.eye(4))
         msk.to_filename(os.path.join(save_directory,
-                        "{}_msk.nii.gz".format(fileIDs[idx])))
+                                     "{}_msk.nii.gz".format(fileIDs[idx])))
 
-        pred = nib.Nifti1Image(preds[idx,:,:,:,0], np.eye(4))
+        pred = nib.Nifti1Image(preds[idx, :, :, :, 0], np.eye(4))
         pred.to_filename(os.path.join(save_directory,
-                         "{}_pred.nii.gz".format(fileIDs[idx])))
+                                      "{}_pred.nii.gz".format(fileIDs[idx])))
 
 print("\n\n\nModel predictions saved to directory: {}".format(save_directory))
 print("Stopped script on {}".format(datetime.datetime.now()))

@@ -78,6 +78,7 @@ parser.add_argument("--split", type=float, default=0.85,
 
 args = parser.parse_args()
 
+
 def crop_center(img, cropx, cropy, cropz):
     """
     Take a center crop of the images.
@@ -99,6 +100,7 @@ def crop_center(img, cropx, cropy, cropz):
 
     return img[startx:endx, starty:endy, startz:endz, :]
 
+
 def normalize_img(img):
     """
     Normalize the pixel values.
@@ -115,6 +117,7 @@ def normalize_img(img):
 
     return img
 
+
 def attach_attributes(df, json_data, name):
     """
     Save the json data
@@ -129,16 +132,17 @@ def attach_attributes(df, json_data, name):
     dset = df.create_dataset(name, (length,), dtype=dt)
     dset[:] = json_data
 
+
 def preprocess_inputs(img):
     """
     Process the input images
 
     For BraTS subset:
     INPUT CHANNELS:  "modality": {
-    	 "0": "FLAIR", T2-weighted-Fluid-Attenuated Inversion Recovery MRI
-    	 "1": "T1w",  T1-weighted MRI
-    	 "2": "t1gd", T1-gadolinium contrast MRI
-    	 "3": "T2w"   T2-weighted MRI
+         "0": "FLAIR", T2-weighted-Fluid-Attenuated Inversion Recovery MRI
+         "1": "T1w",  T1-weighted MRI
+         "2": "t1gd", T1-gadolinium contrast MRI
+         "3": "T2w"   T2-weighted MRI
      }
     """
     if len(img.shape) != 4:  # Make sure 4D
@@ -149,9 +153,10 @@ def preprocess_inputs(img):
 
     img = np.swapaxes(np.array(img), 0, -2)
 
-    #img = img[:,:,:,[0]]  # Just get the FLAIR channel
+    # img = img[:,:,:,[0]]  # Just get the FLAIR channel
 
     return img
+
 
 def preprocess_labels(msk):
     """
@@ -159,14 +164,14 @@ def preprocess_labels(msk):
 
     For BraTS subset:
     LABEL_CHANNELS: "labels": {
-    	 "0": "background",  No tumor
-    	 "1": "edema",       Swelling around tumor
-    	 "2": "non-enhancing tumor",  Tumor that isn't enhanced by Gadolinium contrast
-    	 "3": "enhancing tumour"  Gadolinium contrast enhanced regions
+         "0": "background",  No tumor
+         "1": "edema",       Swelling around tumor
+         "2": "non-enhancing tumor",  Tumor that isn't enhanced by Gadolinium contrast
+         "3": "enhancing tumour"  Gadolinium contrast enhanced regions
      }
 
     """
-    if len(msk.shape) != 4: # Make sure 4D
+    if len(msk.shape) != 4:  # Make sure 4D
         msk = np.expand_dims(msk, -1)
 
     msk = crop_center(msk, args.resize, args.resize, args.resize)
@@ -176,6 +181,7 @@ def preprocess_labels(msk):
     msk = np.swapaxes(np.array(msk), 0, -2)
 
     return msk
+
 
 def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
                              filename, dataDir, json_data):
@@ -196,7 +202,8 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
     attach_attributes(hdf_file, json_data["name"], "name")
     attach_attributes(hdf_file, json_data["description"], "description")
     attach_attributes(hdf_file, json_data["release"], "release")
-    attach_attributes(hdf_file, json_data["tensorImageSize"], "tensorImageSize")
+    attach_attributes(
+        hdf_file, json_data["tensorImageSize"], "tensorImageSize")
 
     # Training filenames
     train_image_files = []
@@ -268,7 +275,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             img_train_dset[row:(row+num_rows), :] = img
 
-
     # Save validation set images
     print("Step 2 of 4. Save validation set images.")
     first = True
@@ -298,7 +304,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             # Insert data into new row
             img_validation_dset[row:(row+num_rows), :] = img
 
-
     # Save training set masks
     print("Step 3 of 4. Save training set masks.")
     first = True
@@ -325,7 +330,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             msk_train_dset.resize(row+num_rows, axis=0)  # Add new row
             # Insert data into new row
             msk_train_dset[row:(row+num_rows), :] = msk
-
 
     # Save testing/validation set masks
 
@@ -355,7 +359,6 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
             msk_validation_dset.resize(row+num_rows, axis=0)  # Add new row
             # Insert data into new row
             msk_validation_dset[row:(row+num_rows), :] = msk
-
 
     hdf_file.close()
     print("Finished processing.")

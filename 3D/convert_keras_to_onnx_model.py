@@ -56,17 +56,22 @@ def dice_coef_loss(y_true, y_pred, smooth=1.0):
 
     return loss
 
-def sensitivity(target, prediction, axis=(1,2,3), smooth = 1e-5 ):
+
+def sensitivity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
 
     intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(prediction, axis=axis) + smooth)
+    coef = (intersection + smooth) / \
+        (tf.reduce_sum(prediction, axis=axis) + smooth)
     return tf.reduce_mean(coef)
 
-def specificity(target, prediction, axis=(1,2,3), smooth = 1e-5 ):
+
+def specificity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
 
     intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(prediction, axis=axis) + smooth)
+    coef = (intersection + smooth) / \
+        (tf.reduce_sum(prediction, axis=axis) + smooth)
     return tf.reduce_mean(coef)
+
 
 print("Loading saved Keras model.")
 
@@ -75,7 +80,7 @@ If there are other custom loss and metric functions you'll need to specify them
 and add them to the dictionary below.
 """
 model = keras.models.load_model(args.input_filename, custom_objects={
-				"sensitivity": sensitivity, "specificity": specificity,
+                                "sensitivity": sensitivity, "specificity": specificity,
                                 "dice_coef": dice_coef, "dice_coef_loss": dice_coef_loss})
 
 
@@ -84,14 +89,14 @@ onnx_model = onnxmltools.convert_keras(model)
 try:
     os.stat(args.output_directory)
 except:
-    os.mkdir(args.output_directory)       
+    os.mkdir(args.output_directory)
 
 # Save as text
-onnxmltools.utils.save_text(onnx_model, os.path.join(args.output_directory, "onnx_model.json"))
+onnxmltools.utils.save_text(onnx_model, os.path.join(
+    args.output_directory, "onnx_model.json"))
 
 # Save as protobuf
-onnxmltools.utils.save_model(onnx_model, os.path.join(args.output_directory, "onnx_model.onnx"))
+onnxmltools.utils.save_model(onnx_model, os.path.join(
+    args.output_directory, "onnx_model.onnx"))
 
 print("Exported to ONNX model is directory {}".format(args.output_directory))
-
-

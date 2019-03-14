@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+from openvino.inference_engine import IENetwork, IEPlugin
+from time import time
+import logging as log
+import numpy as np
+from argparse import ArgumentParser
+import os
+import sys
 """
  Copyright (c) 2019 Intel Corporation
 
@@ -27,13 +34,6 @@ python inference_openvino.py -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7
 
 """
 
-import sys
-import os
-from argparse import ArgumentParser
-import numpy as np
-import logging as log
-from time import time
-from openvino.inference_engine import IENetwork, IEPlugin
 
 def dice_score(pred, truth):
     """
@@ -44,6 +44,7 @@ def dice_score(pred, truth):
     denominator = np.sum(pred) + np.sum(truth) + 1.0
 
     return numerator / denominator
+
 
 def plot_predictions(predictions, input_data, label_data, img_indicies, args):
     """
@@ -63,28 +64,32 @@ def plot_predictions(predictions, input_data, label_data, img_indicies, args):
 
     for idx in range(number_imgs):
 
-        if row==0:  plt.figure(figsize=(15,15))
+        if row == 0:
+            plt.figure(figsize=(15, 15))
 
         plt.subplot(num_rows_per_image, 3, 1+row*3)
-        plt.imshow(input_data[idx,0,:,:], cmap="bone", origin="lower")
+        plt.imshow(input_data[idx, 0, :, :], cmap="bone", origin="lower")
         plt.axis("off")
-        if row==0: plt.title("MRI")
+        if row == 0:
+            plt.title("MRI")
 
         plt.subplot(num_rows_per_image, 3, 2+row*3)
-        plt.imshow(label_data[idx,0,:,:], origin="lower")
+        plt.imshow(label_data[idx, 0, :, :], origin="lower")
         plt.axis("off")
-        if row==0: plt.title("Ground truth")
+        if row == 0:
+            plt.title("Ground truth")
 
         plt.subplot(num_rows_per_image, 3, 3+row*3)
-        plt.imshow(predictions[idx,0,:,:], origin="lower")
+        plt.imshow(predictions[idx, 0, :, :], origin="lower")
         plt.axis("off")
-        if row ==0:  plt.title("Prediction")
+        if row == 0:
+            plt.title("Prediction")
 
         plt.tight_layout()
 
         if (row == (num_rows_per_image-1)) or (idx == (number_imgs-1)):
 
-            if num_rows_per_image==1:
+            if num_rows_per_image == 1:
                 fileidx = "pred{}.png".format(img_indicies[idx])
             else:
                 fileidx = "pred_group{}".format(idx // num_rows_per_image)
@@ -95,6 +100,7 @@ def plot_predictions(predictions, input_data, label_data, img_indicies, args):
             row = 0
         else:
             row += 1
+
 
 def load_data():
     """
@@ -113,10 +119,11 @@ def load_data():
     TensorFlow usually does channels last (NHWC).
     So we need to transpose the axes.
     """
-    input_data = imgs_validation.transpose((0,3,1,2))
-    msks_data = msks_validation.transpose((0,3,1,2))
+    input_data = imgs_validation.transpose((0, 3, 1, 2))
+    msks_data = msks_validation.transpose((0, 3, 1, 2))
 
     return input_data, msks_data, img_indicies
+
 
 def load_model(fp16=False):
     """
@@ -133,6 +140,7 @@ def load_model(fp16=False):
 
     return model_xml, model_bin
 
+
 def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_blob, args):
     """
     Prints layer by layer inference times.
@@ -145,12 +153,15 @@ def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_bl
 
     for i in range(args.number_iter):
         t0 = time()
-        res = exec_net.infer(inputs={input_blob: input_data[0:batch_size,:n_channels]})
+        res = exec_net.infer(
+            inputs={input_blob: input_data[0:batch_size, :n_channels]})
         infer_time.append((time() - t0) * 1000)
 
     average_inference = np.average(np.asarray(infer_time))
-    log.info("Average running time of one batch: {:.5f} ms".format(average_inference))
-    log.info("Images per second = {:.3f}".format(batch_size * 1000.0 / average_inference))
+    log.info("Average running time of one batch: {:.5f} ms".format(
+        average_inference))
+    log.info("Images per second = {:.3f}".format(
+        batch_size * 1000.0 / average_inference))
 
     perf_counts = exec_net.requests[0].get_perf_counts()
     log.info("Performance counters:")
@@ -212,7 +223,7 @@ def main():
 
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
-    #net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
+    # net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
 
     """
     This code checks to see if all of the graphs in the IR are
@@ -221,7 +232,8 @@ def main():
     """
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
-        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
+        not_supported_layers = [
+            l for l in net.layers.keys() if l not in supported_layers]
         if len(not_supported_layers) != 0:
             log.error("Following layers are not supported by the plugin "
                       " for specified device {}:\n {}".
@@ -229,13 +241,18 @@ def main():
             log.error("Please try to specify cpu extensions library path "
                       "in sample's command line parameters using -l "
                       "or --cpu_extension command line argument")
-            log.error("On CPU this is usually -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so")
-            log.error("You may need to build the OpenVINO samples directory for this library to be created on your system.")
-            log.error("e.g. bash ${INTEL_CVSDK_DIR}/inference_engine/samples/build_samples.sh will trigger the library to be built.")
-            log.error("Replace 'centos_7.4' with the pathname on your computer e.g. ('ubuntu_16.04')")
+            log.error(
+                "On CPU this is usually -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so")
+            log.error(
+                "You may need to build the OpenVINO samples directory for this library to be created on your system.")
+            log.error(
+                "e.g. bash ${INTEL_CVSDK_DIR}/inference_engine/samples/build_samples.sh will trigger the library to be built.")
+            log.error(
+                "Replace 'centos_7.4' with the pathname on your computer e.g. ('ubuntu_16.04')")
             sys.exit(1)
 
-    assert len(net.inputs.keys()) == 1, "Sample supports only single input topologies"
+    assert len(net.inputs.keys()
+               ) == 1, "Sample supports only single input topologies"
     assert len(net.outputs) == 1, "Sample supports only single output topologies"
 
     """
@@ -274,10 +291,10 @@ def main():
 
         res = exec_net.infer(inputs={input_blob:
                                      input_data[idx:(idx+batch_size),
-                                     :n_channels]})
+                                                :n_channels]})
 
         # Save the predictions to array
-        predictions[idx:(idx+batch_size),] = res[out_blob]
+        predictions[idx:(idx+batch_size), ] = res[out_blob]
 
     if idx != (len(img_indicies)-1):  # Partial batch left in data
         log.info("Partial batch left over in dataset.")
@@ -286,14 +303,17 @@ def main():
     Evaluate model with Dice metric
     """
     for idx in range(img_indicies.shape[0]):
-        dice = dice_score(predictions[idx,0,:,:], label_data[idx,0,:,:])
-        log.info("Image #{}: Dice score = {:.4f}".format(img_indicies[idx], dice))
+        dice = dice_score(predictions[idx, 0, :, :], label_data[idx, 0, :, :])
+        log.info("Image #{}: Dice score = {:.4f}".format(
+            img_indicies[idx], dice))
 
     if args.plot:
-        plot_predictions(predictions, input_data, label_data, img_indicies, args)
+        plot_predictions(predictions, input_data,
+                         label_data, img_indicies, args)
 
     del exec_net
     del plugin
+
 
 if __name__ == '__main__':
     sys.exit(main() or 0)

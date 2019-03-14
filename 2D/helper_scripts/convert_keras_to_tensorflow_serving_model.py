@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+from distutils.sysconfig import get_python_lib
 from tensorflow.contrib.session_bundle import exporter
 import keras
 import tensorflow as tf
@@ -34,12 +35,15 @@ parser.add_argument("--output_directory",
 
 args = parser.parse_args()
 
-def sensitivity(y_true, y_pred, axis=(1,2,3), smooth=1.):
+
+def sensitivity(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
     return 1
-    
-def specificity(y_true, y_pred, axis=(1,2,3), smooth=1.):
+
+
+def specificity(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
     return 1
-        
+
+
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -78,6 +82,7 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*keras.losses.binary_crossentropy(y_true, y_pred)
+
 
 sess = keras.backend.get_session()
 
@@ -119,8 +124,7 @@ print("Model input shape = ", model.input.shape)
 print("Model output name = ", model.output.op.name)
 print("Model output shape = ", model.output.shape)
 
-from distutils.sysconfig import get_python_lib
-packages_directory=get_python_lib()
+packages_directory = get_python_lib()
 
 print()
 print()
@@ -128,7 +132,7 @@ print("="*30)
 print("To freeze this model, run the commands:")
 print("mkdir frozen_model")
 print("python {}/tensorflow/python/tools/freeze_graph.py "
-       "--input_saved_model_dir {} "
-       "--output_node_names {} "
-       "--output_graph frozen_model/saved_model_frozen.pb".format(packages_directory,
-       args.output_directory, model.output.op.name))
+      "--input_saved_model_dir {} "
+      "--output_node_names {} "
+      "--output_graph frozen_model/saved_model_frozen.pb".format(packages_directory,
+                                                                 args.output_directory, model.output.op.name))

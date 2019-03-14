@@ -50,6 +50,7 @@ def calc_dice(y_true, y_pred, smooth=1.):
 
     return coef
 
+
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -129,17 +130,18 @@ if __name__ == "__main__":
     # You can create this Numpy datafile by running the create_validation_sample.py script
     sample_datafile = os.path.join("data", "validation_data.npz")
     try:
-    	data_file = np.load(sample_datafile)
+        data_file = np.load(sample_datafile)
     except IOError:
-        print("Can't find {}. Please run `python create_validation_sample.py` to generate the sample datafile.".format(sample_datafile))
+        print("Can't find {}. Please run `python create_validation_sample.py` to generate the sample datafile.".format(
+            sample_datafile))
         sys.exit()
-        
+
     imgs_validation = data_file["imgs_validation"]
     msks_validation = data_file["msks_validation"]
     img_indicies = data_file["indicies_validation"]
 
     print("Using Keras model: {}".format(args.inference_filename))
-    
+
     # Load model
     model = K.models.load_model(args.inference_filename, custom_objects={
         "combined_dice_ce_loss": combined_dice_ce_loss,
@@ -154,6 +156,6 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     for idx, img_index in enumerate(img_indicies):
-    	plot_results(model, imgs_validation[[idx],],
-    		     msks_validation[[idx],],
-                 img_index, png_directory)
+        plot_results(model, imgs_validation[[idx], ],
+                     msks_validation[[idx], ],
+                     img_index, png_directory)

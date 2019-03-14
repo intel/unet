@@ -34,6 +34,7 @@ parser.add_argument("--output_directory",
 
 args = parser.parse_args()
 
+
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice

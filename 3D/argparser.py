@@ -56,7 +56,8 @@ parser.add_argument("--epochs",
                     help="Number of epochs")
 parser.add_argument("--intraop_threads",
                     type=int,
-                    default=max(len(psutil.Process().cpu_affinity())-num_data_loaders,2),
+                    default=max(
+                        len(psutil.Process().cpu_affinity())-num_data_loaders, 2),
                     help="Number of intraop threads")
 parser.add_argument("--interop_threads",
                     type=int,

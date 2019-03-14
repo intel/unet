@@ -95,6 +95,7 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
             else:
                 return img
 
+
 def load_data(hdf5_data_filename):
     """
     Load the data from the HDF5 file using the Keras HDF5 wrapper.
@@ -105,13 +106,13 @@ def load_data(hdf5_data_filename):
     # Otherwise they won't get the same random transformation
 
     image_datagen = K.preprocessing.image.ImageDataGenerator(
-        zca_whitening=True, # Do ZCA pre-whitening to consider richer features
-        shear_range=2, # Up to 2 degree random shear
+        zca_whitening=True,  # Do ZCA pre-whitening to consider richer features
+        shear_range=2,  # Up to 2 degree random shear
         horizontal_flip=True,
         vertical_flip=True)
 
     msk_datagen = K.preprocessing.image.ImageDataGenerator(
-        shear_range=2, # Up to 2 degree random shear
+        shear_range=2,  # Up to 2 degree random shear
         horizontal_flip=True,
         vertical_flip=True)
 
@@ -130,15 +131,15 @@ def load_data(hdf5_data_filename):
     # Validation dataset
     # No data augmentation
     imgs_validation = PreprocessHDF5Matrix(image_datagen,
-                                      False, # Don't augment
-                                      816,
-                                      hdf5_data_filename,
-                                      "imgs_validation")
+                                           False,  # Don't augment
+                                           816,
+                                           hdf5_data_filename,
+                                           "imgs_validation")
     msks_validation = PreprocessHDF5Matrix(image_datagen,
-                                      False, # Don't augment
-                                      816,
-                                      hdf5_data_filename,
-                                      "msks_validation")
+                                           False,  # Don't augment
+                                           816,
+                                           hdf5_data_filename,
+                                           "msks_validation")
 
     print("Batch size = {}".format(args.batch_size))
 

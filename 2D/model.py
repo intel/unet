@@ -27,7 +27,7 @@ from argparser import args
 import os
 import time
 
-import tensorflow as tf # conda install -c anaconda tensorflow
+import tensorflow as tf  # conda install -c anaconda tensorflow
 
 if args.keras_api:
     import keras as K
@@ -126,34 +126,38 @@ def unet_model(imgs_shape, msks_shape,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    fms = args.featuremaps  #32 or 16 depending on your memory size
+    fms = args.featuremaps  # 32 or 16 depending on your memory size
 
     encodeA = K.layers.Conv2D(name="encodeAa", filters=fms, **params)(inputs)
     encodeA = K.layers.Conv2D(name="encodeAb", filters=fms, **params)(encodeA)
     poolA = K.layers.MaxPooling2D(name="poolA", pool_size=(2, 2))(encodeA)
 
     encodeB = K.layers.Conv2D(name="encodeBa", filters=fms*2, **params)(poolA)
-    encodeB = K.layers.Conv2D(name="encodeBb", filters=fms*2, **params)(encodeB)
+    encodeB = K.layers.Conv2D(
+        name="encodeBb", filters=fms*2, **params)(encodeB)
     poolB = K.layers.MaxPooling2D(name="poolB", pool_size=(2, 2))(encodeB)
 
     encodeC = K.layers.Conv2D(name="encodeCa", filters=fms*4, **params)(poolB)
     if args.use_dropout:
         encodeC = K.layers.SpatialDropout2D(dropout,
-                                          data_format=data_format)(encodeC)
-    encodeC = K.layers.Conv2D(name="encodeCb", filters=fms*4, **params)(encodeC)
+                                            data_format=data_format)(encodeC)
+    encodeC = K.layers.Conv2D(
+        name="encodeCb", filters=fms*4, **params)(encodeC)
 
     poolC = K.layers.MaxPooling2D(name="poolC", pool_size=(2, 2))(encodeC)
 
     encodeD = K.layers.Conv2D(name="encodeDa", filters=fms*8, **params)(poolC)
     if args.use_dropout:
         encodeD = K.layers.SpatialDropout2D(dropout,
-                                          data_format=data_format)(encodeD)
-    encodeD = K.layers.Conv2D(name="encodeDb", filters=fms*8, **params)(encodeD)
+                                            data_format=data_format)(encodeD)
+    encodeD = K.layers.Conv2D(
+        name="encodeDb", filters=fms*8, **params)(encodeD)
 
     poolD = K.layers.MaxPooling2D(name="poolD", pool_size=(2, 2))(encodeD)
 
     encodeE = K.layers.Conv2D(name="encodeEa", filters=fms*16, **params)(poolD)
-    encodeE = K.layers.Conv2D(name="encodeEb", filters=fms*16, **params)(encodeE)
+    encodeE = K.layers.Conv2D(
+        name="encodeEb", filters=fms*16, **params)(encodeE)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="upE", size=(2, 2),
@@ -161,10 +165,13 @@ def unet_model(imgs_shape, msks_shape,
     else:
         up = K.layers.Conv2DTranspose(name="transconvE", filters=fms*8,
                                       **params_trans)(encodeE)
-    concatD = K.layers.concatenate([up, encodeD], axis=concat_axis, name="concatD")
+    concatD = K.layers.concatenate(
+        [up, encodeD], axis=concat_axis, name="concatD")
 
-    decodeC = K.layers.Conv2D(name="decodeCa", filters=fms*8, **params)(concatD)
-    decodeC = K.layers.Conv2D(name="decodeCb", filters=fms*8, **params)(decodeC)
+    decodeC = K.layers.Conv2D(
+        name="decodeCa", filters=fms*8, **params)(concatD)
+    decodeC = K.layers.Conv2D(
+        name="decodeCb", filters=fms*8, **params)(decodeC)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="upC", size=(2, 2),
@@ -172,10 +179,13 @@ def unet_model(imgs_shape, msks_shape,
     else:
         up = K.layers.Conv2DTranspose(name="transconvC", filters=fms*4,
                                       **params_trans)(decodeC)
-    concatC = K.layers.concatenate([up, encodeC], axis=concat_axis, name="concatC")
+    concatC = K.layers.concatenate(
+        [up, encodeC], axis=concat_axis, name="concatC")
 
-    decodeB = K.layers.Conv2D(name="decodeBa", filters=fms*4, **params)(concatC)
-    decodeB = K.layers.Conv2D(name="decodeBb", filters=fms*4, **params)(decodeB)
+    decodeB = K.layers.Conv2D(
+        name="decodeBa", filters=fms*4, **params)(concatC)
+    decodeB = K.layers.Conv2D(
+        name="decodeBb", filters=fms*4, **params)(decodeB)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="upB", size=(2, 2),
@@ -183,10 +193,13 @@ def unet_model(imgs_shape, msks_shape,
     else:
         up = K.layers.Conv2DTranspose(name="transconvB", filters=fms*2,
                                       **params_trans)(decodeB)
-    concatB = K.layers.concatenate([up, encodeB], axis=concat_axis, name="concatB")
+    concatB = K.layers.concatenate(
+        [up, encodeB], axis=concat_axis, name="concatB")
 
-    decodeA = K.layers.Conv2D(name="decodeAa", filters=fms*2, **params)(concatB)
-    decodeA = K.layers.Conv2D(name="decodeAb", filters=fms*2, **params)(decodeA)
+    decodeA = K.layers.Conv2D(
+        name="decodeAa", filters=fms*2, **params)(concatB)
+    decodeA = K.layers.Conv2D(
+        name="decodeAb", filters=fms*2, **params)(decodeA)
 
     if args.use_upsampling:
         up = K.layers.UpSampling2D(name="upA", size=(2, 2),
@@ -194,7 +207,8 @@ def unet_model(imgs_shape, msks_shape,
     else:
         up = K.layers.Conv2DTranspose(name="transconvA", filters=fms,
                                       **params_trans)(decodeA)
-    concatA = K.layers.concatenate([up, encodeA], axis=concat_axis, name="concatA")
+    concatA = K.layers.concatenate(
+        [up, encodeA], axis=concat_axis, name="concatA")
 
     convOut = K.layers.Conv2D(name="convOuta", filters=fms, **params)(concatA)
     convOut = K.layers.Conv2D(name="convOutb", filters=fms, **params)(convOut)

@@ -24,6 +24,7 @@ import json
 
 import nibabel as nib
 
+
 class DataGenerator(K.utils.Sequence):
     """
     Generates data for Keras/TensorFlow
@@ -41,7 +42,7 @@ class DataGenerator(K.utils.Sequence):
     def __init__(self,
                  isTraining,     # Boolean: Is this train or test set
                  data_path,    # File path for data
-                 train_test_split=0.85, # Train test split
+                 train_test_split=0.85,  # Train test split
                  batch_size=8,  # batch size
                  dim=(128, 128, 128),  # Dimension of images/masks
                  n_in_channels=1,  # Number of channels in image
@@ -76,7 +77,7 @@ class DataGenerator(K.utils.Sequence):
         for idx in range(0, len(dim)):
             for jdx in range(idx+1, len(dim)):
                 if dim[idx] == dim[jdx]:
-                    equal_dim_axis.append([idx, jdx]) # Valid rotation axes
+                    equal_dim_axis.append([idx, jdx])  # Valid rotation axes
         self.dim_to_rotate = equal_dim_axis
 
     def get_length(self):
@@ -123,9 +124,9 @@ class DataGenerator(K.utils.Sequence):
 
         for idx in idxList:
             self.imgFiles[idx] = os.path.join(self.data_path,
-                      experiment_data["training"][idx]["image"])
+                                              experiment_data["training"][idx]["image"])
             self.mskFiles[idx] = os.path.join(self.data_path,
-                      experiment_data["training"][idx]["label"])
+                                              experiment_data["training"][idx]["label"])
 
         np.random.seed(self.seed)
         randomIdx = np.random.random(numFiles)  # List of random numbers
@@ -179,7 +180,7 @@ class DataGenerator(K.utils.Sequence):
 
         for idx, fileIdx in enumerate(indexes):
             name = self.imgFiles[fileIdx]
-            filename = ntpath.basename(name) # Strip all but filename
+            filename = ntpath.basename(name)  # Strip all but filename
             filename = os.path.splitext(filename)[0]
             fileIDs[idx] = os.path.splitext(filename)[0]
 
@@ -226,7 +227,8 @@ class DataGenerator(K.utils.Sequence):
 
             slices.append(slice(start, start+cropLen))
 
-        slices.append(slice(0,self.n_in_channels)) # No slicing along channels
+        # No slicing along channels
+        slices.append(slice(0, self.n_in_channels))
 
         return img[tuple(slices)], msk[tuple(slices)]
 
@@ -247,9 +249,10 @@ class DataGenerator(K.utils.Sequence):
 
             # This will choose the axes to rotate
             # Axes must be equal in size
-            random_axis = self.dim_to_rotate[np.random.choice(len(self.dim_to_rotate))]
-            img = np.rot90(img, rot, axes=random_axis) # Rotate axes 0 and 1
-            msk = np.rot90(msk, rot, axes=random_axis) # Rotate axes 0 and 1
+            random_axis = self.dim_to_rotate[np.random.choice(
+                len(self.dim_to_rotate))]
+            img = np.rot90(img, rot, axes=random_axis)  # Rotate axes 0 and 1
+            msk = np.rot90(msk, rot, axes=random_axis)  # Rotate axes 0 and 1
 
         # elif np.random.rand() > 0.5:
         #     rot = np.random.choice([1, 2, 3])  # 90, 180, or 270 degrees
@@ -266,10 +269,10 @@ class DataGenerator(K.utils.Sequence):
         """
         for channel in range(img.shape[-1]):
 
-            img_temp = img[...,channel]
+            img_temp = img[..., channel]
             img_temp = (img_temp - np.mean(img_temp)) / np.std(img_temp)
 
-            img[...,channel] = img_temp
+            img[..., channel] = img_temp
 
         return img
 
@@ -297,7 +300,7 @@ class DataGenerator(K.utils.Sequence):
                  "3": "T2w"
             """
             if self.n_in_channels == 1:
-                img = img_temp[:,:,:,[0]]  # FLAIR channel
+                img = img_temp[:, :, :, [0]]  # FLAIR channel
             else:
                 img = img_temp
 

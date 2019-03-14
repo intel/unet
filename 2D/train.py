@@ -27,7 +27,7 @@ best model.
 import datetime
 import os
 
-import tensorflow as tf # conda install -c anaconda tensorflow
+import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
 
 from model import load_model, get_callbacks, evaluate_model
@@ -57,6 +57,7 @@ else:
 
 
 K.backend.set_session(SESS)
+
 
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
@@ -107,6 +108,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("-" * 30)
 
     model = evaluate_model(model_filename, imgs_validation, msks_validation)
+
 
 if __name__ == "__main__":
 

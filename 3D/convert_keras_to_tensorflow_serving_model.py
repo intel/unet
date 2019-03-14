@@ -17,6 +17,8 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+import shutil
+from tensorflow.contrib.session_bundle import exporter
 import keras
 import tensorflow as tf
 
@@ -54,16 +56,20 @@ def dice_coef_loss(y_true, y_pred, smooth=1.0):
 
     return loss
 
-def sensitivity(target, prediction, axis=(1,2,3), smooth = 1e-5 ):
+
+def sensitivity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
 
     intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(prediction, axis=axis) + smooth)
+    coef = (intersection + smooth) / \
+        (tf.reduce_sum(prediction, axis=axis) + smooth)
     return tf.reduce_mean(coef)
 
-def specificity(target, prediction, axis=(1,2,3), smooth = 1e-5 ):
+
+def specificity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
 
     intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(prediction, axis=axis) + smooth)
+    coef = (intersection + smooth) / \
+        (tf.reduce_sum(prediction, axis=axis) + smooth)
     return tf.reduce_mean(coef)
 
 
@@ -76,11 +82,9 @@ If there are other custom loss and metric functions you'll need to specify them
 and add them to the dictionary below.
 """
 model = keras.models.load_model(args.input_filename, custom_objects={
-				"sensitivity": sensitivity, "specificity": specificity,
+                                "sensitivity": sensitivity, "specificity": specificity,
                                 "dice_coef": dice_coef, "dice_coef_loss": dice_coef_loss})
 
-
-from tensorflow.contrib.session_bundle import exporter
 
 print("Freezing the graph.")
 keras.backend.set_learning_phase(0)
@@ -88,7 +92,6 @@ keras.backend.set_learning_phase(0)
 signature = tf.saved_model.signature_def_utils.predict_signature_def(
     inputs={'input': model.input}, outputs={'output': model.output})
 
-import shutil
 
 shutil.rmtree(args.output_directory, ignore_errors=True)
 
@@ -104,5 +107,3 @@ builder.add_meta_graph_and_variables(
     })
 builder.save()
 print("TensorFlow protobuf version of model is saved.")
-
-

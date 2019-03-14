@@ -46,20 +46,21 @@ parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
                     help="the Keras inference model filename")
 
 parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
-		    type=int, help="Number of intra-op-parallelism threads")
+                    type=int, help="Number of intra-op-parallelism threads")
 parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
-  		    type=int, help="Number of inter-op-parallelism threads")
-  		    		    
+                    type=int, help="Number of inter-op-parallelism threads")
+
 args = parser.parse_args()
 
 # Optimize CPU threads for TensorFlow
 config = tf.ConfigProto(
-    	inter_op_parallelism_threads=args.interop_threads,
-        intra_op_parallelism_threads=args.intraop_threads)
-        
-sess = tf.Session(config=config)        
+    inter_op_parallelism_threads=args.interop_threads,
+    intra_op_parallelism_threads=args.intraop_threads)
+
+sess = tf.Session(config=config)
 K.backend.set_session(sess)
-        
+
+
 def calc_dice(y_true, y_pred, smooth=1.):
     """
     Sorensen Dice coefficient
@@ -69,6 +70,7 @@ def calc_dice(y_true, y_pred, smooth=1.):
     coef = numerator / denominator
 
     return coef
+
 
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
@@ -109,6 +111,7 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1.,
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
+
 
 def plot_results(model, imgs_validation, msks_validation, img_no, png_directory):
     """
@@ -174,7 +177,8 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_validation = [40,61,400,1100,4385,5566,5673,6433,7864,8899,9003,9722,10591]
+    indicies_validation = [40, 61, 400, 1100, 4385,
+                           5566, 5673, 6433, 7864, 8899, 9003, 9722, 10591]
 
     for idx in indicies_validation:
         plot_results(model, imgs_validation, msks_validation,

@@ -17,6 +17,7 @@
 
 from imports import *  # All of the common imports
 
+
 def dice_coef(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -96,7 +97,7 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
                         kernel_size=(2, 2, 2), strides=(2, 2, 2),
                         padding="same")
 
-    fms = 16  #32 or 16 depending on your memory size
+    fms = 16  # 32 or 16 depending on your memory size
 
     # BEGIN - Encoding path
     encodeA = ConvolutionBlock(inputs, "encodeA", fms, params)
@@ -121,7 +122,8 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
     else:
         up = K.layers.Conv3DTranspose(name="transconvE", filters=fms*8,
                                       **params_trans)(encodeE)
-    concatD = K.layers.concatenate([up, encodeD], axis=concat_axis, name="concatD")
+    concatD = K.layers.concatenate(
+        [up, encodeD], axis=concat_axis, name="concatD")
 
     decodeC = ConvolutionBlock(concatD, "decodeC", fms*8, params)
 
@@ -131,7 +133,8 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
     else:
         up = K.layers.Conv3DTranspose(name="transconvC", filters=fms*4,
                                       **params_trans)(decodeC)
-    concatC = K.layers.concatenate([up, encodeC], axis=concat_axis, name="concatC")
+    concatC = K.layers.concatenate(
+        [up, encodeC], axis=concat_axis, name="concatC")
 
     decodeB = ConvolutionBlock(concatC, "decodeB", fms*4, params)
 
@@ -141,7 +144,8 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
     else:
         up = K.layers.Conv3DTranspose(name="transconvB", filters=fms*2,
                                       **params_trans)(decodeB)
-    concatB = K.layers.concatenate([up, encodeB], axis=concat_axis, name="concatB")
+    concatB = K.layers.concatenate(
+        [up, encodeB], axis=concat_axis, name="concatB")
 
     decodeA = ConvolutionBlock(concatB, "decodeA", fms*2, params)
 
@@ -151,7 +155,8 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
     else:
         up = K.layers.Conv3DTranspose(name="transconvA", filters=fms,
                                       **params_trans)(decodeA)
-    concatA = K.layers.concatenate([up, encodeA], axis=concat_axis, name="concatA")
+    concatA = K.layers.concatenate(
+        [up, encodeA], axis=concat_axis, name="concatA")
 
     # END - Decoding path
 

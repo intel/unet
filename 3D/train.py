@@ -51,14 +51,14 @@ K.backend.set_session(sess)
 print_summary = args.print_model
 
 model, opt = unet_3d(use_upsampling=args.use_upsampling,
-                learning_rate=args.lr,
-                n_cl_in=args.number_input_channels,
-                n_cl_out=1,  # single channel (greyscale)
-                dropout=0.2,
-                print_summary=print_summary)
+                     learning_rate=args.lr,
+                     n_cl_in=args.number_input_channels,
+                     n_cl_out=1,  # single channel (greyscale)
+                     dropout=0.2,
+                     print_summary=print_summary)
 
 model.compile(optimizer=opt,
-              #loss=[combined_dice_ce_loss],
+              # loss=[combined_dice_ce_loss],
               loss=[dice_coef_loss],
               metrics=[dice_coef, "accuracy",
                        sensitivity, specificity])
@@ -85,7 +85,7 @@ tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
 
 # Keep reducing learning rate if we get to plateau
 reduce_lr = K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2,
-                              patience=5, min_lr=0.0001)
+                                          patience=5, min_lr=0.0001)
 
 callbacks = [checkpoint, tb_logs, reduce_lr]
 

@@ -33,6 +33,7 @@ parser.add_argument("--output_directory",
 
 args = parser.parse_args()
 
+
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice
@@ -71,6 +72,7 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
         (1-weight)*keras.losses.binary_crossentropy(y_true, y_pred)
+
 
 sess = keras.backend.get_session()
 
