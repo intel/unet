@@ -24,37 +24,39 @@ from model.py, trains the model on the data, and then saves the
 best model.
 """
 
-import tensorflow as tf # conda install -c anaconda tensorflow
-import time
+import datetime
 import os
-import settings    # Use the custom settings.py file for default parameters
+
+import tensorflow as tf # conda install -c anaconda tensorflow
+import settings   # Use the custom settings.py file for default parameters
 
 from model import load_model, get_callbacks, evaluate_model
 from data import load_data
 
 from argparser import args
 
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
-
 """
 For best CPU speed set the number of intra and inter threads
 to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
+CONFIG = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
+                        inter_op_parallelism_threads=args.num_inter_threads)
+
+SESS = tf.Session(config=CONFIG)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
 os.environ["KMP_BLOCKTIME"] = "1"
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
-config = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
-                        inter_op_parallelism_threads=args.num_inter_threads)
 
-sess = tf.Session(config=config)
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
-K.backend.set_session(sess)
+
+K.backend.set_session(SESS)
 
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
@@ -90,18 +92,12 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Fitting model with training data ...")
     print("-" * 30)
 
-    history = model.fit(imgs_train, msks_train,
-                        batch_size=batch_size,
-                        epochs=n_epoch,
-                        validation_data=(imgs_validation, msks_validation),
-                        verbose=1, shuffle="batch",
-                        callbacks=model_callbacks)
-
-    # Append training log
-    # with open("training.log","a+") as fp:
-    #     fp.write("{}: {}\n".format(datetime.datetime.now(),
-    #                              history.history["val_dice_coef"]))
-
+    model.fit(imgs_train, msks_train,
+              batch_size=batch_size,
+              epochs=n_epoch,
+              validation_data=(imgs_validation, msks_validation),
+              verbose=1, shuffle="batch",
+              callbacks=model_callbacks)
 
     """
     Step 4: Evaluate the best model
@@ -116,19 +112,18 @@ if __name__ == "__main__":
 
     os.system("lscpu")
 
-    import datetime
-    print("Started script on {}".format(datetime.datetime.now()))
+    START_TIME = datetime.datetime.now()
+    print("Started script on {}".format(START_TIME))
 
     print("args = {}".format(args))
     os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
-    start_time = time.time()
 
     train_and_predict(args.data_path, args.data_filename,
                       args.batch_size, args.epochs)
 
     print(
         "Total time elapsed for program = {} seconds".format(
-            time.time() -
-            start_time))
+            datetime.datetime.now() -
+            START_TIME))
     print("Stopped script on {}".format(datetime.datetime.now()))
