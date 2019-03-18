@@ -112,13 +112,13 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
 
 if __name__ == "__main__":
 
-    os.system("lscpu")
+    # os.system("lscpu")
 
     START_TIME = datetime.datetime.now()
     print("Started script on {}".format(START_TIME))
 
     print("args = {}".format(args))
-    os.system("uname -a")
+    #os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
 
     train_and_predict(args.data_path, args.data_filename,

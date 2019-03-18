@@ -15,17 +15,27 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-from argparser import args
-from imports import *  # All of the common imports
-
-import os
-import datetime
-
-from model import *
-
-from dataloader import DataGenerator
-
 import horovod.keras as hvd
+from dataloader import DataGenerator
+from model import unet_3d, dice_coef_loss, dice_coef, sensitivity, specificity
+import datetime
+import os
+from argparser import args
+import numpy as np
+import tensorflow as tf
+import keras as K
+#from tensorflow import keras as K
+
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+    concat_axis = -1
+    data_format = "channels_last"
+
+else:
+    concat_axis = 1
+    data_format = "channels_first"
+
+
 hvd.init()
 
 
@@ -37,8 +47,8 @@ os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 if (hvd.rank() == 0):  # Only print on worker 0
     print_summary = args.print_model
     verbose = 1
-    os.system("lscpu")
-    os.system("uname -a")
+    # os.system("lscpu")
+    #os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
     print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
     print("Keras API version: {}".format(K.__version__))
@@ -55,13 +65,13 @@ else:  # Don't print on workers > 0
     args.saved_model = "./worker{}/3d_unet_decathlon.hdf5".format(hvd.rank())
 
 # Optimize CPU threads for TensorFlow
-config = tf.ConfigProto(
+CONFIG = tf.ConfigProto(
     inter_op_parallelism_threads=args.interop_threads,
     intra_op_parallelism_threads=args.intraop_threads)
 
-sess = tf.Session(config=config)
+SESS = tf.Session(config=CONFIG)
 
-K.backend.set_session(sess)
+K.backend.set_session(SESS)
 
 
 model, opt = unet_3d(use_upsampling=args.use_upsampling,
@@ -212,5 +222,5 @@ if hvd.rank() == 0:
     stop_time = datetime.datetime.now()
     print("Started script on {}".format(start_time))
     print("Stopped script on {}".format(stop_time))
-    print("\nTotal time = {:,.3f} seconds".format(
+    print("\nTotal time = {}".format(
         stop_time - start_time))

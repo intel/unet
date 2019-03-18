@@ -1,16 +1,45 @@
-from imports import *
 
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+import keras as K
+import tensorflow as tf
+import numpy as np
 import datetime
 from tqdm import tqdm
-
 from argparser import args
-
-from model import *
-
-from dataloader import DataGenerator
-
-import os
 import nibabel as nib
+import os
+from dataloader import DataGenerator
+from model import dice_coef, dice_coef_loss, sensitivity, specificity, combined_dice_ce_loss
+
+#from tensorflow import keras as K
+
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+    concat_axis = -1
+    data_format = "channels_last"
+
+else:
+    concat_axis = 1
+    data_format = "channels_first"
 
 print("Started script on {}".format(datetime.datetime.now()))
 
@@ -20,13 +49,13 @@ os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
 # Optimize CPU threads for TensorFlow
-config = tf.ConfigProto(
+CONFIG = tf.ConfigProto(
     inter_op_parallelism_threads=args.interop_threads,
     intra_op_parallelism_threads=args.intraop_threads)
 
-sess = tf.Session(config=config)
+SESS = tf.Session(config=CONFIG)
 
-K.backend.set_session(sess)
+K.backend.set_session(SESS)
 
 model = K.models.load_model(args.saved_model,
                             custom_objects={"dice_coef": dice_coef,

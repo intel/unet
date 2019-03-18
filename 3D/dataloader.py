@@ -15,14 +15,23 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-from imports import *  # All of the common imports
-
-import os
-import ntpath
-
-import json
-
 import nibabel as nib
+import json
+import ntpath
+import os
+import numpy as np
+import tensorflow as tf
+import keras as K
+#from tensorflow import keras as K
+
+CHANNEL_LAST = True
+if CHANNEL_LAST:
+    concat_axis = -1
+    data_format = "channels_last"
+
+else:
+    concat_axis = 1
+    data_format = "channels_first"
 
 
 class DataGenerator(K.utils.Sequence):

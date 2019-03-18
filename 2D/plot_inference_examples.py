@@ -53,12 +53,12 @@ parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
 args = parser.parse_args()
 
 # Optimize CPU threads for TensorFlow
-config = tf.ConfigProto(
+CONFIG = tf.ConfigProto(
     inter_op_parallelism_threads=args.interop_threads,
     intra_op_parallelism_threads=args.intraop_threads)
 
-sess = tf.Session(config=config)
-K.backend.set_session(sess)
+SESS = tf.Session(config=CONFIG)
+K.backend.set_session(SESS)
 
 
 def calc_dice(y_true, y_pred, smooth=1.):

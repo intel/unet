@@ -52,7 +52,6 @@ else:
 print("Data format = " + data_format)
 K.backend.set_image_data_format(data_format)
 
-
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
     Sorenson (Soft) Dice

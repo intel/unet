@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-from dataloader import DataGenerator
-from openvino.inference_engine import IENetwork, IEPlugin
-from time import time
-import logging as log
-import numpy as np
-from argparse import ArgumentParser
-import os
 import sys
+import os
+from argparse import ArgumentParser
+import numpy as np
+import logging as log
+from time import time
+from openvino.inference_engine import IENetwork, IEPlugin
+from dataloader import DataGenerator
 """
  Copyright (c) 2019 Intel Corporation
 
@@ -30,7 +30,6 @@ and perform inference on a few validation samples
 from the Decathlon dataset.
 
 """
-
 
 sys.path.append("..")  # Adds higher directory to python modules path.
 
