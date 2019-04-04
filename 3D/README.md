@@ -89,7 +89,7 @@ python convert_keras_to_tensorflow_serving_model.py
 python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py --input_saved_model_dir saved_3dunet_model_protobuf --output_node_names PredictionMask/Sigmoid --output_graph frozen_model/saved_model_frozen.pb
 ```
 
-4. Use the [Intel&reg; OpenVINO model optimizer](https://software.intel.com/en-us/articles/OpenVINO-ModelOptimizer) to convert the frozen model to OpenVINO&trade;'s intermediate represenation (IR) model:
+4. Use the [Intel&reg; OpenVINO&trade; model optimizer](https://software.intel.com/en-us/articles/OpenVINO-ModelOptimizer) to convert the frozen model to OpenVINO&trade;'s intermediate represenation (IR) model:
 ```
 python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_model frozen_model/saved_model_frozen.pb --input_shape=[1,144,144,144,1] --data_type FP32  --output_dir openvino_models/FP32  --model_name 3d_unet_decathlon
 ```
