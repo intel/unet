@@ -9,7 +9,8 @@ This model can achieve a [Dice coefficient](https://www.ncbi.nlm.nih.gov/pmc/art
 
 ### Steps to train a new model:
 
-1. Go to the [Medical Segmentation Decathlon](http://medicaldecathlon.com) website and download the [BraTS subset](https://drive.google.com/file/d/1A2IU8Sgea1h3fYLpYtFb2v7NYdMjvEhU/view?usp=sharing). The dataset has the Creative Commons Attribution-ShareAlike 4.0 International [license](https://creativecommons.org/licenses/by-sa/4.0/).
+1. Go to the [Medical Segmentation Decathlon](http://medicaldecathlon.com) website and download the [BraTS subset](https://drive.google.com/file/d/1A2IU8Sgea1h3fYLpYtFb2v7NYdMjvEhU/view?usp=sharing). The dataset has the [Creative Commons Attribution-ShareAlike 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).
+
 2. Untar the "Task01_BrainTumour.tar" file:   
 ```
 tar -xvf Task01_BrainTumour.tar
@@ -37,7 +38,7 @@ where `$DECATHLON_ROOT_DIRECTORY` is the root directory where you un-tarred the 
 
 ![commandline](https://github.com/IntelAI/unet/blob/master/3D/images/3d_commandline.png)
 
-NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel Xeon 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--patch_height=64 --patch_width=64 --patch_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--bz=4` for a batch size of 4).
+NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel&reg; Xeon&reg; 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--patch_height=64 --patch_width=64 --patch_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--bz=4` for a batch size of 4).
 
 ### Steps to evaluate a pre-trained 3D U-Net model.
 
@@ -69,26 +70,26 @@ There are many programs that will display [Nifti](https://nifti.nimh.nih.gov/) 3
 
  ![pred426](https://github.com/IntelAI/unet/blob/master/3D/images/BRATS_426.png "BRATS image #426:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
-## Extra Credit - [Intel OpenVINO](https://software.intel.com/en-us/openvino-toolkit) model conversion
+## Extra Credit - [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit) model conversion
 
-To convert the trained model to [Intel OpenVINO](https://software.intel.com/en-us/openvino-toolkit):
+To convert the trained model to [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit):
 
-1. Download and install [Intel OpenVINO](https://software.intel.com/en-us/openvino-toolkit). Start the Intel OpenVINO environment: 
+1. Download and install [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit). Start the Intel&reg; OpenVINO&trade; environment: 
 ```
 source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 ```
 
-2. Convert the Keras model to the TensorFlow Serving protobuf format:
+2. Convert the Keras model to the TensorFlow* Serving protobuf format:
 ```
 python convert_keras_to_tensorflow_serving_model.py
 ```
 
-3. Use TensorFlow to freeze the TensorFlow Serving protobuf model:
+3. Use TensorFlow* to freeze the TensorFlow* Serving protobuf model:
 ```
 python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py --input_saved_model_dir saved_3dunet_model_protobuf --output_node_names PredictionMask/Sigmoid --output_graph frozen_model/saved_model_frozen.pb
 ```
 
-4. Use the [Intel OpenVINO model optimizer](https://software.intel.com/en-us/articles/OpenVINO-ModelOptimizer) to convert the frozen model to OpenVINO's intermediate represenation (IR) model:
+4. Use the [Intel&reg; OpenVINO model optimizer](https://software.intel.com/en-us/articles/OpenVINO-ModelOptimizer) to convert the frozen model to OpenVINO&trade;'s intermediate represenation (IR) model:
 ```
 python ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_model frozen_model/saved_model_frozen.pb --input_shape=[1,144,144,144,1] --data_type FP32  --output_dir openvino_models/FP32  --model_name 3d_unet_decathlon
 ```
@@ -120,7 +121,7 @@ Please see our [optimization notice](https://software.intel.com/en-us/articles/o
 | Vendor ID:          |   GenuineIntel |
 | CPU family:          |  6 |
 | Model:               |  85 |
-| Model name:          |  Intel(R) Xeon(R) Platinum 8180 CPU @ 2.50GHz |
+| Model name:          |  Intel&reg; Xeon&reg; Platinum 8180 CPU @ 2.50GHz |
 | Stepping:           |   4 |
 | CPU MHz:             |  999.908 |
 | CPU max MHz:          | 2500.0000 |
