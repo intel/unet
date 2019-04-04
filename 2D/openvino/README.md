@@ -1,4 +1,4 @@
-# Intel&reg; [OpenVINO]&trade;(https://software.intel.com/en-us/openvino-toolkit) integration (2018 R5)
+# Intel&reg; [OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit) integration (2018 R5)
 
 ### How to freeze a saved TensorFlow*/Keras model and convert it to OpenVINO&trade; format
 
