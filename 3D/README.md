@@ -20,7 +20,7 @@ tar -xvf Task01_BrainTumour.tar
 conda create -c anaconda -n decathlon pip python=3.6 tensorflow=1.11 keras tqdm h5py psutil
 ```
 
-This will create a new conda virtual environment called "decathlon" and install [TensorFlow with Intel MKL-DNN](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide) for CPU training and inference.
+This will create a new conda virtual environment called "decathlon" and install [TensorFlow* with Intel&reg; MKL-DNN](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide) for CPU training and inference.
 
 4. Enable the new environment. Run the command: 
 ```
