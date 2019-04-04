@@ -74,7 +74,7 @@ There are many programs that will display [Nifti](https://nifti.nimh.nih.gov/) 3
 
 To convert the trained model to [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit):
 
-1. Download and install [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit). Start the Intel&reg; OpenVINO&trade; environment: 
+1. Download and install [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit) (2018 R5). Start the Intel&reg; OpenVINO&trade; environment: 
 ```
 source /opt/intel/computer_vision_sdk/bin/setupvars.sh
 ```
