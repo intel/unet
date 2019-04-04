@@ -1,6 +1,6 @@
 # Intel&reg; [OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit) integration (2018 R5)
 
-### How to freeze a saved TensorFlow*/Keras model and convert it to OpenVINO&trade; format
+### How to freeze a saved TensorFlow*/Keras model and convert it to Intel&reg; OpenVINO&trade; format
 
 1. Convert your Keras model to TensorFlow* saved model fomat.
 
@@ -74,7 +74,7 @@ For example:
 
 5. The scripts `inference_keras.py` and `inference_openvino.py` load the `validation_data.npz` data file and run inference. Add the `--plot` argument to the command line and the script will plot figures for each prediction.
 
-NOTE: The baseline model uses UpSampling2D (Bilinear Interpolation). This is supported on Intel&reg; OpenVINO&trade; via a shared TensorFlow* with Intel&reg; MKL-DNN library. To build the library run the script:
+NOTE: The baseline model uses UpSampling2D (Bilinear Interpolation). This is supported on Intel&reg; OpenVINO&trade; via a shared [TensorFlow* with Intel&reg; MKL-DNN](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1) library. To build the library run the script:
 
 ```
 bash ${INTEL_CVSDK_DIR}/inference_engine/samples/build_samples.sh
