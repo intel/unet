@@ -32,7 +32,7 @@ mkdir frozen_model
 python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py --input_saved_model_dir saved_2dunet_model_protobuf --output_node_names PredictionMask/Sigmoid --output_graph frozen_model/saved_model_frozen.pb
 ```
 
-3. Use the OpenVINO model optimizer to convert the frozen TensorFlow* model to Intel&reg; OpenVINO&trade; IR format.
+3. Use the Intel&reg; OpenVINO&trade; model optimizer to convert the frozen TensorFlow* model to Intel&reg; OpenVINO&trade; IR format.
 
 Once you have a frozen model, you can use the Intel&reg; OpenVINO&trade; model optimizer to create the Intel&reg; OpenVINO&trade; version.
 
