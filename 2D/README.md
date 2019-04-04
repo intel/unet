@@ -31,7 +31,7 @@ pip install nibabel
 ```
 bash run_brats_model.sh $DECATHLON_ROOT_DIRECTORY
 ```
-, where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
+where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 ![run_brats_help](https://github.com/IntelAI/unet/blob/master/2D/images/run_brats_usage.png)
 
