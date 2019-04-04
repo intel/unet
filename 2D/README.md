@@ -37,3 +37,38 @@ REFERENCES:
 1. Menze BH, Jakab A, Bauer S, Kalpathy-Cramer J, Farahani K, Kirby J, Burren Y, Porz N, Slotboom J, Wiest R, Lanczi L, Gerstner E, Weber MA, Arbel T, Avants BB, Ayache N, Buendia P, Collins DL, Cordier N, Corso JJ, Criminisi A, Das T, Delingette H, Demiralp Γ, Durst CR, Dojat M, Doyle S, Festa J, Forbes F, Geremia E, Glocker B, Golland P, Guo X, Hamamci A, Iftekharuddin KM, Jena R, John NM, Konukoglu E, Lashkari D, Mariz JA, Meier R, Pereira S, Precup D, Price SJ, Raviv TR, Reza SM, Ryan M, Sarikaya D, Schwartz L, Shin HC, Shotton J, Silva CA, Sousa N, Subbanna NK, Szekely G, Taylor TJ, Thomas OM, Tustison NJ, Unal G, Vasseur F, Wintermark M, Ye DH, Zhao L, Zhao B, Zikic D, Prastawa M, Reyes M, Van Leemput K. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
 
 2. Bakas S, Akbari H, Sotiras A, Bilello M, Rozycki M, Kirby JS, Freymann JB, Farahani K, Davatzikos C. "Advancing The Cancer Genome Atlas glioma MRI collections with expert segmentation labels and radiomic features", Nature Scientific Data, 4:170117 (2017) DOI: 10.1038/sdata.2017.117
+
+
+### Optimization notice
+Please see our [optimization notice](https://software.intel.com/en-us/articles/optimization-notice#opt-en).
+
+### Architecture
+|  lscpu  |   |
+| -- | -- | 
+| Architecture:   |       x86_64 |
+| CPU op-mode(s):  |      32-bit, 64-bit |
+| Byte Order:       |     Little Endian |
+| CPU(s):            |    56 |
+| On-line CPU(s) list: |  0-55 |
+| Thread(s) per core:  |  1 |
+| Core(s) per socket:  |  28 |
+| Socket(s):           |  2 |
+| NUMA node(s):        |  2 |
+| Vendor ID:          |   GenuineIntel |
+| CPU family:          |  6 |
+| Model:               |  85 |
+| Model name:          |  Intel&reg; Xeon&reg; Platinum 8180 CPU @ 2.50GHz |
+| Stepping:           |   4 |
+| CPU MHz:             |  999.908 |
+| CPU max MHz:          | 2500.0000 |
+| CPU min MHz:          | 1000.0000 |
+| BogoMIPS:             | 5000.00 |
+| Virtualization:       | VT-x |
+| L1d cache:            | 32K |
+| L1i cache:            | 32K |
+| L2 cache:             | 1024K |
+| L3 cache:             | 39424K |
+| NUMA node0 CPU(s):    | 0-27 |
+| NUMA node1 CPU(s):    | 28-55 |
+| Flags:                | fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch epb cat_l3 cdp_l3 intel_ppin intel_pt mba tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local ibpb ibrs dtherm arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req pku ospke |
+
