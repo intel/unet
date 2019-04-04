@@ -48,7 +48,7 @@ We've written a bash script to do Intel&reg; OpenVINO&trade; model conversion fo
 
 If you'd like to try it manually, the steps are:
 
-First, set the Intel&reg; OpenVINO&trade; environment (this assumes you've already downloaded and installed [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit/choose-download) on your computer)(R5 2018):
+First, set the Intel&reg; OpenVINO&trade; environment (this assumes you've already downloaded and installed [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit/choose-download) on your computer)(These instructions assume version R5 2018):
 
 ```
 source /opt/intel/computer_vision_sdk/bin/setupvars.sh
