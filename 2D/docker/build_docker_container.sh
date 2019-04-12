@@ -19,6 +19,7 @@
 # Copy the model and scripts from the OpenVINO directory here
 echo "Copying the contents of openvino_saved_model directory here."
 rsync -av ../openvino/* . --exclude=README.md
+rsync -av ../output/*.hdf5 ./models/keras/
 
 echo "Building Docker container"
 docker build -t unet_openvino \

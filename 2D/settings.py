@@ -20,7 +20,7 @@
 import psutil  # pip install psutil
 import os
 
-DATA_PATH = os.path.join("../../data/decathlon/144x144/")
+DATA_PATH = os.path.join("../../data/decathlon/128x128/")
 DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME = "unet_model_for_decathlon.hdf5"
@@ -64,5 +64,5 @@ USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 # loss function. Recommend to use Keras API when in doubt.
 # If true, then use bilinear interpolation. Otherwise, transposed convolution
 USE_UPSAMPLING = True
-USE_AUGMENTATION = False  # Use data augmentation during training
-USE_DROPOUT = False  # Use spatial dropout in model
+USE_AUGMENTATION = True  # Use data augmentation during training
+USE_DROPOUT = True  # Use spatial dropout in model

@@ -33,12 +33,28 @@ parser = argparse.ArgumentParser(
     description="Inference example for trained 2D U-Net model on BraTS.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--inference_filename", default="../output/unet_model_for_decathlon.hdf5",
+parser.add_argument("--inference_filename", default="models/keras/unet_model_for_decathlon.hdf5",
                     help="the Keras inference model filename")
 
 args = parser.parse_args()
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+os.environ["KMP_BLOCKTIME"] = "1"
+os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
+"""
+For best CPU speed set the number of intra and inter threads
+to take advantage of multi-core systems.
+See https://github.com/intel/mkl-dnn
+"""
+CONFIG = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
+                        inter_op_parallelism_threads=args.num_inter_threads)
+                        
+SESS = tf.Session(config=CONFIG)
+
+K.backend.set_session(SESS)                        
+                        
 def calc_dice(y_true, y_pred, smooth=1.):
     """
     Sorensen Dice coefficient
@@ -124,6 +140,9 @@ def plot_results(model, img, msk, img_no, png_directory):
 
 
 if __name__ == "__main__":
+
+    print("TensorFlow version: {}".format(tf.__version__))
+    print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
 
     # Load data
     # You can create this Numpy datafile by running the create_validation_sample.py script

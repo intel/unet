@@ -3,19 +3,19 @@
 #
 # Copyright (c) 2019 Intel Corporation
 #
-# This program is free software: you can redistribute it and/or modify  
-# it under the terms of the GNU General Public License as published by  
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, version 3.
 #
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License 
+# You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-
+import h5py
 
 from argparser import args
 """
@@ -42,7 +42,6 @@ This module loads the training and validation datasets.
 If you have custom datasets, you can load and preprocess them here.
 """
 
-
 if args.keras_api:
     import keras as K
 else:
@@ -52,21 +51,100 @@ else:
 Load data from HDF5 file
 """
 
-
 class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
     """
     Wraps HDF5Matrix in preprocessing code.
     Performs image augmentation if needed.
     """
 
-    def __init__(self, image_datagen, use_augmentation, seed, *args, **kwargs):
-        self.image_datagen = image_datagen
+    def __init__(self, datapath, dataset, datagen, start=0, end=None,
+                 normalizer=None, crop_dim=128,
+                 use_augmentation=False, seed=816):
+        """
+        This will need to keep up with the HDF5Matrix code
+        base.  It allows us to do random image cropping and
+        use Keras online data augmentation.
+        """
+        self.image_datagen = datagen
         self.use_augmentation = use_augmentation
         self.seed = seed
+        self.crop_dim = crop_dim
         self.idx = 0
-        super().__init__(*args, **kwargs)
+
+        if h5py is None:
+            raise ImportError('The use of HDF5Matrix requires '
+                              'HDF5 and h5py installed.')
+
+        if datapath not in list(self.refs.keys()):
+            f = h5py.File(datapath, "r")
+            self.refs[datapath] = f
+        else:
+            f = self.refs[datapath]
+        self.data = f[dataset]
+        self.start = start
+        if end is None:
+            self.end = self.data.shape[0]
+        else:
+            self.end = end
+        self.normalizer = normalizer
+        if self.normalizer is not None:
+            first_val = self.normalizer(self.data[0:1])
+        else:
+            first_val = self.data[0:1]
+        self._base_dtype = first_val.dtype
+
+        # Handle the shape if we want to crop
+        bshape = list(first_val.shape[1:])
+
+        self.original_height = bshape[0]
+        self.original_width = bshape[1]
+
+        if ((self.crop_dim[0] > 0) and
+            (self.crop_dim[1] > 0) and
+            (self.crop_dim[0] < self.original_height) and
+                (self.crop_dim[1] < self.original_width)):
+            bshape[0] = self.crop_dim[0]
+            bshape[1] = self.crop_dim[1]
+            self._base_shape = tuple(bshape)
+            self.crop = True
+        else:
+            # Don't crop
+            self._base_shape = first_val.shape[1:]
+            self.crop = False
+
+    def random_crop_img(self, img):
+        """
+        Random crop image - Assumes 2D images. NHWC format
+        """
+
+        if self.crop:
+
+            # Assuming NHWC format
+            height, width = img.shape[1], img.shape[2]
+            dx, dy = self.crop_dim[0], self.crop_dim[1]
+
+            img_temp = np.zeros((img.shape[0], dx, dy, img.shape[3]))
+            for idx in range(img.shape[0]):
+
+                if self.use_augmentation:
+                    x = np.random.randint(0, height - dx + 1)
+                    y = np.random.randint(0, width - dy + 1)
+
+                else:  # If no augmentation, then just do center crop
+                    x = (height - dx)//2
+                    y = (width - dy)//2
+
+                img_temp[idx] = img[idx, x:(x+dx), y:(y+dy), :]
+
+            return img_temp
+        else:  # Don't crop
+            return img
 
     def __getitem__(self, key):
+        """
+        Grab a batch of images and do online data augmentation and cropping
+        """
+
         data = super().__getitem__(key)
         self.idx += 1
         if len(data.shape) == 3:
@@ -76,10 +154,13 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
             else:
                 img = data
 
+            img = self.random_crop_img(img)
+
             if args.channels_first:  # NCHW
-                return np.swapaxes(img, 1, 3)
+                outData = np.swapaxes(img, 1, 3)
             else:
-                return img
+                outData = img
+
         else:  # Need to test the code below. Usually only 3D tensors expected
             if self.use_augmentation:
                 img = np.array([
@@ -89,13 +170,17 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
             else:
                 img = np.array([x for x in data])
 
+            img = self.random_crop_img(img)
+
             if args.channels_first:  # NCHW
-                return np.swapaxes(img, 1, 3)
+                outData = np.swapaxes(img, 1, 3)
             else:
-                return img
+                outData = img
+
+        return outData
 
 
-def load_data(hdf5_data_filename):
+def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
     """
     Load the data from the HDF5 file using the Keras HDF5 wrapper.
     """
@@ -104,43 +189,44 @@ def load_data(hdf5_data_filename):
     # Make sure both input and label start with the same random seed
     # Otherwise they won't get the same random transformation
 
-    image_datagen = K.preprocessing.image.ImageDataGenerator(
-        zca_whitening=True,  # Do ZCA pre-whitening to consider richer features
-        shear_range=2,  # Up to 2 degree random shear
-        horizontal_flip=True,
-        vertical_flip=True)
-
-    msk_datagen = K.preprocessing.image.ImageDataGenerator(
-        shear_range=2,  # Up to 2 degree random shear
-        horizontal_flip=True,
-        vertical_flip=True)
+    params = dict(horizontal_flip=True,
+                  vertical_flip=True,
+                  rotation_range=90, #degrees
+                  shear_range=5 # degrees
+                  )
+    image_datagen = K.preprocessing.image.ImageDataGenerator(**params)
+    msk_datagen = K.preprocessing.image.ImageDataGenerator(**params)
 
     random_seed = 816
-    imgs_train = PreprocessHDF5Matrix(image_datagen,
-                                      args.use_augmentation,
-                                      random_seed,
-                                      hdf5_data_filename,
-                                      "imgs_train")
-    msks_train = PreprocessHDF5Matrix(msk_datagen,
-                                      args.use_augmentation,
-                                      random_seed,
-                                      hdf5_data_filename,
-                                      "msks_train")
+    imgs_train = PreprocessHDF5Matrix(hdf5_data_filename,
+                                      "imgs_train",
+                                      image_datagen,
+                                      crop_dim=crop_dim,
+                                      use_augmentation=args.use_augmentation,
+                                      seed=random_seed)
+    msks_train = PreprocessHDF5Matrix(hdf5_data_filename,
+                                      "msks_train",
+                                      msk_datagen,
+                                      crop_dim=crop_dim,
+                                      use_augmentation=args.use_augmentation,
+                                      seed=random_seed)
 
     # Validation dataset
     # No data augmentation
-    imgs_validation = PreprocessHDF5Matrix(image_datagen,
-                                           False,  # Don't augment
-                                           816,
-                                           hdf5_data_filename,
-                                           "imgs_validation")
-    msks_validation = PreprocessHDF5Matrix(image_datagen,
-                                           False,  # Don't augment
-                                           816,
-                                           hdf5_data_filename,
-                                           "msks_validation")
+    imgs_validation = PreprocessHDF5Matrix(hdf5_data_filename,
+                                           "imgs_validation",
+                                           image_datagen,
+                                           crop_dim=crop_dim,
+                                           use_augmentation=False,  # Don't augment
+                                           seed=random_seed)
+    msks_validation = PreprocessHDF5Matrix(hdf5_data_filename,
+                                           "msks_validation",
+                                           image_datagen,
+                                           crop_dim=crop_dim,
+                                           use_augmentation=False,  # Don't augment
+                                           seed=random_seed)
 
-    print("Batch size = {}".format(args.batch_size))
+    print("Batch size = {}".format(batch_size))
 
     print("Training image dimensions:   {}".format(imgs_train.shape))
     print("Training mask dimensions:    {}".format(msks_train.shape))

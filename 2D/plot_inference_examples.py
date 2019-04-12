@@ -59,8 +59,15 @@ CONFIG = tf.ConfigProto(
 SESS = tf.Session(config=CONFIG)
 K.backend.set_session(SESS)
 
+def calc_hard_dice(y_true, y_pred):
+    numerator = 2.0 * np.sum(np.round(y_true)*np.round(y_pred))
+    denominator = np.sum(np.round(y_true)) + np.sum(np.round(y_pred))
+    if denominator == 0:
+       return 1.0
+    else:
+       return numerator / denominator
 
-def calc_dice(y_true, y_pred, smooth=1.):
+def calc_dice(y_true, y_pred, smooth=1):
     """
     Sorensen Dice coefficient
     """
@@ -71,7 +78,7 @@ def calc_dice(y_true, y_pred, smooth=1.):
     return coef
 
 
-def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
+def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1):
     """
     Sorenson (Soft) Dice
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
@@ -124,32 +131,7 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
     dice_score = calc_dice(pred_mask, msk)
 
-    print("Dice score for Image #{} = {:.4f}".format(img_no,
-                                                     dice_score))
-
-    plt.figure(figsize=(15, 15))
-    plt.subplot(1, 3, 1)
-    plt.imshow(img[0, :, :, 0], cmap="bone", origin="lower")
-    plt.axis("off")
-    plt.title("MRI Input", fontsize=20)
-    plt.subplot(1, 3, 2)
-    plt.imshow(msk[0, :, :, 0], origin="lower")
-    plt.axis("off")
-    plt.title("Ground truth", fontsize=20)
-    plt.subplot(1, 3, 3)
-    plt.imshow(pred_mask[0, :, :, 0], origin="lower")
-    plt.axis("off")
-    plt.title("Prediction\nDice = {:.4f}".format(dice_score), fontsize=20)
-
-    plt.tight_layout()
-
-    png_name = os.path.join(png_directory, "pred{}.png".format(img_no))
-    plt.savefig(png_name, bbox_inches="tight", pad_inches=0)
-    print("Saved png file to {}".format(png_name))
-
-    # Close to prevent memory leak
-    plt.clf()
-    plt.close()
+    print("{:.4f}, {:.4f}".format(dice_score, calc_hard_dice(pred_mask, msk)))
 
 
 if __name__ == "__main__":
@@ -180,5 +162,9 @@ if __name__ == "__main__":
                            5566, 5673, 6433, 7864, 8899, 9003, 9722, 10591]
 
     for idx in indicies_validation:
+        plot_results(model, imgs_validation, msks_validation,
+                     idx, png_directory)
+                     
+    for idx in range(2000,5000,50):
         plot_results(model, imgs_validation, msks_validation,
                      idx, png_directory)

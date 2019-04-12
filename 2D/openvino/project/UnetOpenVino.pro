@@ -24,19 +24,20 @@ SOURCES += ../src/main.cpp \
 
 HEADERS +=  ../include/brainunetopenvino.h
 
-INCLUDEPATH += " ../src/cnpy/"   #to read the numpy arrays in c++
+INCLUDEPATH += "../src/cnpy/"   #to read the numpy arrays in c++
 
-INCLUDEPATH += "/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/include/"
-INCLUDEPATH += "/opt/intel/computer_vision_sdk/opencv/include/"
-LIBS += -L"/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/"
-LIBS += -L"/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/external/omp/lib/"
-LIBS += -L"/opt/intel/computer_vision_sdk/inference_engine/lib/ubuntu_16.04/intel64/"
-LIBS += -lcpu_extension_avx2 -lcnpy
-LIBS += -L"/opt/intel/computer_vision_sdk/inference_engine/external/omp/lib/"
+
+INCLUDEPATH += "${INTEL_OPENVINO_DIR}/deployment_tools/inference_engine/include/"
+INCLUDEPATH += "${INTEL_OPENVINO_DIR}/opencv/include/"
+LIBS += -L"${INTEL_OPENVINO_DIR}/deployment_tools/inference_engine/lib/intel64/"
+LIBS += -L"${INTEL_OPENVINO_DIR}/deployment_tools/inference_engine/external/omp/lib/"
+LIBS += -L"${INTEL_OPENVINO_DIR}/inference_engine/lib/intel64/"
+LIBS += -lcpu_extension_avx512 -lcnpy
+LIBS += -L"${INTEL_OPENVINO_DIR}/inference_engine/external/omp/lib/"
 LIBS += -liomp5
-LIBS += -L"/opt/intel/computer_vision_sdk/deployment_tools/external/mkltiny_lnx/lib/"
+LIBS += -L"${INTEL_OPENVINO_DIR}/deployment_tools/external/mkltiny_lnx/lib/"
 LIBS += -linference_engine -ldl
-LIBS += -L"/opt/intel/computer_vision_sdk/opencv/lib/"
+LIBS += -L"${INTEL_OPENVINO_DIR}/opencv/lib/"
 LIBS +=-lopencv_highgui \
     -lopencv_core \
     -lopencv_imgproc \

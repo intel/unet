@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
@@ -20,15 +20,7 @@ if [ -d "openvino" ]; then
   cd openvino
 fi
 
-if [ -f /etc/redhat-release ]; then
-  # CentOS
-  OPENVINO_LIB=${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/
-fi
+OPENVINO_LIB=${INTEL_OPENVINO_DIR}/inference_engine/lib/intel64/
 
-if [ -f /etc/lsb-release ]; then
-  # Ubuntu
-  OPENVINO_LIB=${INTEL_CVSDK_DIR}/inference_engine/lib/ubuntu_16.04/intel64/
-fi
-
-python inference_openvino.py -l ${OPENVINO_LIB}/libcpu_extension_avx2.so \
+python inference_openvino.py -l ${OPENVINO_LIB}/libcpu_extension_avx512.so \
        --plot --stats -d MYRIAD

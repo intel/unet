@@ -7,8 +7,8 @@
 ## 2. For CPU - `docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino`
 FROM ubuntu:16.04
 
-ARG OPENVINO_DIR=/opt/intel/computer_vision_sdk
-ENV OPENVINO_PLUGIN_PATH ${OPENVINO_DIR}/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64
+ARG OPENVINO_DIR=/opt/intel/openvino
+ENV OPENVINO_PLUGIN_PATH ${OPENVINO_DIR}/deployment_tools/inference_engine/lib/intel64
 
 ENV APP_DIR /app
 ADD . ${APP_DIR}
@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         git \
         g++ \
+        libomp-dev \
         libtool \
         lsb-release \
         nano \
@@ -58,8 +59,8 @@ RUN wget --quiet \
 
 RUN conda update -y -n base -c defaults conda
 
-# We need a python 3.5 environment for OpenVINO
-RUN conda create -y -n openvino python=3.5 pip h5py numpy matplotlib
+# We need a python environment for OpenVINO
+RUN conda create -y -n openvino python pip h5py numpy matplotlib tensorflow keras
 RUN echo "conda activate openvino" >> ~/.bashrc
 
 # Unzip the OpenVINO installer
@@ -67,15 +68,12 @@ RUN cd ${APP_DIR} && tar -xvzf l_openvino_toolkit*
 
 # installing OpenVINO dependencies
 RUN cd ${APP_DIR}/l_openvino_toolkit* && \
-    ./install_cv_sdk_dependencies.sh
+    ./install_openvino_dependencies.sh
 
 # installing OpenVINO itself
 RUN cd ${APP_DIR}/l_openvino_toolkit* && \
     sed -i 's/decline/accept/g' silent.cfg && \
     ./install.sh --silent silent.cfg
-
-# Setup the OpenVINO environment
-RUN /bin/bash -c "source ${OPENVINO_DIR}/bin/setupvars.sh"
 
 # Build the samples so that we have libraries
 RUN /bin/bash -c "${OPENVINO_DIR}/inference_engine/samples/build_samples.sh"
@@ -88,24 +86,13 @@ RUN cp ${APP_DIR}/97-myriad-usbboot.rules /etc/udev/rules.d/
 RUN echo "udevadm control --reload-rules" >> ~/.bashrc
 RUN echo "udevadm trigger" >> ~/.bashrc
 
-#Steps to build C++ code
-RUN cd ${APP_DIR}/src/
-RUN git clone https://github.com/rogersce/cnpy.git
-RUN mv cnpy ${APP_DIR}/src/ && \
-    cd ${APP_DIR}/src/cnpy && \
-    mkdir -p build && \
-    cd ${APP_DIR}/src/cnpy/build  \
-    && cmake ${APP_DIR}/src/cnpy/ \
-    && make && make install
-RUN cd ${APP_DIR}/project && \
-    qmake -makefile && make && cd ../build
-RUN cp /usr/local/lib/libcnpy.so ${OPENVINO_PLUGIN_PATH}
+# Build C++
+RUN ${APP_DIR}/build_unet_demo_c++.sh
 
 # Cleanup
 RUN rm -rf ${APP_DIR}/l_openvino_toolkit*
 RUN rm -f ${APP_DIR}/Dockerfile
 RUN rm -f ${APP_DIR}/97-myriad-usbboot.rules
-RUN rm -f ${APP_DIR}/inference_keras.py
 RUN rm -f ${APP_DIR}/README.md
 RUN rm -f ${APP_DIR}/build_docker_container.sh
 RUN rm -f ${APP_DIR}/create_validation_sample.py

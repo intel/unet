@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("--bz",
                     type=int,
-                    default=8,
+                    default=32,
                     help="Batch size")
 parser.add_argument("--patch_height",
                     type=int,

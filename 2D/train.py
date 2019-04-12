@@ -3,16 +3,16 @@
 #
 # Copyright (c) 2019 Intel Corporation
 #
-# This program is free software: you can redistribute it and/or modify  
-# it under the terms of the GNU General Public License as published by  
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, version 3.
 #
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License 
+# You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
@@ -47,12 +47,15 @@ os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
 os.environ["KMP_BLOCKTIME"] = "1"
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
-
 if args.keras_api:
     import keras as K
 else:
     from tensorflow import keras as K
 
+print("TensorFlow version: {}".format(tf.__version__))
+print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
+
+print("Keras API version: {}".format(K.__version__))
 
 K.backend.set_session(SESS)
 
@@ -71,7 +74,8 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("-" * 30)
 
     imgs_train, msks_train, imgs_validation, msks_validation = \
-        load_data(hdf5_filename)
+        load_data(hdf5_filename, args.batch_size,
+                  [args.crop_dim, args.crop_dim])
 
     print("-" * 30)
     print("Creating and compiling model ...")
