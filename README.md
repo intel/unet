@@ -1,5 +1,5 @@
 # Medical Decathlon Models
-### U-Net Biomedical Image Segmentation with Medical Decathlon.
+### U-Net Biomedical Image Segmentation with Medical Decathlon Dataset.
 
 This repository contains [2D](https://github.com/IntelAI/unet/tree/master/2D) and [3D](https://github.com/IntelAI/unet/tree/master/3D) U-Net scripts for training models using the [Medical Decathlon](http://medicaldecathlon.com/) dataset.
 
