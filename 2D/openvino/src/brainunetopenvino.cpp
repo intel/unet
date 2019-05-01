@@ -1,18 +1,18 @@
-/* 
+/*
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
 #
-# This program is free software: you can redistribute it and/or modify  
-# it under the terms of the GNU General Public License as published by  
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, version 3.
 #
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 # General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License 
+# You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 */
@@ -26,6 +26,7 @@ void BrainUnetOpenVino::loadData(int img_num) {
   cnpy::NpyArray arr_msks = cnpy::npz_load(DATA_FILENAME, "msks_validation");
   cnpy::NpyArray arr_indices =
       cnpy::npz_load(DATA_FILENAME, "indicies_validation");
+
 
   std::cout << "Numpy arrays loaded" << std::endl;
 
@@ -79,6 +80,7 @@ void BrainUnetOpenVino::loadData(int img_num) {
     msk_data.push_back(t_msks);
   }
   std::cout << "Finished reading Numpy arrays " << std::endl;
+
 }
 
 void BrainUnetOpenVino::plotResults() {
@@ -126,10 +128,11 @@ void BrainUnetOpenVino::plotResults() {
   std::cout << "Image index #" << img_id << std::endl;
   std::cout << "Dice coefficient " << dice_coef << std::endl;
 
-  cv::imshow("Ground truth image", output_GT_msks);
+/*  cv::imshow("Ground truth image", output_GT_msks);
   cv::waitKey(0);
   cv::imshow("Predicted mask image", output_pred_img);
   cv::waitKey(0);
+*/
 }
 void BrainUnetOpenVino::doInference(
     InferenceEngine::TargetDevice targetDevice) {
@@ -237,11 +240,7 @@ void BrainUnetOpenVino::doInference(
   // 6. Prepare input
   // ----------------
   /** Iterate over all the input blobs **/
-  Blob::Ptr inputBlob;
-  for (auto &item : input_info)
-    inputBlob = infer_request.GetBlob(item.first);
-  // InferenceEngine::SizeVector blobSize =
-  // inputBlob->getTensorDesc().getDims();
+  Blob::Ptr inputBlob = infer_request.GetBlob(input_info.begin()->first);;
 
   const auto blob_data =
       inputBlob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
