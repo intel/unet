@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
@@ -17,6 +18,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+
 from distutils.sysconfig import get_python_lib
 from tensorflow.contrib.session_bundle import exporter
 import keras
