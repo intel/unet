@@ -18,7 +18,6 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
 """
 Converts the Medical Decathlon raw Nifti files into
 single HDF5 file for easier use in TensorFlow/Keras.
@@ -57,381 +56,452 @@ import json
 import argparse
 
 parser = argparse.ArgumentParser(
-    description="Convert Decathlon raw Nifti data "
-    "(http://medicaldecathlon.com) "
-    "files to Numpy data files",
-    add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	description="Convert Decathlon raw Nifti data "
+	"(http://medicaldecathlon.com) "
+	"files to Numpy data files",
+	add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--data_path",
-                    default="../../data/decathlon/Task01_BrainTumour/",
-                    help="Path to the raw BraTS datafiles")
+					default="../../data/decathlon/Task01_BrainTumour/",
+					help="Path to the raw BraTS datafiles")
 parser.add_argument("--save_path",
-                    default="../../data/decathlon/",
-                    help="Folder to save Numpy data files")
+					default="../../data/decathlon/",
+					help="Folder to save Numpy data files")
 parser.add_argument("--output_filename",
-                    default="decathlon_brats.h5",
-                    help="Name of the output HDF5 file")
+					default="decathlon_brats.h5",
+					help="Name of the output HDF5 file")
 parser.add_argument("--resize", type=int, default=144,
-                    help="Resize height and width to this size. "
-                    "Original size = 240")
+					help="Resize height and width to this size. "
+					"Original size = 240")
 parser.add_argument("--split", type=float, default=0.85,
-                    help="Train/test split ratio")
+					help="Train/test split ratio")
 
 args = parser.parse_args()
 
 
 def crop_center(img, cropx, cropy, cropz):
-    """
-    Take a center crop of the images.
-    If we are using a 2D model, then we'll just stack the
-    z dimension.
-    """
+	"""
+	Take a center crop of the images.
+	If we are using a 2D model, then we'll just stack the
+	z dimension.
+	"""
 
-    x, y, z, c = img.shape
+	x, y, z, c = img.shape
 
-    # Make sure starting index is >= 0
-    startx = max(x//2-(cropx//2), 0)
-    starty = max(y//2-(cropy//2), 0)
-    startz = max(z//2-(cropz//2), 0)
+	# Make sure starting index is >= 0
+	startx = max(x // 2 - (cropx // 2), 0)
+	starty = max(y // 2 - (cropy // 2), 0)
+	startz = max(z // 2 - (cropz // 2), 0)
 
-    # Make sure ending index is <= size
-    endx = min(startx + cropx, x)
-    endy = min(starty + cropy, y)
-    endz = min(startz + cropz, z)
+	# Make sure ending index is <= size
+	endx = min(startx + cropx, x)
+	endy = min(starty + cropy, y)
+	endz = min(startz + cropz, z)
 
-    return img[startx:endx, starty:endy, startz:endz, :]
+	return img[startx:endx, starty:endy, startz:endz, :]
 
 
 def normalize_img(img):
-    """
-    Normalize the pixel values.
-    This is one of the most important preprocessing steps.
-    We need to make sure that the pixel values have a mean of 0
-    and a standard deviation of 1 to help the model to train
-    faster and more accurately.
-    """
+	"""
+	Normalize the pixel values.
+	This is one of the most important preprocessing steps.
+	We need to make sure that the pixel values have a mean of 0
+	and a standard deviation of 1 to help the model to train
+	faster and more accurately.
+	"""
 
-    for channel in range(img.shape[3]):
-        img[:, :, :, channel] = (
-            img[:, :, :, channel] - np.mean(img[:, :, :, channel])) \
-            / np.std(img[:, :, :, channel])
+	for channel in range(img.shape[3]):
+		img[:, :, :, channel] = (
+			img[:, :, :, channel] - np.mean(img[:, :, :, channel])) \
+			/ np.std(img[:, :, :, channel])
 
-    return img
+	return img
 
 
 def attach_attributes(df, json_data, name):
-    """
-    Save the json data
-    """
+	"""
+	Save the json data
+	"""
 
-    if type(json_data) is str:
-        length = 1
-    else:
-        length = len(json_data)
+	if type(json_data) is str:
+		length = 1
+	else:
+		length = len(json_data)
 
-    dt = h5py.special_dtype(vlen=str)
-    dset = df.create_dataset(name, (length,), dtype=dt)
-    dset[:] = json_data
+	dt = h5py.special_dtype(vlen=str)
+	dset = df.create_dataset(name, (length,), dtype=dt)
+	dset[:] = json_data
 
 
 def preprocess_inputs(img):
-    """
-    Process the input images
+	"""
+	Process the input images
 
-    For BraTS subset:
-    INPUT CHANNELS:  "modality": {
-         "0": "FLAIR", T2-weighted-Fluid-Attenuated Inversion Recovery MRI
-         "1": "T1w",  T1-weighted MRI
-         "2": "t1gd", T1-gadolinium contrast MRI
-         "3": "T2w"   T2-weighted MRI
-     }
-    """
-    if len(img.shape) != 4:  # Make sure 4D
-        img = np.expand_dims(img, -1)
+	For BraTS subset:
+	INPUT CHANNELS:  "modality": {
+		 "0": "FLAIR", T2-weighted-Fluid-Attenuated Inversion Recovery MRI
+		 "1": "T1w",  T1-weighted MRI
+		 "2": "t1gd", T1-gadolinium contrast MRI
+		 "3": "T2w"   T2-weighted MRI
+	 }
+	"""
+	if len(img.shape) != 4:  # Make sure 4D
+		img = np.expand_dims(img, -1)
 
-    img = crop_center(img, args.resize, args.resize, args.resize)
-    img = normalize_img(img)
+	img = crop_center(img, args.resize, args.resize, args.resize)
+	img = normalize_img(img)
 
-    img = np.swapaxes(np.array(img), 0, -2)
+	img = np.swapaxes(np.array(img), 0, -2)
 
-    # img = img[:,:,:,[0]]  # Just get the FLAIR channel
+	# img = img[:,:,:,[0]]  # Just get the FLAIR channel
 
-    return img
+	return img
 
 
 def preprocess_labels(msk):
-    """
-    Process the ground truth labels
+	"""
+	Process the ground truth labels
 
-    For BraTS subset:
-    LABEL_CHANNELS: "labels": {
-         "0": "background",  No tumor
-         "1": "edema",       Swelling around tumor
-         "2": "non-enhancing tumor",  Tumor that isn't enhanced by Gadolinium contrast
-         "3": "enhancing tumour"  Gadolinium contrast enhanced regions
-     }
+	For BraTS subset:
+	LABEL_CHANNELS: "labels": {
+		 "0": "background",  No tumor
+		 "1": "edema",       Swelling around tumor
+		 "2": "non-enhancing tumor",  Tumor that isn't enhanced by Gadolinium contrast
+		 "3": "enhancing tumour"  Gadolinium contrast enhanced regions
+	 }
 
-    """
-    if len(msk.shape) != 4:  # Make sure 4D
-        msk = np.expand_dims(msk, -1)
+	"""
+	if len(msk.shape) != 4:  # Make sure 4D
+		msk = np.expand_dims(msk, -1)
 
-    msk = crop_center(msk, args.resize, args.resize, args.resize)
+	msk = crop_center(msk, args.resize, args.resize, args.resize)
 
-    # Combining all masks assumes that a mask value of 0 is the background
-    msk[msk > 1] = 1  # Combine all masks
-    msk = np.swapaxes(np.array(msk), 0, -2)
+	# Combining all masks assumes that a mask value of 0 is the background
+	msk[msk > 1] = 1  # Combine all masks
+	msk = np.swapaxes(np.array(msk), 0, -2)
 
-    return msk
+	return msk
 
 
-def convert_raw_data_to_hdf5(trainIdx, validateIdx, fileIdx,
-                             filename, dataDir, json_data):
-    """
-    Go through the Decathlon dataset.json file.
-    We've already split into training and validation subsets.
-    Read in Nifti format files. Crop images and masks.
-    Save to HDF5 format.
-    This code is will convert the 3D images and masks
-    into a stack of 2D slices.
-    """
-    hdf_file = h5py.File(filename, "w")
+def convert_raw_data_to_hdf5(trainIdx, validateIdx, testIdx, fileIdx,
+							 filename, dataDir, json_data):
+	"""
+	Go through the Decathlon dataset.json file.
+	We've already split into training and validation subsets.
+	Read in Nifti format files. Crop images and masks.
+	Save to HDF5 format.
+	This code is will convert the 3D images and masks
+	into a stack of 2D slices.
+	"""
+	hdf_file = h5py.File(filename, "w")
 
-    # Save the dataset attributes
-    attach_attributes(hdf_file, str(json_data["modality"]), "modalities")
-    attach_attributes(hdf_file, json_data["licence"], "license")
-    attach_attributes(hdf_file, json_data["reference"], "reference")
-    attach_attributes(hdf_file, json_data["name"], "name")
-    attach_attributes(hdf_file, json_data["description"], "description")
-    attach_attributes(hdf_file, json_data["release"], "release")
-    attach_attributes(
-        hdf_file, json_data["tensorImageSize"], "tensorImageSize")
+	# Save the dataset attributes
+	attach_attributes(hdf_file, str(json_data["modality"]), "modalities")
+	attach_attributes(hdf_file, json_data["licence"], "license")
+	attach_attributes(hdf_file, json_data["reference"], "reference")
+	attach_attributes(hdf_file, json_data["name"], "name")
+	attach_attributes(hdf_file, json_data["description"], "description")
+	attach_attributes(hdf_file, json_data["release"], "release")
+	attach_attributes(
+		hdf_file, json_data["tensorImageSize"], "tensorImageSize")
 
-    # Training filenames
-    train_image_files = []
-    train_label_files = []
-    for idx in trainIdx:
-        train_image_files.append(fileIdx[idx]["image"])
-        train_label_files.append(fileIdx[idx]["label"])
+	# Training filenames
+	train_image_files = []
+	train_label_files = []
+	for idx in trainIdx:
+		train_image_files.append(fileIdx[idx]["image"])
+		train_label_files.append(fileIdx[idx]["label"])
 
-    # Validation filenames
-    validate_image_files = []
-    validate_label_files = []
-    for idx in validateIdx:
-        validate_image_files.append(fileIdx[idx]["image"])
-        validate_label_files.append(fileIdx[idx]["label"])
+	# Validation filenames
+	validate_image_files = []
+	validate_label_files = []
+	for idx in validateIdx:
+		validate_image_files.append(fileIdx[idx]["image"])
+		validate_label_files.append(fileIdx[idx]["label"])
 
-    attach_attributes(hdf_file, train_image_files, "training_input_files")
-    attach_attributes(hdf_file, train_label_files, "training_label_files")
-    attach_attributes(hdf_file, validate_image_files, "validation_input_files")
-    attach_attributes(hdf_file, validate_label_files, "validation_label_files")
+		# Testing filenames
+	test_image_files = []
+	test_label_files = []
+	for idx in testIdx:
+		test_image_files.append(fileIdx[idx]["image"])
+		test_label_files.append(fileIdx[idx]["label"])
 
-    """
-    Print shapes of raw data
-    """
-    print("Data shapes")
-    print("===========")
-    print("n.b. All tensors converted to stacks of 2D slices.")
-    print("If you want true 3D tensors, then modify this code appropriately.")
-    data_filename = os.path.join(dataDir, train_image_files[0])
-    img = np.array(nib.load(data_filename).dataobj)
-    print("Raw Image shape     = ", img.shape)
-    crop_shape = preprocess_inputs(img).shape[1:]
-    print("Cropped Image shape = (?, {}, {}, {})".format(crop_shape[0],
-                                                         crop_shape[1],
-                                                         crop_shape[2]))
+	attach_attributes(hdf_file, train_image_files, "training_input_files")
+	attach_attributes(hdf_file, train_label_files, "training_label_files")
+	attach_attributes(hdf_file, validate_image_files, "validation_input_files")
+	attach_attributes(hdf_file, validate_label_files, "validation_label_files")
+	attach_attributes(hdf_file, test_image_files, "testing_input_files")
+	attach_attributes(hdf_file, test_label_files, "testing_label_files")
 
-    data_filename = os.path.join(dataDir, train_label_files[0])
-    msk = np.array(nib.load(data_filename).dataobj)
-    print("Raw Masks shape     = ", msk.shape)
-    crop_shape = preprocess_labels(msk).shape[1:]
-    print("Cropped Masks shape = (?, {}, {}, {})".format(crop_shape[0],
-                                                         crop_shape[1],
-                                                         crop_shape[2]))
+	"""
+	Print shapes of raw data
+	"""
+	print("Data shapes")
+	print("===========")
+	print("n.b. All tensors converted to stacks of 2D slices.")
+	print("If you want true 3D tensors, then modify this code appropriately.")
+	data_filename = os.path.join(dataDir, train_image_files[0])
+	img = np.array(nib.load(data_filename).dataobj)
+	print("Raw Image shape     = ", img.shape)
+	crop_shape = preprocess_inputs(img).shape[1:]
+	print("Cropped Image shape = (?, {}, {}, {})".format(crop_shape[0],
+														 crop_shape[1],
+														 crop_shape[2]))
 
-    # Save training set images
-    print("Step 1 of 4. Save training set images.")
-    first = True
-    for idx in tqdm(train_image_files):
+	data_filename = os.path.join(dataDir, train_label_files[0])
+	msk = np.array(nib.load(data_filename).dataobj)
+	print("Raw Masks shape     = ", msk.shape)
+	crop_shape = preprocess_labels(msk).shape[1:]
+	print("Cropped Masks shape = (?, {}, {}, {})".format(crop_shape[0],
+														 crop_shape[1],
+														 crop_shape[2]))
 
-        data_filename = os.path.join(dataDir, idx)
-        img = np.array(nib.load(data_filename).dataobj)
+	# Save training set images
+	print("Step 1 of 6. Save training set images.")
+	first = True
+	for idx in tqdm(train_image_files):
 
-        img = preprocess_inputs(img)
-        num_rows = img.shape[0]
+		data_filename = os.path.join(dataDir, idx)
+		img = np.array(nib.load(data_filename).dataobj)
 
-        if first:
-            first = False
-            img_train_dset = hdf_file.create_dataset("imgs_train",
-                                                     img.shape,
-                                                     maxshape=(None,
-                                                               img.shape[1],
-                                                               img.shape[2],
-                                                               img.shape[3]),
-                                                     dtype=float,
-                                                     compression="gzip")
-            img_train_dset[:] = img
-        else:
-            row = img_train_dset.shape[0]  # Count current dataset rows
-            img_train_dset.resize(row+num_rows, axis=0)  # Add new row
-            # Insert data into new row
-            img_train_dset[row:(row+num_rows), :] = img
+		img = preprocess_inputs(img)
+		num_rows = img.shape[0]
 
-    # Save validation set images
-    print("Step 2 of 4. Save validation set images.")
-    first = True
-    for idx in tqdm(validate_image_files):
+		if first:
+			first = False
+			img_train_dset = hdf_file.create_dataset("imgs_train",
+													 img.shape,
+													 maxshape=(None,
+															   img.shape[1],
+															   img.shape[2],
+															   img.shape[3]),
+													 dtype=float,
+													 compression="gzip")
+			img_train_dset[:] = img
+		else:
+			row = img_train_dset.shape[0]  # Count current dataset rows
+			img_train_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			img_train_dset[row:(row + num_rows), :] = img
 
-        # Nibabel should read the file as X,Y,Z,C
-        data_filename = os.path.join(dataDir, idx)
-        img = np.array(nib.load(data_filename).dataobj)
-        img = preprocess_inputs(img)
+	# Save validation set images
+	print("Step 2 of 6. Save validation set images.")
+	first = True
+	for idx in tqdm(validate_image_files):
 
-        num_rows = img.shape[0]
+		# Nibabel should read the file as X,Y,Z,C
+		data_filename = os.path.join(dataDir, idx)
+		img = np.array(nib.load(data_filename).dataobj)
+		img = preprocess_inputs(img)
 
-        if first:
-            first = False
-            img_validation_dset = hdf_file.create_dataset("imgs_validation",
-                                                          img.shape,
-                                                          maxshape=(None,
-                                                                    img.shape[1],
-                                                                    img.shape[2],
-                                                                    img.shape[3]),
-                                                          dtype=float,
-                                                          compression="gzip")
-            img_validation_dset[:] = img
-        else:
-            row = img_validation_dset.shape[0]  # Count current dataset rows
-            img_validation_dset.resize(row+num_rows, axis=0)  # Add new row
-            # Insert data into new row
-            img_validation_dset[row:(row+num_rows), :] = img
+		num_rows = img.shape[0]
 
-    # Save training set masks
-    print("Step 3 of 4. Save training set masks.")
-    first = True
-    for idx in tqdm(train_label_files):
+		if first:
+			first = False
+			img_validation_dset = hdf_file.create_dataset("imgs_validation",
+														  img.shape,
+														  maxshape=(None,
+																	img.shape[1],
+																	img.shape[2],
+																	img.shape[3]),
+														  dtype=float,
+														  compression="gzip")
+			img_validation_dset[:] = img
+		else:
+			row = img_validation_dset.shape[0]  # Count current dataset rows
+			img_validation_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			img_validation_dset[row:(row + num_rows), :] = img
 
-        data_filename = os.path.join(dataDir, idx)
-        msk = np.array(nib.load(data_filename).dataobj)
-        msk = preprocess_labels(msk)
-        num_rows = msk.shape[0]
+	# Save validation set images
+	print("Step 3 of 6. Save testing set images.")
+	first = True
+	for idx in tqdm(test_image_files):
 
-        if first:
-            first = False
-            msk_train_dset = hdf_file.create_dataset("msks_train",
-                                                     msk.shape,
-                                                     maxshape=(None,
-                                                               msk.shape[1],
-                                                               msk.shape[2],
-                                                               msk.shape[3]),
-                                                     dtype=float,
-                                                     compression="gzip")
-            msk_train_dset[:] = msk
-        else:
-            row = msk_train_dset.shape[0]  # Count current dataset rows
-            msk_train_dset.resize(row+num_rows, axis=0)  # Add new row
-            # Insert data into new row
-            msk_train_dset[row:(row+num_rows), :] = msk
+		# Nibabel should read the file as X,Y,Z,C
+		data_filename = os.path.join(dataDir, idx)
+		img = np.array(nib.load(data_filename).dataobj)
+		img = preprocess_inputs(img)
 
-    # Save testing/validation set masks
+		num_rows = img.shape[0]
 
-    print("Step 4 of 4. Save validation set masks.")
-    first = True
-    for idx in tqdm(validate_label_files):
+		if first:
+			first = False
+			img_testing_dset = hdf_file.create_dataset("imgs_testing",
+													   img.shape,
+													   maxshape=(None,
+																 img.shape[1],
+																 img.shape[2],
+																 img.shape[3]),
+													   dtype=float,
+													   compression="gzip")
+			img_testing_dset[:] = img
+		else:
+			row = img_testing_dset.shape[0]  # Count current dataset rows
+			img_testing_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			img_testing_dset[row:(row + num_rows), :] = img
 
-        data_filename = os.path.join(dataDir, idx)
-        msk = np.array(nib.load(data_filename).dataobj)
-        msk = preprocess_labels(msk)
+	# Save training set masks
+	print("Step 4 of 6. Save training set masks.")
+	first = True
+	for idx in tqdm(train_label_files):
 
-        num_rows = msk.shape[0]
+		data_filename = os.path.join(dataDir, idx)
+		msk = np.array(nib.load(data_filename).dataobj)
+		msk = preprocess_labels(msk)
+		num_rows = msk.shape[0]
 
-        if first:
-            first = False
-            msk_validation_dset = hdf_file.create_dataset("msks_validation",
-                                                          msk.shape,
-                                                          maxshape=(None,
-                                                                    msk.shape[1],
-                                                                    msk.shape[2],
-                                                                    msk.shape[3]),
-                                                          dtype=float,
-                                                          compression="gzip")
-            msk_validation_dset[:] = msk
-        else:
-            row = msk_validation_dset.shape[0]  # Count current dataset rows
-            msk_validation_dset.resize(row+num_rows, axis=0)  # Add new row
-            # Insert data into new row
-            msk_validation_dset[row:(row+num_rows), :] = msk
+		if first:
+			first = False
+			msk_train_dset = hdf_file.create_dataset("msks_train",
+													 msk.shape,
+													 maxshape=(None,
+															   msk.shape[1],
+															   msk.shape[2],
+															   msk.shape[3]),
+													 dtype=float,
+													 compression="gzip")
+			msk_train_dset[:] = msk
+		else:
+			row = msk_train_dset.shape[0]  # Count current dataset rows
+			msk_train_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			msk_train_dset[row:(row + num_rows), :] = msk
 
-    hdf_file.close()
-    print("Finished processing.")
-    print("HDF5 saved to {}".format(filename))
+	# Save testing/validation set masks
+
+	print("Step 5 of 6. Save validation set masks.")
+	first = True
+	for idx in tqdm(validate_label_files):
+
+		data_filename = os.path.join(dataDir, idx)
+		msk = np.array(nib.load(data_filename).dataobj)
+		msk = preprocess_labels(msk)
+
+		num_rows = msk.shape[0]
+
+		if first:
+			first = False
+			msk_validation_dset = hdf_file.create_dataset("msks_validation",
+														  msk.shape,
+														  maxshape=(None,
+																	msk.shape[1],
+																	msk.shape[2],
+																	msk.shape[3]),
+														  dtype=float,
+														  compression="gzip")
+			msk_validation_dset[:] = msk
+		else:
+			row = msk_validation_dset.shape[0]  # Count current dataset rows
+			msk_validation_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			msk_validation_dset[row:(row + num_rows), :] = msk
+
+	print("Step 6 of 6. Save testing set masks.")
+	first = True
+	for idx in tqdm(test_label_files):
+
+		data_filename = os.path.join(dataDir, idx)
+		msk = np.array(nib.load(data_filename).dataobj)
+		msk = preprocess_labels(msk)
+
+		num_rows = msk.shape[0]
+
+		if first:
+			first = False
+			msk_testing_dset = hdf_file.create_dataset("msks_testing",
+													   msk.shape,
+													   maxshape=(None,
+																 msk.shape[1],
+																 msk.shape[2],
+																 msk.shape[3]),
+													   dtype=float,
+													   compression="gzip")
+			msk_testing_dset[:] = msk
+		else:
+			row = msk_testing_dset.shape[0]  # Count current dataset rows
+			msk_testing_dset.resize(row + num_rows, axis=0)  # Add new row
+			# Insert data into new row
+			msk_testing_dset[row:(row + num_rows), :] = msk
+
+	hdf_file.close()
+	print("Finished processing.")
+	print("HDF5 saved to {}".format(filename))
 
 
 if __name__ == "__main__":
 
-    print("Converting Decathlon raw Nifti data files to single "
-          "training and validation HDF5 data file.")
-    print(args)
+	print("Converting Decathlon raw Nifti data files to single "
+		  "training and validation HDF5 data file.")
+	print(args)
 
-    save_dir = os.path.join(
-        args.save_path, "{}x{}/".format(args.resize, args.resize))
+	save_dir = os.path.join(
+		args.save_path, "{}x{}/".format(args.resize, args.resize))
 
-    # Create directory
-    try:
-        os.makedirs(save_dir)
-    except OSError:
-        if not os.path.isdir(save_dir):
-            raise
+	# Create directory
+	try:
+		os.makedirs(save_dir)
+	except OSError:
+		if not os.path.isdir(save_dir):
+			raise
 
-    filename = os.path.join(save_dir, args.output_filename)
-    # Check for existing output file and delete if exists
-    if os.path.exists(filename):
-        print("Removing existing data file: {}".format(filename))
-        os.remove(filename)
+	filename = os.path.join(save_dir, args.output_filename)
+	# Check for existing output file and delete if exists
+	if os.path.exists(filename):
+		print("Removing existing data file: {}".format(filename))
+		os.remove(filename)
 
-    """
-    Get the training file names from the data directory.
-    Decathlon should always have a dataset.json file in the
-    subdirectory which lists the experiment information including
-    the input and label filenames.
-    """
+	"""
+	Get the training file names from the data directory.
+	Decathlon should always have a dataset.json file in the
+	subdirectory which lists the experiment information including
+	the input and label filenames.
+	"""
 
-    json_filename = os.path.join(args.data_path, "dataset.json")
+	json_filename = os.path.join(args.data_path, "dataset.json")
 
-    try:
-        with open(json_filename, "r") as fp:
-            experiment_data = json.load(fp)
-    except IOError as e:
-        print("File {} doesn't exist. It should be part of the "
-              "Decathlon directory".format(json_filename))
+	try:
+		with open(json_filename, "r") as fp:
+			experiment_data = json.load(fp)
+	except IOError as e:
+		print("File {} doesn't exist. It should be part of the "
+			  "Decathlon directory".format(json_filename))
 
-    # Print information about the Decathlon experiment data
-    print("*"*30)
-    print("="*30)
-    print("Dataset name:        ", experiment_data["name"])
-    print("Dataset description: ", experiment_data["description"])
-    print("Tensor image size:   ", experiment_data["tensorImageSize"])
-    print("Dataset release:     ", experiment_data["release"])
-    print("Dataset reference:   ", experiment_data["reference"])
-    print("Dataset license:     ", experiment_data["licence"])  # sic
-    print("="*30)
-    print("*"*30)
+	# Print information about the Decathlon experiment data
+	print("*" * 30)
+	print("=" * 30)
+	print("Dataset name:        ", experiment_data["name"])
+	print("Dataset description: ", experiment_data["description"])
+	print("Tensor image size:   ", experiment_data["tensorImageSize"])
+	print("Dataset release:     ", experiment_data["release"])
+	print("Dataset reference:   ", experiment_data["reference"])
+	print("Dataset license:     ", experiment_data["licence"])  # sic
+	print("=" * 30)
+	print("*" * 30)
 
-    """
-    Randomize the file list. Then separate into training and
-    validation lists. We won't use the testing set since we
-    don't have ground truth masks for this.
-    """
-    # Set the random seed so that always get same random mix
-    np.random.seed(816)
-    numFiles = experiment_data["numTraining"]
-    idxList = np.arange(numFiles)  # List of file indices
-    randomList = np.random.random((numFiles))  # List of random numbers
-    # Random number go from 0 to 1. So anything above
-    # args.train_split is in the validation list.
-    trainList = idxList[randomList < args.split]
-    validateList = idxList[randomList >= args.split]
+	"""
+	Randomize the file list. Then separate into training and
+	validation lists. We won't use the testing set since we
+	don't have ground truth masks for this; instead we'll
+	split the validation set into separate test and validation
+	sets.
+	"""
+	# Set the random seed so that always get same random mix
+	np.random.seed(816)
+	numFiles = experiment_data["numTraining"]
+	idxList = np.arange(numFiles)  # List of file indices
+	randomList = np.random.random(numFiles)  # List of random numbers
+	# Random number go from 0 to 1. So anything above
+	# args.train_split is in the validation list.
+	trainList = idxList[randomList < args.split]
 
-    convert_raw_data_to_hdf5(trainList, validateList,
-                             experiment_data["training"],
-                             filename, args.data_path,
-                             experiment_data)
+	otherList = idxList[randomList >= args.split]
+	randomList = np.random.random(len(otherList))  # List of random numbers
+	validateList = otherList[randomList >= 0.5]
+	testList = otherList[randomList < 0.5]
+
+	convert_raw_data_to_hdf5(trainList, validateList, testList,
+	                         experiment_data["training"],
+	                         filename, args.data_path,
+	                         experiment_data)

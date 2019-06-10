@@ -55,6 +55,7 @@ else:
 Load data from HDF5 file
 """
 
+
 class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
     """
     Wraps HDF5Matrix in preprocessing code.
@@ -135,10 +136,10 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
                     y = np.random.randint(0, width - dy + 1)
 
                 else:  # If no augmentation, then just do center crop
-                    x = (height - dx)//2
-                    y = (width - dy)//2
+                    x = (height - dx) // 2
+                    y = (width - dy) // 2
 
-                img_temp[idx] = img[idx, x:(x+dx), y:(y+dy), :]
+                img_temp[idx] = img[idx, x:(x + dx), y:(y + dy), :]
 
             return img_temp
         else:  # Don't crop
@@ -195,8 +196,8 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
 
     params = dict(horizontal_flip=True,
                   vertical_flip=True,
-                  rotation_range=90, #degrees
-                  shear_range=5 # degrees
+                  rotation_range=90,  # degrees
+                  shear_range=5  # degrees
                   )
     image_datagen = K.preprocessing.image.ImageDataGenerator(**params)
     msk_datagen = K.preprocessing.image.ImageDataGenerator(**params)
@@ -225,10 +226,25 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
                                            seed=random_seed)
     msks_validation = PreprocessHDF5Matrix(hdf5_data_filename,
                                            "msks_validation",
-                                           image_datagen,
+                                           msk_datagen,
                                            crop_dim=crop_dim,
                                            use_augmentation=False,  # Don't augment
                                            seed=random_seed)
+
+    # Testing dataset
+    # No data augmentation
+    imgs_testing = PreprocessHDF5Matrix(hdf5_data_filename,
+                                        "imgs_testing",
+                                        image_datagen,
+                                        crop_dim=crop_dim,
+                                        use_augmentation=False,  # Don't augment
+                                        seed=random_seed)
+    msks_testing = PreprocessHDF5Matrix(hdf5_data_filename,
+                                        "msks_testing",
+                                        msk_datagen,
+                                        crop_dim=crop_dim,
+                                        use_augmentation=False,  # Don't augment
+                                        seed=random_seed)
 
     print("Batch size = {}".format(batch_size))
 
@@ -236,5 +252,7 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
     print("Training mask dimensions:    {}".format(msks_train.shape))
     print("Validation image dimensions: {}".format(imgs_validation.shape))
     print("Validation mask dimensions:  {}".format(msks_validation.shape))
+    print("Testing image dimensions: {}".format(imgs_testing.shape))
+    print("Testing mask dimensions:  {}".format(msks_testing.shape))
 
-    return imgs_train, msks_train, imgs_validation, msks_validation
+    return imgs_train, msks_train, imgs_validation, msks_validation, imgs_testing, msks_testing

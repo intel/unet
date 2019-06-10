@@ -61,17 +61,21 @@ CONFIG = tf.ConfigProto(
 SESS = tf.Session(config=CONFIG)
 K.backend.set_session(SESS)
 
-def calc_hard_dice(y_true, y_pred):
-    numerator = 2.0 * np.sum(np.round(y_true)*np.round(y_pred))
-    denominator = np.sum(np.round(y_true)) + np.sum(np.round(y_pred))
-    if denominator == 0:
-       return 1.0
-    else:
-       return numerator / denominator
-
-def calc_dice(y_true, y_pred, smooth=1):
+def calc_dice(y_true, y_pred, smooth=0.0001):
     """
-    Sorensen Dice coefficient
+    Sorenson Dice
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
+    where T is ground truth mask and P is the prediction mask
+    """
+    numerator = 2.0 * np.sum(np.round(y_true) * np.round(y_pred)) + smooth
+    denominator = np.sum(np.round(y_true)) + np.sum(np.round(y_pred)) + smooth
+    coef = numerator / denominator
+
+    return coef
+
+def calc_soft_dice(y_true, y_pred, smooth=0.0001):
+    """
+    Sorensen (Soft) Dice coefficient - Don't round preictions
     """
     numerator = 2.0 * np.sum(y_true * y_pred) + smooth
     denominator = np.sum(y_true) + np.sum(y_pred) + smooth
@@ -80,7 +84,21 @@ def calc_dice(y_true, y_pred, smooth=1):
     return coef
 
 
-def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1):
+def dice_coef(y_true, y_pred, axis=(1, 2), smooth=0.0001):
+    """
+    Sorenson Dice
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
+    where T is ground truth mask and P is the prediction mask
+    """
+    intersection = tf.reduce_sum(tf.round(y_true) * tf.round(y_pred), axis=axis)
+    union = tf.reduce_sum(tf.round(y_true) + tf.round(y_pred), axis=axis)
+    numerator = tf.constant(2.) * intersection + smooth
+    denominator = union + smooth
+    coef = numerator / denominator
+
+    return tf.reduce_mean(coef)
+
+def soft_dice_coef(y_true, y_pred, axis=(1, 2), smooth=0.0001):
     """
     Sorenson (Soft) Dice
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
@@ -131,9 +149,7 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
     pred_mask = model.predict(img)
 
-    dice_score = calc_dice(pred_mask, msk)
-
-    print("{:.4f}, {:.4f}".format(dice_score, calc_hard_dice(pred_mask, msk)))
+    print("Dice {:.4f}, Soft Dice {:.4f}".format(calc_dice(pred_mask, msk), calc_soft_dice(pred_mask, msk)))
 
 
 if __name__ == "__main__":
@@ -143,14 +159,15 @@ if __name__ == "__main__":
 
     # Load data
     df = h5py.File(data_fn, "r")
-    imgs_validation = df["imgs_validation"]
-    msks_validation = df["msks_validation"]
+    imgs_testing = df["imgs_testing"]
+    msks_testing = df["msks_testing"]
 
     # Load model
     model = K.models.load_model(model_fn, custom_objects={
         "combined_dice_ce_loss": combined_dice_ce_loss,
         "dice_coef_loss": dice_coef_loss,
-        "dice_coef": dice_coef})
+        "dice_coef": dice_coef,
+        "soft_dice_coef": soft_dice_coef})
 
     # Create output directory for images
     png_directory = "inference_examples"
@@ -160,13 +177,9 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_validation = [40, 61, 400, 1100, 4385,
+    indicies_testing = [40, 61, 400, 1100, 4385,
                            5566, 5673, 6433, 7864, 8899, 9003, 9722, 10591]
 
-    for idx in indicies_validation:
-        plot_results(model, imgs_validation, msks_validation,
-                     idx, png_directory)
-                     
-    for idx in range(2000,5000,50):
-        plot_results(model, imgs_validation, msks_validation,
+    for idx in indicies_testing:
+        plot_results(model, imgs_testing, msks_testing,
                      idx, png_directory)

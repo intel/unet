@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
@@ -52,9 +53,10 @@ class DataGenerator(K.utils.Sequence):
     """
 
     def __init__(self,
-                 isTraining,     # Boolean: Is this train or test set
+                 setType,     # ["train", "validate", "test"]
                  data_path,    # File path for data
                  train_test_split=0.85,  # Train test split
+                 validate_test_split=0.5,  # Validation/test split
                  batch_size=8,  # batch size
                  dim=(128, 128, 128),  # Dimension of images/masks
                  n_in_channels=1,  # Number of channels in image
@@ -66,10 +68,11 @@ class DataGenerator(K.utils.Sequence):
         Initialization
         """
         self.data_path = data_path
-        self.isTraining = isTraining
+        self.setType = setType
         self.dim = dim
         self.batch_size = batch_size
         self.train_test_split = train_test_split
+        self.validate_test_split = validate_test_split
 
         self.n_in_channels = n_in_channels
         self.n_out_channels = n_out_channels
@@ -145,14 +148,24 @@ class DataGenerator(K.utils.Sequence):
         # Random number go from 0 to 1. So anything above
         # self.train_split is in the validation list.
         trainIdx = idxList[randomIdx < self.train_test_split]
-        testIdx = idxList[randomIdx >= self.train_test_split]
 
-        if self.isTraining:
+        listIdx = idxList[randomIdx >= self.train_test_split]
+        randomIdx = np.random.random(len(listIdx))  # List of random numbers
+        validateIdx = listIdx[randomIdx >= self.validate_test_split]
+        testIdx = listIdx[randomIdx < self.validate_test_split]
+
+        if self.setType == "train":
             print("Number of training MRIs = {}".format(len(trainIdx)))
             return trainIdx
-        else:
-            print("Number of test MRIs = {}".format(len(testIdx)))
+        elif self.setType == "validate":
+            print("Number of validation MRIs = {}".format(len(testIdx)))
+            return validateIdx
+        elif self.setType == "test":
+            print("Number of testing MRIs = {}".format(len(testIdx)))
             return testIdx
+        else:
+            print("error with type of data")
+            return []
 
     def __len__(self):
         """

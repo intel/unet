@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("--bz",
                     type=int,
-                    default=32,
+                    default=8,
                     help="Batch size")
 parser.add_argument("--patch_height",
                     type=int,
@@ -52,10 +52,14 @@ parser.add_argument("--lr",
 parser.add_argument("--train_test_split",
                     type=float,
                     default=0.85,
-                    help="Train test split (0-1)")
+                    help="Train/test split (0-1)")
+parser.add_argument("--validate_test_split",
+                    type=float,
+                    default=0.50,
+                    help="Valdiation/test split (0-1)")
 parser.add_argument("--epochs",
                     type=int,
-                    default=25,
+                    default=40,
                     help="Number of epochs")
 parser.add_argument("--intraop_threads",
                     type=int,

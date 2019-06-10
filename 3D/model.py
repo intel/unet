@@ -33,9 +33,26 @@ else:
     data_format = "channels_first"
 
 
-def dice_coef(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
+def dice_coef(y_true, y_pred, axis=(1, 2, 3), smooth=0.0001):
     """
-    Sorenson (Soft) Dice
+    Sorenson Dice
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
+    where T is ground truth mask and P is the prediction mask
+    """
+    y_true = K.backend.round(y_true)  # Round to 0 or 1
+    y_pred = K.backend.round(y_pred)  # Round to 0 or 1
+
+    intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
+    union = tf.reduce_sum(y_true + y_pred, axis=axis)
+    numerator = tf.constant(2.) * intersection + smooth
+    denominator = union + smooth
+    coef = numerator / denominator
+
+    return tf.reduce_mean(coef)
+
+def soft_dice_coef(y_true, y_pred, axis=(1, 2, 3), smooth=.0001):
+    """
+    Sorenson (Soft) Dice - Don't round predictions
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
     where T is ground truth mask and P is the prediction mask
     """
@@ -192,21 +209,21 @@ def unet_3d(use_upsampling=False, learning_rate=0.001,
     return model, opt
 
 
-def sensitivity(target, prediction, axis=(1, 2, 3), smooth=1.):
+def sensitivity(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     """
     Sensitivity
     """
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(target,
+    intersection = tf.reduce_sum(tf.round(prediction) * tf.round(target), axis=axis)
+    coef = (intersection + smooth) / (tf.reduce_sum(tf.round(target),
                                                     axis=axis) + smooth)
     return tf.reduce_mean(coef)
 
 
-def specificity(target, prediction, axis=(1, 2, 3), smooth=1.):
+def specificity(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     """
     Specificity
     """
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / (tf.reduce_sum(prediction,
+    intersection = tf.reduce_sum(tf.round(prediction) * tf.round(target), axis=axis)
+    coef = (intersection + smooth) / (tf.reduce_sum(tf.round(prediction),
                                                     axis=axis) + smooth)
     return tf.reduce_mean(coef)

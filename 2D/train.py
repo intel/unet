@@ -34,6 +34,8 @@ import settings   # Use the custom settings.py file for default parameters
 from model import load_model, get_callbacks, evaluate_model
 from data import load_data
 
+import numpy as np
+
 from argparser import args
 
 """
@@ -76,9 +78,11 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Loading the data from HDF5 file ...")
     print("-" * 30)
 
-    imgs_train, msks_train, imgs_validation, msks_validation = \
+    imgs_train, msks_train, imgs_validation, msks_validation, imgs_testing, msks_testing = \
         load_data(hdf5_filename, args.batch_size,
                   [args.crop_dim, args.crop_dim])
+
+    np.random.seed(816)
 
     print("-" * 30)
     print("Creating and compiling model ...")
@@ -90,6 +94,12 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     model = load_model(imgs_train.shape, msks_train.shape)
 
     model_filename, model_callbacks = get_callbacks()
+
+    # If there is a current saved file, then load weights and start from
+    # there.
+    saved_model = os.path.join(args.output_path, args.inference_filename)
+    if os.path.isfile(saved_model):
+        model.load_weights(saved_model)
 
     """
     Step 3: Train the model on the data
@@ -112,7 +122,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Loading the best trained model ...")
     print("-" * 30)
 
-    model = evaluate_model(model_filename, imgs_validation, msks_validation)
+    model = evaluate_model(model_filename, imgs_testing, msks_testing)
 
 
 if __name__ == "__main__":

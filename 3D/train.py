@@ -3,24 +3,22 @@
 #
 # Copyright (c) 2019 Intel Corporation
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# SPDX-License-Identifier: EPL-2.0
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
 from argparser import args
 from dataloader import DataGenerator
-from model import unet_3d, dice_coef_loss, dice_coef, sensitivity, specificity
+from model import unet_3d, dice_coef_loss, dice_coef, combined_dice_ce_loss, soft_dice_coef, sensitivity, specificity
 import datetime
 import os
 import numpy as np
@@ -41,7 +39,7 @@ else:
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
 os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
 
 # os.system("lscpu")
 start_time = datetime.datetime.now()
@@ -72,9 +70,9 @@ model, opt = unet_3d(use_upsampling=args.use_upsampling,
                      print_summary=print_summary)
 
 model.compile(optimizer=opt,
-              # loss=[combined_dice_ce_loss],
-              loss=[dice_coef_loss],
-              metrics=[dice_coef, "accuracy",
+              loss=[combined_dice_ce_loss],
+              #loss=[dice_coef_loss],
+              metrics=[dice_coef, soft_dice_coef, "accuracy",
                        sensitivity, specificity])
 
 # Save best model to hdf5 file
@@ -94,8 +92,9 @@ checkpoint = K.callbacks.ModelCheckpoint(args.saved_model,
                                          save_best_only=True)
 
 # TensorBoard
+currentDT = datetime.datetime.now()
 tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-    saved_model_directory, "tensorboard_logs"), update_freq="batch")
+    saved_model_directory, "tensorboard_logs", currentDT.strftime("%Y/%m/%d-%H:%M:%S")), update_freq="batch")
 
 # Keep reducing learning rate if we get to plateau
 reduce_lr = K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2,
@@ -108,11 +107,12 @@ training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_
                         "n_in_channels": args.number_input_channels,
                         "n_out_channels": 1,
                         "train_test_split": args.train_test_split,
+                        "validate_test_split": args.validate_test_split,
                         "augment": True,
                         "shuffle": True,
                         "seed": args.random_seed}
 
-training_generator = DataGenerator(True, args.data_path,
+training_generator = DataGenerator("train", args.data_path,
                                    **training_data_params)
 
 validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
@@ -120,11 +120,13 @@ validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patc
                           "n_in_channels": args.number_input_channels,
                           "n_out_channels": 1,
                           "train_test_split": args.train_test_split,
+                          "validate_test_split": args.validate_test_split,
                           "augment": False,
                           "shuffle": False,
                           "seed": args.random_seed}
-validation_generator = DataGenerator(False, args.data_path,
+validation_generator = DataGenerator("validate", args.data_path,
                                      **validation_data_params)
+
 
 # Fit the model
 """
@@ -153,6 +155,15 @@ model.fit_generator(training_generator,
                     max_queue_size=args.num_prefetched_batches,
                     workers=args.num_data_loaders,
                     use_multiprocessing=False)  # True seems to cause fork issue
+
+# Evaluate final model on test holdout set
+testing_generator = DataGenerator("test", args.data_path,
+                                     **validation_data_params)
+
+scores = model.evaluate_generator(testing_generator, verbose=1)
+print("Final model metrics on test dataset:")
+for idx, name in enumerate(model.metrics_names):
+    print("{} \t= {}".format(name, scores[idx]))
 
 stop_time = datetime.datetime.now()
 print("Started script on {}".format(start_time))

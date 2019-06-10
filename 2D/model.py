@@ -55,10 +55,13 @@ K.backend.set_image_data_format(data_format)
 
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
-    Sorenson (Soft) Dice
+    Sorenson Dice
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
     where T is ground truth mask and P is the prediction mask
     """
+    y_true = K.backend.round(y_true)  # Round to 0 or 1
+    y_pred = K.backend.round(y_pred)  # Round to 0 or 1
+
     intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
     union = tf.reduce_sum(y_true + y_pred, axis=axis)
     numerator = tf.constant(2.) * intersection + smooth
@@ -67,6 +70,20 @@ def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
 
     return tf.reduce_mean(coef)
 
+def soft_dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
+    """
+    Sorenson (Soft) Dice  - Don't round the predictions
+    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
+    where T is ground truth mask and P is the prediction mask
+    """
+
+    intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
+    union = tf.reduce_sum(y_true + y_pred, axis=axis)
+    numerator = tf.constant(2.) * intersection + smooth
+    denominator = union + smooth
+    coef = numerator / denominator
+
+    return tf.reduce_mean(coef)
 
 def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
     """
@@ -225,7 +242,7 @@ def unet_model(imgs_shape, msks_shape,
     if final:
         model.trainable = False
     else:
-        metrics = ["accuracy", dice_coef]
+        metrics = ["accuracy", dice_coef, soft_dice_coef]
         # loss = dice_coef_loss
         loss = combined_dice_ce_loss
 
