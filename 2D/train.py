@@ -31,7 +31,7 @@ import os
 import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
 
-from model import load_model, get_callbacks, evaluate_model
+from model import unet
 from data import load_data
 
 import numpy as np
@@ -91,9 +91,11 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
     Step 2: Define the model
     """
-    model = load_model(imgs_train.shape, msks_train.shape)
 
-    model_filename, model_callbacks = get_callbacks()
+    unet_model = unet()
+    model = unet_model.create_model(imgs_train.shape, msks_train.shape)
+
+    model_filename, model_callbacks = unet_model.get_callbacks()
 
     # If there is a current saved file, then load weights and start from
     # there.
@@ -122,7 +124,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Loading the best trained model ...")
     print("-" * 30)
 
-    model = evaluate_model(model_filename, imgs_testing, msks_testing)
+    unet_model.evaluate_model(model_filename, imgs_testing, msks_testing)
 
 
 if __name__ == "__main__":

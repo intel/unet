@@ -22,6 +22,7 @@
 """
 Takes a trained model and performs inference on a few validation examples.
 """
+from model import unet
 import os
 
 import numpy as np
@@ -31,7 +32,10 @@ import settings
 import argparse
 import h5py
 
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use("Agg")
+
 
 parser = argparse.ArgumentParser(
     description="Inference example for trained 2D U-Net model on BraTS.",
@@ -45,6 +49,9 @@ parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
                     help="the Keras inference model filename")
+
+parser.add_argument("--output_pngs", default="inference_examples",
+                    help="the directory for the output prediction pngs")
 
 parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
                     type=int, help="Number of intra-op-parallelism threads")
@@ -61,85 +68,35 @@ CONFIG = tf.ConfigProto(
 SESS = tf.Session(config=CONFIG)
 K.backend.set_session(SESS)
 
-def calc_dice(y_true, y_pred, smooth=0.0001):
+
+def calc_dice(target, prediction, smooth=0.01):
     """
     Sorenson Dice
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
-    where T is ground truth mask and P is the prediction mask
+    where T is ground truth (target) mask and P is the prediction mask
     """
-    numerator = 2.0 * np.sum(np.round(y_true) * np.round(y_pred)) + smooth
-    denominator = np.sum(np.round(y_true)) + np.sum(np.round(y_pred)) + smooth
+    prediction = np.round(prediction)
+
+    numerator = 2.0 * np.sum(target * prediction) + smooth
+    denominator = np.sum(target) + np.sum(prediction) + smooth
     coef = numerator / denominator
 
     return coef
 
-def calc_soft_dice(y_true, y_pred, smooth=0.0001):
+
+def calc_soft_dice(target, prediction, smooth=0.01):
     """
     Sorensen (Soft) Dice coefficient - Don't round preictions
     """
-    numerator = 2.0 * np.sum(y_true * y_pred) + smooth
-    denominator = np.sum(y_true) + np.sum(y_pred) + smooth
+    numerator = 2.0 * np.sum(target * prediction) + smooth
+    denominator = np.sum(target) + np.sum(prediction) + smooth
     coef = numerator / denominator
 
     return coef
 
 
-def dice_coef(y_true, y_pred, axis=(1, 2), smooth=0.0001):
-    """
-    Sorenson Dice
-    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
-    where T is ground truth mask and P is the prediction mask
-    """
-    intersection = tf.reduce_sum(tf.round(y_true) * tf.round(y_pred), axis=axis)
-    union = tf.reduce_sum(tf.round(y_true) + tf.round(y_pred), axis=axis)
-    numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
-    coef = numerator / denominator
-
-    return tf.reduce_mean(coef)
-
-def soft_dice_coef(y_true, y_pred, axis=(1, 2), smooth=0.0001):
-    """
-    Sorenson (Soft) Dice
-    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
-    where T is ground truth mask and P is the prediction mask
-    """
-    intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
-    union = tf.reduce_sum(y_true + y_pred, axis=axis)
-    numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
-    coef = numerator / denominator
-
-    return tf.reduce_mean(coef)
-
-
-def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
-    """
-    Sorenson (Soft) Dice loss
-    Using -log(Dice) as the loss since it is better behaved.
-    Also, the log allows avoidance of the division which
-    can help prevent underflow when the numbers are very small.
-    """
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    p = tf.reduce_sum(prediction, axis=axis)
-    t = tf.reduce_sum(target, axis=axis)
-    numerator = tf.reduce_mean(intersection + smooth)
-    denominator = tf.reduce_mean(t + p + smooth)
-    dice_loss = -tf.log(2.*numerator) + tf.log(denominator)
-
-    return dice_loss
-
-
-def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1.,
-                          weight=0.9):
-    """
-    Combined Dice and Binary Cross Entropy Loss
-    """
-    return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
-        (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
-
-
-def plot_results(model, imgs_validation, msks_validation, img_no, png_directory):
+def plot_results(model, imgs_validation, msks_validation,
+                 img_no, png_directory):
     """
     Calculate the Dice and plot the predicted masks for image # img_no
     """
@@ -149,25 +106,40 @@ def plot_results(model, imgs_validation, msks_validation, img_no, png_directory)
 
     pred_mask = model.predict(img)
 
-    print("Dice {:.4f}, Soft Dice {:.4f}".format(calc_dice(pred_mask, msk), calc_soft_dice(pred_mask, msk)))
+    plt.figure(figsize=(10, 10))
+    plt.subplot(1, 3, 1)
+    plt.imshow(img[0, :, :, 0], cmap="bone", origin="lower")
+    plt.title("MRI")
+    plt.axis("off")
+    plt.subplot(1, 3, 2)
+    plt.imshow(msk[0, :, :, 0], origin="lower")
+    plt.title("Ground Truth")
+    plt.axis("off")
+    plt.subplot(1, 3, 3)
+    plt.imshow(pred_mask[0, :, :, 0], origin="lower")
+    plt.title("Prediction\n(Dice = {:.4f})".format(calc_dice(msk, pred_mask)))
+    plt.axis("off")
+
+    png_filename = os.path.join(png_directory, "pred_{}.png".format(img_no))
+    plt.savefig(png_filename, bbox_inches="tight", pad_inches=0)
+    print("Dice {:.4f}, Soft Dice {:.4f}, Saved png file to: {}".format(
+        calc_dice(msk, pred_mask), calc_soft_dice(msk, pred_mask), png_filename))
 
 
 if __name__ == "__main__":
 
-    data_fn = os.path.join(args.data_path, args.data_filename)
-    model_fn = os.path.join(args.output_path, args.inference_filename)
+    data_filename = os.path.join(args.data_path, args.data_filename)
+    model_filename = os.path.join(args.output_path, args.inference_filename)
 
     # Load data
-    df = h5py.File(data_fn, "r")
+    df = h5py.File(data_filename, "r")
     imgs_testing = df["imgs_testing"]
     msks_testing = df["msks_testing"]
+    files_testing = df["testing_input_files"]
 
     # Load model
-    model = K.models.load_model(model_fn, custom_objects={
-        "combined_dice_ce_loss": combined_dice_ce_loss,
-        "dice_coef_loss": dice_coef_loss,
-        "dice_coef": dice_coef,
-        "soft_dice_coef": soft_dice_coef})
+    unet_model = unet()
+    model = unet_model.load_model(model_filename)
 
     # Create output directory for images
     png_directory = "inference_examples"
@@ -177,9 +149,11 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_testing = [40, 61, 400, 1100, 4385,
-                           5566, 5673, 6433, 7864, 8899, 9003, 9722, 10591]
+    indicies_testing = [40, 61, 102, 210, 371,
+                        400, 1093, 2222, 3540, 4485,
+                        5566, 5675, 6433]
+
 
     for idx in indicies_testing:
         plot_results(model, imgs_testing, msks_testing,
-                     idx, png_directory)
+                     idx, args.output_pngs)

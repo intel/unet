@@ -219,7 +219,7 @@ def convert_raw_data_to_hdf5(trainIdx, validateIdx, testIdx, fileIdx,
 		validate_image_files.append(fileIdx[idx]["image"])
 		validate_label_files.append(fileIdx[idx]["label"])
 
-		# Testing filenames
+	# Testing filenames
 	test_image_files = []
 	test_label_files = []
 	for idx in testIdx:
