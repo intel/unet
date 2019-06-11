@@ -20,7 +20,7 @@
 
 import horovod.keras as hvd
 from dataloader import DataGenerator
-from model import unet_3d, dice_coef_loss, dice_coef, sensitivity, specificity
+from model import unet
 import datetime
 import os
 from argparser import args
@@ -28,15 +28,6 @@ import numpy as np
 import tensorflow as tf
 import keras as K
 #from tensorflow import keras as K
-
-CHANNEL_LAST = True
-if CHANNEL_LAST:
-    concat_axis = -1
-    data_format = "channels_last"
-
-else:
-    concat_axis = 1
-    data_format = "channels_first"
 
 
 hvd.init()
@@ -76,21 +67,21 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
+CHANNEL_LAST = True
+unet_model = unet(use_upsampling=args.use_upsampling,
+                  learning_rate=args.lr,
+                  n_cl_in=args.number_input_channels,
+                  n_cl_out=1,  # single channel (greyscale)
+                  feature_maps = args.featuremaps,
+                  dropout=0.2,
+                  print_summary=args.print_model,
+                  channels_last = CHANNELS_LAST)  # channels first or last
 
-model, opt = unet_3d(use_upsampling=args.use_upsampling,
-                     n_cl_in=args.number_input_channels,
-                     learning_rate=args.lr*hvd.size(),
-                     n_cl_out=1,  # single channel (greyscale)
-                     dropout=0.2,
-                     print_summary=print_summary)
+opt = hvd.DistributedOptimizer(unet_model.optimizer)
 
-opt = hvd.DistributedOptimizer(opt)
-
-model.compile(optimizer=opt,
-              # loss=[combined_dice_ce_loss],
-              loss=[dice_coef_loss],
-              metrics=[dice_coef, "accuracy",
-                       sensitivity, specificity])
+unet_model.model.compile(optimizer=opt,
+              unet_model.loss,
+              metrics=unet_model.metrics)
 
 if hvd.rank() == 0:
     start_time = datetime.datetime.now()
@@ -211,7 +202,7 @@ workers, use_multiprocessing: Generates multiple generator instances.
 num_data_loaders is defined in argparser.py
 """
 
-model.fit_generator(training_generator,
+unet_model.model.fit_generator(training_generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=args.epochs, verbose=verbose,
                     validation_data=validation_generator,
@@ -222,6 +213,26 @@ model.fit_generator(training_generator,
                     use_multiprocessing=False)  # True)
 
 if hvd.rank() == 0:
+
+    """
+    Test the final model on test set
+    """
+    testing_generator = DataGenerator("test", args.data_path,
+                                      **validation_data_params)
+    testing_generator.print_info()
+
+    m = model.evaluate_generator(testing_generator, verbose=1,
+                                 max_queue_size=args.num_prefetched_batches,
+                                 workers=args.num_data_loaders,
+                                 use_multiprocessing=False)
+
+    print("\n\nTest metrics")
+    print("============")
+    for idx, name in enumerate(unet_model.model.metrics_names):
+        print("{} = {:.4f}".format(name, m[idx]))
+
+    print("\n\n")
+
     stop_time = datetime.datetime.now()
     print("Started script on {}".format(start_time))
     print("Stopped script on {}".format(stop_time))

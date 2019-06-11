@@ -27,18 +27,9 @@ from argparser import args
 import nibabel as nib
 import os
 from dataloader import DataGenerator
-from model import dice_coef, dice_coef_loss, sensitivity, specificity, combined_dice_ce_loss
+from model import unet
 
 #from tensorflow import keras as K
-
-CHANNEL_LAST = True
-if CHANNEL_LAST:
-    concat_axis = -1
-    data_format = "channels_last"
-
-else:
-    concat_axis = 1
-    data_format = "channels_first"
 
 print("Started script on {}".format(datetime.datetime.now()))
 
@@ -56,12 +47,8 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-model = K.models.load_model(args.saved_model,
-                            custom_objects={"dice_coef": dice_coef,
-                                            "dice_coef_loss": dice_coef_loss,
-                                            "sensitivity": sensitivity,
-                                            "specificity": specificity,
-                                            "combined_dice_ce_loss": combined_dice_ce_loss})
+unet_model = unet(channels_last=True)
+model = unet_model.model.load_model(args.saved_model, custom_objects=unet_model.custom_objects)
 
 print("Loading images and masks from test set")
 
@@ -72,20 +59,20 @@ validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patc
                           "train_test_split": args.train_test_split,
                           "augment": False,
                           "shuffle": False, "seed": args.random_seed}
-validation_generator = DataGenerator(False, args.data_path,
+testing_generator = DataGenerator("test", args.data_path,
                                      **validation_data_params)
+testing_generator.print_info()
 
-m = model.evaluate_generator(validation_generator, verbose=1,
+m = model.evaluate_generator(testing_generator, verbose=1,
                              max_queue_size=args.num_prefetched_batches,
                              workers=args.num_data_loaders,
                              use_multiprocessing=False)
 
 print("\n\nTest metrics")
 print("============")
-i = 0
-for name in model.metrics_names:
-    print("{} = {:.4f}".format(name, m[i]))
-    i += 1
+for idx, name in enumerate(unet_model.model.metrics_names):
+    print("{} = {:.4f}".format(name, m[idx]))
+
 
 save_directory = "predictions_directory"
 try:
@@ -101,7 +88,7 @@ for batch_idx in tqdm(range(validation_generator.num_batches),
     imgs, msks = validation_generator.get_batch(batch_idx)
     fileIDs = validation_generator.get_batch_fileIDs(batch_idx)
 
-    preds = model.predict_on_batch(imgs)
+    preds = unet_model.predict_on_batch(imgs)
 
     # Save the predictions as Nifti files so that we can
     # display them on a 3D viewer.

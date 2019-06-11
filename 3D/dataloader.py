@@ -81,6 +81,7 @@ class DataGenerator(K.utils.Sequence):
 
         self.seed = seed
         self.list_IDs = self.get_file_list()
+        self.num_images = self.get_length()
 
         self.on_epoch_end()   # Generate the sequence
 
@@ -98,6 +99,25 @@ class DataGenerator(K.utils.Sequence):
     def get_length(self):
         return len(self.list_IDs)
 
+    def print_info(self):
+        """
+        Print the dataset information
+        """
+
+        print("*"*30)
+        print("="*30)
+        print("Number of {} images = {}".format(self.setType, self.num_images))
+        print("Dataset name:        ", self.name)
+        print("Dataset description: ", self.description)
+        print("Tensor image size:   ", self.tensorImageSize)
+        print("Dataset release:     ", self.release)
+        print("Dataset reference:   ", self.reference)
+        print("Input channels:      ", self.input_channels)
+        print("Output labels:       ", self.output_channels)
+        print("Dataset license:     ", self.license)
+        print("="*30)
+        print("*"*30)
+
     def get_file_list(self):
         """
         Get list of the files from the BraTS raw data
@@ -112,19 +132,14 @@ class DataGenerator(K.utils.Sequence):
             print("File {} doesn't exist. It should be part of the "
                   "Decathlon directory".format(json_filename))
 
-        # Print information about the Decathlon experiment data
-        print("*"*30)
-        print("="*30)
-        print("Dataset name:        ", experiment_data["name"])
-        print("Dataset description: ", experiment_data["description"])
-        print("Tensor image size:   ", experiment_data["tensorImageSize"])
-        print("Dataset release:     ", experiment_data["release"])
-        print("Dataset reference:   ", experiment_data["reference"])
-        print("Input channels:      ", experiment_data["modality"])
-        print("Output labels:       ", experiment_data["labels"])
-        print("Dataset license:     ", experiment_data["licence"])  # sic
-        print("="*30)
-        print("*"*30)
+        self.output_channels = experiment_data["labels"]
+        self.input_channels = experiment_data["modality"]
+        self.description = experiment_data["description"]
+        self.name = experiment_data["name"]
+        self.release = experiment_data["release"]
+        self.license = experiment_data["licence"]
+        self.reference = experiment_data["reference"]
+        self.tensorImageSize = experiment_data["tensorImageSize"]
 
         """
         Randomize the file list. Then separate into training and
@@ -155,23 +170,20 @@ class DataGenerator(K.utils.Sequence):
         testIdx = listIdx[randomIdx < self.validate_test_split]
 
         if self.setType == "train":
-            print("Number of training MRIs = {}".format(len(trainIdx)))
             return trainIdx
         elif self.setType == "validate":
-            print("Number of validation MRIs = {}".format(len(testIdx)))
             return validateIdx
         elif self.setType == "test":
-            print("Number of testing MRIs = {}".format(len(testIdx)))
             return testIdx
         else:
-            print("error with type of data")
+            print("error with type of data: {}".format(self.setType))
             return []
 
     def __len__(self):
         """
         The number of batches per epoch
         """
-        return len(self.list_IDs) // self.batch_size
+        return self.num_images // self.batch_size
 
     def __getitem__(self, index):
         """
@@ -179,7 +191,7 @@ class DataGenerator(K.utils.Sequence):
         """
         # Generate indicies of the batch
         indexes = np.sort(
-            self.indexes[index*self.batch_size:(index+1)*self.batch_size])
+            self.indexes[(index*self.batch_size):((index+1)*self.batch_size)])
 
         # Find list of IDs
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
@@ -217,7 +229,7 @@ class DataGenerator(K.utils.Sequence):
         If shuffle is true, then it will shuffle the training set
         after every epoch.
         """
-        self.indexes = np.arange(len(self.list_IDs))
+        self.indexes = np.arange(self.num_images)
         if self.shuffle:
             np.random.shuffle(self.indexes)
 

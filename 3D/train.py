@@ -18,7 +18,7 @@
 
 from argparser import args
 from dataloader import DataGenerator
-from model import unet_3d, dice_coef_loss, dice_coef, combined_dice_ce_loss, soft_dice_coef, sensitivity, specificity
+from model import unet
 import datetime
 import os
 import numpy as np
@@ -26,15 +26,7 @@ import tensorflow as tf
 import keras as K
 #from tensorflow import keras as K
 
-CHANNEL_LAST = True
-if CHANNEL_LAST:
-    concat_axis = -1
-    data_format = "channels_last"
-
-else:
-    concat_axis = 1
-    data_format = "channels_first"
-
+CHANNELS_LAST = True
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
@@ -60,20 +52,18 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-print_summary = args.print_model
+unet_model = unet(use_upsampling=args.use_upsampling,
+                  learning_rate=args.lr,
+                  n_cl_in=args.number_input_channels,
+                  n_cl_out=1,  # single channel (greyscale)
+                  feature_maps = args.featuremaps,
+                  dropout=0.2,
+                  print_summary=args.print_model,
+                  channels_last = CHANNELS_LAST)  # channels first or last
 
-model, opt = unet_3d(use_upsampling=args.use_upsampling,
-                     learning_rate=args.lr,
-                     n_cl_in=args.number_input_channels,
-                     n_cl_out=1,  # single channel (greyscale)
-                     dropout=0.2,
-                     print_summary=print_summary)
-
-model.compile(optimizer=opt,
-              loss=[combined_dice_ce_loss],
-              #loss=[dice_coef_loss],
-              metrics=[dice_coef, soft_dice_coef, "accuracy",
-                       sensitivity, specificity])
+unet_model.model.compile(optimizer=unet_model.optimizer,
+              loss=unet_model.loss,
+              metrics=unet_model.metrics)
 
 # Save best model to hdf5 file
 saved_model_directory = os.path.dirname(args.saved_model)
@@ -85,7 +75,7 @@ except:
 # If there is a current saved file, then load weights and start from
 # there.
 if os.path.isfile(args.saved_model):
-    model.load_weights(args.saved_model)
+    unet_model.model.load_weights(args.saved_model)
 
 checkpoint = K.callbacks.ModelCheckpoint(args.saved_model,
                                          verbose=1,
@@ -114,6 +104,7 @@ training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_
 
 training_generator = DataGenerator("train", args.data_path,
                                    **training_data_params)
+training_generator.print_info()
 
 validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                           "batch_size": 1,
@@ -126,7 +117,7 @@ validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patc
                           "seed": args.random_seed}
 validation_generator = DataGenerator("validate", args.data_path,
                                      **validation_data_params)
-
+validation_generator.print_info()
 
 # Fit the model
 """
@@ -148,7 +139,7 @@ workers, use_multiprocessing: Generates multiple generator instances.
 num_data_loaders is defined in argparser.py
 """
 
-model.fit_generator(training_generator,
+unet_model.model.fit_generator(training_generator,
                     epochs=args.epochs, verbose=1,
                     validation_data=validation_generator,
                     callbacks=callbacks,
@@ -159,10 +150,11 @@ model.fit_generator(training_generator,
 # Evaluate final model on test holdout set
 testing_generator = DataGenerator("test", args.data_path,
                                      **validation_data_params)
+testing_generator.print_info()
 
-scores = model.evaluate_generator(testing_generator, verbose=1)
+scores = unet_model.model.evaluate_generator(testing_generator, verbose=1)
 print("Final model metrics on test dataset:")
-for idx, name in enumerate(model.metrics_names):
+for idx, name in enumerate(unet_model.model.metrics_names):
     print("{} \t= {}".format(name, scores[idx]))
 
 stop_time = datetime.datetime.now()

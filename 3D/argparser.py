@@ -49,6 +49,10 @@ parser.add_argument("--lr",
                     type=float,
                     default=0.01,
                     help="Learning rate")
+parser.add_argument("--featuremaps",
+                    type=int,
+                    default=16,
+                    help="Number of feature maps in the first convolutional layer")
 parser.add_argument("--train_test_split",
                     type=float,
                     default=0.85,
