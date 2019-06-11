@@ -35,39 +35,58 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
-if args.channels_first:
-    """
-    Use NCHW format for data
-    """
-    concat_axis = 1
-    data_format = "channels_first"
-
-else:
-    """
-    Use NHWC format for data
-    """
-    concat_axis = -1
-    data_format = "channels_last"
-
-
 class unet(object):
+    """
+    2D U-Net model class
+    """
 
-    def __init__(self):
+    def __init__(self, channels_first=args.channels_first,
+                 fms=args.featuremaps,
+                 output_path = args.output_path,
+                 inference_filename = args.inference_filename,
+                 batch_size = args.batch_size,
+                 blocktime = args.blocktime,
+                 num_threads = args.num_threads,
+                 learning_rate = args.learningrate,
+                 num_inter_threads = args.num_inter_threads,
+                 use_upsampling = args.use_upsampling,
+                 use_dropout = args.use_dropout,
+                 print_model = args.print_model):
 
-        print("Data format = " + data_format)
-        K.backend.set_image_data_format(data_format)
 
-        self.output_path = args.output_path
-        self.inference_filename = args.inference_filename
+        self.channels_first = channels_first
+        if self.channels_first:
+            """
+            Use NCHW format for data
+            """
+            self.concat_axis = 1
+            self.data_format = "channels_first"
 
-        self.batch_size = args.batch_size
+        else:
+            """
+            Use NHWC format for data
+            """
+            self.concat_axis = -1
+            self.data_format = "channels_last"
+
+        self.fms = fms  # 32 or 16 depending on your memory size
+
+        self.learningrate = learning_rate
+
+        print("Data format = " + self.data_format)
+        K.backend.set_image_data_format(self.data_format)
+
+        self.output_path = output_path
+        self.inference_filename = inference_filename
+
+        self.batch_size = batch_size
 
         self.metrics = ["accuracy", self.dice_coef, self.soft_dice_coef]
 
         # self.loss = self.dice_coef_loss
         self.loss = self.combined_dice_ce_loss
 
-        self.optimizer = K.optimizers.Adam(lr=args.learningrate)
+        self.optimizer = K.optimizers.Adam(lr=self.learningrate)
 
         self.custom_objects = {
             "combined_dice_ce_loss": self.combined_dice_ce_loss,
@@ -75,13 +94,13 @@ class unet(object):
             "dice_coef": self.dice_coef,
             "soft_dice_coef": self.soft_dice_coef}
 
-        self.blocktime = args.blocktime
-        self.num_threads = args.num_threads
-        self.num_inter_threads = args.num_inter_threads
+        self.blocktime = blocktime
+        self.num_threads = num_threads
+        self.num_inter_threads = num_inter_threads
 
-        self.use_upsampling = args.use_upsampling
-        self.use_dropout = args.use_dropout
-        self.print_model = args.print_model
+        self.use_upsampling = use_upsampling
+        self.use_dropout = use_dropout
+        self.print_model = print_model
 
     def dice_coef(self, target, prediction, axis=(1, 2), smooth=0.01):
         """
@@ -114,7 +133,7 @@ class unet(object):
 
         return tf.reduce_mean(coef)
 
-    def dice_coef_loss(self, target, prediction, axis=(1, 2), smooth=.1):
+    def dice_coef_loss(self, target, prediction, axis=(1, 2), smooth=1.0):
         """
         Sorenson (Soft) Dice loss
         Using -log(Dice) as the loss since it is better behaved.
@@ -131,7 +150,7 @@ class unet(object):
         return dice_loss
 
 
-    def combined_dice_ce_loss(self, target, prediction, axis=(1, 2), smooth=.1,
+    def combined_dice_ce_loss(self, target, prediction, axis=(1, 2), smooth=1.0,
                               weight=args.weight_dice_loss):
         """
         Combined Dice and Binary Cross Entropy Loss
@@ -164,88 +183,87 @@ class unet(object):
 
         # Convolution parameters
         params = dict(kernel_size=(3, 3), activation="relu",
-                      padding="same", data_format=data_format,
+                      padding="same", data_format=self.data_format,
                       kernel_initializer="he_uniform")
 
         # Transposed convolution parameters
-        params_trans = dict(data_format=data_format,
+        params_trans = dict(data_format=self.data_format,
                             kernel_size=(2, 2), strides=(2, 2),
                             padding="same")
 
-        fms = args.featuremaps  # 32 or 16 depending on your memory size
 
-        encodeA = K.layers.Conv2D(name="encodeAa", filters=fms, **params)(inputs)
-        encodeA = K.layers.Conv2D(name="encodeAb", filters=fms, **params)(encodeA)
+        encodeA = K.layers.Conv2D(name="encodeAa", filters=self.fms, **params)(inputs)
+        encodeA = K.layers.Conv2D(name="encodeAb", filters=self.fms, **params)(encodeA)
         poolA = K.layers.MaxPooling2D(name="poolA", pool_size=(2, 2))(encodeA)
 
-        encodeB = K.layers.Conv2D(name="encodeBa", filters=fms*2, **params)(poolA)
+        encodeB = K.layers.Conv2D(name="encodeBa", filters=self.fms*2, **params)(poolA)
         encodeB = K.layers.Conv2D(
-            name="encodeBb", filters=fms*2, **params)(encodeB)
+            name="encodeBb", filters=self.fms*2, **params)(encodeB)
         poolB = K.layers.MaxPooling2D(name="poolB", pool_size=(2, 2))(encodeB)
 
-        encodeC = K.layers.Conv2D(name="encodeCa", filters=fms*4, **params)(poolB)
+        encodeC = K.layers.Conv2D(name="encodeCa", filters=self.fms*4, **params)(poolB)
         if self.use_dropout:
             encodeC = K.layers.SpatialDropout2D(dropout,
-                                                data_format=data_format)(encodeC)
+                                                data_format=self.data_format)(encodeC)
         encodeC = K.layers.Conv2D(
-            name="encodeCb", filters=fms*4, **params)(encodeC)
+            name="encodeCb", filters=self.fms*4, **params)(encodeC)
 
         poolC = K.layers.MaxPooling2D(name="poolC", pool_size=(2, 2))(encodeC)
 
-        encodeD = K.layers.Conv2D(name="encodeDa", filters=fms*8, **params)(poolC)
+        encodeD = K.layers.Conv2D(name="encodeDa", filters=self.fms*8, **params)(poolC)
         if self.use_dropout:
             encodeD = K.layers.SpatialDropout2D(dropout,
-                                                data_format=data_format)(encodeD)
+                                                data_format=self.data_format)(encodeD)
         encodeD = K.layers.Conv2D(
-            name="encodeDb", filters=fms*8, **params)(encodeD)
+            name="encodeDb", filters=self.fms*8, **params)(encodeD)
 
         poolD = K.layers.MaxPooling2D(name="poolD", pool_size=(2, 2))(encodeD)
 
-        encodeE = K.layers.Conv2D(name="encodeEa", filters=fms*16, **params)(poolD)
+        encodeE = K.layers.Conv2D(name="encodeEa", filters=self.fms*16, **params)(poolD)
         encodeE = K.layers.Conv2D(
-            name="encodeEb", filters=fms*16, **params)(encodeE)
+            name="encodeEb", filters=self.fms*16, **params)(encodeE)
 
         if self.use_upsampling:
             up = K.layers.UpSampling2D(name="upE", size=(2, 2),
                                        interpolation="bilinear")(encodeE)
         else:
-            up = K.layers.Conv2DTranspose(name="transconvE", filters=fms*8,
+            up = K.layers.Conv2DTranspose(name="transconvE", filters=self.fms*8,
                                           **params_trans)(encodeE)
         concatD = K.layers.concatenate(
-            [up, encodeD], axis=concat_axis, name="concatD")
+            [up, encodeD], axis=self.concat_axis, name="concatD")
 
         decodeC = K.layers.Conv2D(
-            name="decodeCa", filters=fms*8, **params)(concatD)
+            name="decodeCa", filters=self.fms*8, **params)(concatD)
         decodeC = K.layers.Conv2D(
-            name="decodeCb", filters=fms*8, **params)(decodeC)
+            name="decodeCb", filters=self.fms*8, **params)(decodeC)
 
         if self.use_upsampling:
             up = K.layers.UpSampling2D(name="upC", size=(2, 2),
                                        interpolation="bilinear")(decodeC)
         else:
-            up = K.layers.Conv2DTranspose(name="transconvC", filters=fms*4,
+            up = K.layers.Conv2DTranspose(name="transconvC", filters=self.fms*4,
                                           **params_trans)(decodeC)
         concatC = K.layers.concatenate(
-            [up, encodeC], axis=concat_axis, name="concatC")
+            [up, encodeC], axis=self.concat_axis, name="concatC")
 
         decodeB = K.layers.Conv2D(
-            name="decodeBa", filters=fms*4, **params)(concatC)
+            name="decodeBa", filters=self.fms*4, **params)(concatC)
         decodeB = K.layers.Conv2D(
-            name="decodeBb", filters=fms*4, **params)(decodeB)
+            name="decodeBb", filters=self.fms*4, **params)(decodeB)
 
         if self.use_upsampling:
             up = K.layers.UpSampling2D(name="upB", size=(2, 2),
                                        interpolation="bilinear")(decodeB)
         else:
-            up = K.layers.Conv2DTranspose(name="transconvB", filters=fms*2,
+            up = K.layers.Conv2DTranspose(name="transconvB", filters=self.fms*2,
                                           **params_trans)(decodeB)
         concatB = K.layers.concatenate(
-            [up, encodeB], axis=concat_axis, name="concatB")
+            [up, encodeB], axis=self.concat_axis, name="concatB")
 
         decodeA = K.layers.Conv2D(
-            name="decodeAa", filters=fms*2, **params)(concatB)
+            name="decodeAa", filters=self.fms*2, **params)(concatB)
         decodeA = K.layers.Conv2D(
-            name="decodeAb", filters=fms*2, **params)(decodeA)
+            name="decodeAb", filters=self.fms*2, **params)(decodeA)
 
         if self.use_upsampling:
             up = K.layers.UpSampling2D(name="upA", size=(2, 2),
@@ -254,14 +272,14 @@ class unet(object):
             up = K.layers.Conv2DTranspose(name="transconvA", filters=fms,
                                           **params_trans)(decodeA)
         concatA = K.layers.concatenate(
-            [up, encodeA], axis=concat_axis, name="concatA")
+            [up, encodeA], axis=self.concat_axis, name="concatA")
 
-        convOut = K.layers.Conv2D(name="convOuta", filters=fms, **params)(concatA)
-        convOut = K.layers.Conv2D(name="convOutb", filters=fms, **params)(convOut)
+        convOut = K.layers.Conv2D(name="convOuta", filters=self.fms, **params)(concatA)
+        convOut = K.layers.Conv2D(name="convOutb", filters=self.fms, **params)(convOut)
 
         prediction = K.layers.Conv2D(name="PredictionMask",
                                      filters=num_chan_out, kernel_size=(1, 1),
-                                     data_format=data_format,
+                                     data_format=self.data_format,
                                      activation="sigmoid")(convOut)
 
         model = K.models.Model(inputs=[inputs], outputs=[prediction])

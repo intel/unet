@@ -85,7 +85,7 @@ class unet(object):
 
         return tf.reduce_mean(coef)
 
-    def soft_dice_coef(self, target, prediction, axis=(1, 2, 3), smooth=.01):
+    def soft_dice_coef(self, target, prediction, axis=(1, 2, 3), smooth=0.01):
         """
         Sorenson (Soft) Dice - Don't round predictions
         \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
@@ -100,7 +100,7 @@ class unet(object):
         return tf.reduce_mean(coef)
 
 
-    def dice_coef_loss(self, target, prediction, axis=(1, 2, 3), smooth=.1):
+    def dice_coef_loss(self, target, prediction, axis=(1, 2, 3), smooth=0.1):
         """
         Sorenson (Soft) Dice loss
         Using -log(Dice) as the loss since it is better behaved.
@@ -117,7 +117,8 @@ class unet(object):
         return dice_loss
 
 
-    def combined_dice_ce_loss(self, target, prediction, axis=(1, 2, 3), smooth=.1, weight=.7):
+    def combined_dice_ce_loss(self, target, prediction, axis=(1, 2, 3),
+                              smooth=0.1, weight=0.7):
         """
         Combined Dice and Binary Cross Entropy Loss
         """
