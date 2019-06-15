@@ -1,3 +1,9 @@
+#Project specifics
+2D/output/*
+2D/inference_examples/*
+2D/inference_examples_openvino/*
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
