@@ -47,16 +47,7 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-#unet_model = unet(channels_last = True)  # channels first or last
-CHANNELS_LAST = True
-unet_model = unet(use_upsampling=args.use_upsampling,
-                  learning_rate=args.lr,
-                  n_cl_in=args.number_input_channels,
-                  n_cl_out=1,  # single channel (greyscale)
-                  feature_maps = args.featuremaps,
-                  dropout=0.2,
-                  print_summary=args.print_model,
-                  channels_last = CHANNELS_LAST)  # channels first or last
+unet_model = unet(channels_last = True)  # channels first or last
 
 model = K.models.load_model(args.saved_model, custom_objects=unet_model.custom_objects)
 

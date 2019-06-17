@@ -18,8 +18,9 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import keras
+import keras as K
 import tensorflow as tf
+from model import unet
 
 import os
 import argparse
@@ -34,55 +35,17 @@ parser.add_argument("--output_directory",
 
 args = parser.parse_args()
 
-
-def dice_coef(y_true, y_pred, smooth=1.0):
-    intersection = tf.reduce_sum(y_true * y_pred, axis=(1, 2, 3))
-    union = tf.reduce_sum(y_true + y_pred, axis=(1, 2, 3))
-    numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
-    coef = numerator / denominator
-    return tf.reduce_mean(coef)
-
-
-def dice_coef_loss(y_true, y_pred, smooth=1.0):
-
-    y_true_f = keras.backend.flatten(y_true)
-    y_pred_f = keras.backend.flatten(y_pred)
-    intersection = keras.backend.sum(y_true_f * y_pred_f)
-    loss = -keras.backend.log(2.0 * intersection + smooth) + \
-        keras.backend.log((keras.backend.sum(y_true_f) +
-                           keras.backend.sum(y_pred_f) + smooth))
-
-    return loss
-
-
-def sensitivity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
-
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / \
-        (tf.reduce_sum(prediction, axis=axis) + smooth)
-    return tf.reduce_mean(coef)
-
-
-def specificity(target, prediction, axis=(1, 2, 3), smooth=1e-5):
-
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    coef = (intersection + smooth) / \
-        (tf.reduce_sum(prediction, axis=axis) + smooth)
-    return tf.reduce_mean(coef)
-
-
-sess = keras.backend.get_session()
+sess = K.backend.get_session()
 
 print("Loading saved Keras model.")
+
 
 """
 If there are other custom loss and metric functions you'll need to specify them
 and add them to the dictionary below.
 """
-model = keras.models.load_model(args.input_filename, custom_objects={
-                                "sensitivity": sensitivity, "specificity": specificity,
-                                "dice_coef": dice_coef, "dice_coef_loss": dice_coef_loss})
+unet_model = unet(channels_last = True)  # channels first or last
+model = K.models.load_model(args.input_filename, custom_objects=unet_model.custom_objects)
 
 
 print("Saving the model to directory {}".format(args.output_directory))
