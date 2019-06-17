@@ -216,7 +216,7 @@ def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1.0):
     return dice_loss
 
 if args.channels_first:
-    concat_axis = -1
+    concat_axis = 1
     data_format = "channels_first"
 else:
     concat_axis = -1
