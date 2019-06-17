@@ -320,7 +320,7 @@ class DataGenerator(K.utils.Sequence):
         """
         The number of batches per epoch
         """
-        return len(self.list_IDs) // self.batch_size
+        return self.num_images // self.batch_size
 
     def __getitem__(self, index):
         """
@@ -511,5 +511,47 @@ class DataGenerator(K.utils.Sequence):
 
             imgs[idx, ] = img
             msks[idx, ] = msk
+
+        # for idx, fileIdx in enumerate(list_IDs_temp):
+
+            # img_temp = np.array(nib.load(self.imgFiles[fileIdx]).dataobj)
+            #
+            # """
+            # "modality": {
+            #      "0": "FLAIR",
+            #      "1": "T1w",
+            #      "2": "t1gd",
+            #      "3": "T2w"
+            # """
+            # if self.n_in_channels == 1:
+            #     img = img_temp[:, :, :, [0]]  # FLAIR channel
+            # else:
+            #     img = img_temp
+            #
+            # # Get mask data
+            # msk = np.array(nib.load(self.mskFiles[fileIdx]).dataobj)
+            #
+            # """
+            # "labels": {
+            #      "0": "background",
+            #      "1": "edema",
+            #      "2": "non-enhancing tumor",
+            #      "3": "enhancing tumour"}
+            #  """
+            # # Combine all masks but background
+            # msk[msk > 0] = 1.0
+            # msk = np.expand_dims(msk, -1)
+            #
+            # # Take a crop of the patch_dim size
+            # img, msk = self.crop_img(img, msk, self.augment)
+            #
+            # img = self.z_normalize_img(img)  # Normalize the image
+            #
+            # # Data augmentation
+            # if self.augment and (np.random.rand() > 0.5):
+            #     img, msk = self.augment_data(img, msk)
+            #
+            # imgs[idx, ] = img
+            # msks[idx, ] = msk
 
         return imgs, msks
