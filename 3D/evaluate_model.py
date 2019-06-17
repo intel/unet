@@ -19,6 +19,8 @@
 #
 
 import keras as K
+#from tensorflow import keras as K
+
 import tensorflow as tf
 import numpy as np
 import datetime
@@ -28,8 +30,6 @@ import nibabel as nib
 import os
 from dataloader import DataGenerator
 from model import unet
-
-#from tensorflow import keras as K
 
 print("Started script on {}".format(datetime.datetime.now()))
 
@@ -47,8 +47,18 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-unet_model = unet(channels_last=True)
-model = unet_model.model.load_model(args.saved_model, custom_objects=unet_model.custom_objects)
+#unet_model = unet(channels_last = True)  # channels first or last
+CHANNELS_LAST = True
+unet_model = unet(use_upsampling=args.use_upsampling,
+                  learning_rate=args.lr,
+                  n_cl_in=args.number_input_channels,
+                  n_cl_out=1,  # single channel (greyscale)
+                  feature_maps = args.featuremaps,
+                  dropout=0.2,
+                  print_summary=args.print_model,
+                  channels_last = CHANNELS_LAST)  # channels first or last
+
+model = K.models.load_model(args.saved_model, custom_objects=unet_model.custom_objects)
 
 print("Loading images and masks from test set")
 
@@ -70,7 +80,7 @@ m = model.evaluate_generator(testing_generator, verbose=1,
 
 print("\n\nTest metrics")
 print("============")
-for idx, name in enumerate(unet_model.model.metrics_names):
+for idx, name in enumerate(model.metrics_names):
     print("{} = {:.4f}".format(name, m[idx]))
 
 
@@ -82,13 +92,13 @@ except:
 
 print("Predicting masks")
 
-for batch_idx in tqdm(range(validation_generator.num_batches),
+for batch_idx in tqdm(range(testing_generator.num_batches),
                       desc="Predicting on batch"):
 
-    imgs, msks = validation_generator.get_batch(batch_idx)
-    fileIDs = validation_generator.get_batch_fileIDs(batch_idx)
+    imgs, msks = testing_generator.get_batch(batch_idx)
+    fileIDs = testing_generator.get_batch_fileIDs(batch_idx)
 
-    preds = unet_model.predict_on_batch(imgs)
+    preds = model.predict_on_batch(imgs)
 
     # Save the predictions as Nifti files so that we can
     # display them on a 3D viewer.
