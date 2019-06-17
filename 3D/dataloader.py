@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
@@ -36,6 +35,135 @@ if CHANNEL_LAST:
 else:
     concat_axis = 1
     data_format = "channels_first"
+
+import os
+import sys
+import cv2
+import numpy as np
+import vdms
+
+from multiprocessing.pool import ThreadPool
+
+class vdms_loader(object):
+
+    """
+    A dataloader to get entire 3D MRI and label mask from
+    VDMS. Input is a connection (url) and a dictionary
+    specifying the scan type as the key and the
+    shape of the tensor as the value (channels, height, width, depth/slices)
+
+    Usage:
+    loader = vdms_loader(connection = "sky4.jf.intel.com",
+                         scan_types = { "mri" : [240, 240, 155, 4],
+                                        "label" : [240, 240, 155, 4]}
+                         )
+
+    """
+
+    def __init__(self, connection, scan_types):
+        """
+        Scan Types is a dictionary with the key being
+        the name of the scan in the VDMS database and
+        the value being an integer array of the
+        number of channels, height, width, and depth (# slices) of the images
+        """
+        self.scan_types = scan_types
+        self.scan_type_names = list(scan_types.keys())
+        self.num_scan_types = len(self.scan_type_names)   # MRI and Label
+        self.connection = connection
+
+        self.num_channels = []
+        for idx, name in enumerate(scan_types):
+            if CHANNEL_LAST:
+                self.num_channels.append(scan_types[name][-1])
+            else:
+                self.num_channels.append(scan_types[name][0])
+
+    def get_scan(self, scan_id, img_type, channel):
+
+        db = vdms.vdms()
+        db.connect(self.connection)
+
+        query = [{
+            "FindEntity": {
+                "class": "Scan",
+                "_ref": 33,
+                "constraints": {
+                    "id": ["==", scan_id]
+                }
+            }
+        }, {
+            "FindImage": {
+                "link": {"ref": 33},
+                "constraints": {
+                    "channel":   ["==", channel],
+                    "type": ["==", img_type]
+                },
+                "results": {
+                    # "list": ["id", "type", "channel", "slice_number"],
+                    "sort": "slice_number"  # Important to sort by slice #
+                }
+            }
+        }]
+
+        response, arr = db.query(query)
+
+        # print(db.get_last_response_str())
+        # print(len(arr))
+
+        return arr
+
+    def get_batch(self, patient_list):
+
+        num_patients = len(patient_list)
+
+        # Create a thread pool for the VDMS calls
+        pool = ThreadPool(processes=1) #np.prod(self.num_channels) * num_patients)
+
+        combined_result = {}
+        vdms_result = {}
+        for name_idx, name in enumerate(self.scan_type_names):
+            for patient_num, patient in enumerate(patient_list):
+                for channel in range(self.num_channels[name_idx]):
+                    """
+                    Make the VDMS calls as asyncronous process pools
+                    so that they can execute in parallel.
+                    """
+                    vdms_result[name_idx, patient_num, channel] = pool.apply_async(
+                        self.get_scan, (patient, name, channel))
+
+        for name_idx, name in enumerate(self.scan_type_names):
+
+            combined_result[name] = np.ndarray(
+                shape=([num_patients] + self.scan_types[name]))
+
+            for patient_idx, patient in enumerate(patient_list):
+                for channel in range(self.num_channels[name_idx]):
+
+                    """
+                    TODO: Not sure if this code should be changed. Currently,
+                    it is going through sequentially; however, since the
+                    processes are run in parallel asynchronously, there
+                    is no reason why they should come back in a particular
+                    order.
+                    """
+                    for slice_num, pngs in enumerate(vdms_result[name_idx, patient_idx, channel].get()):  # Get the slices
+
+                        # The imdecode will create a RGB image
+                        # Just take single channel
+                        image_input = cv2.imdecode(np.frombuffer(
+                            pngs, dtype=np.uint8), 1)  # for vdms
+
+                        if CHANNEL_LAST:
+                            combined_result[name][patient_idx, :, :, slice_num,
+                                                    channel] = image_input[:, :, 2]
+                        else:
+                            # Change data layout from HWC to CHW (dont need when using .npz )
+                            image = image_input.transpose((2, 0, 1))
+                            combined_result[name][patient_idx, channel, :, :,
+                                                    slice_num] = image[2, :, :]
+
+        return combined_result
 
 
 class DataGenerator(K.utils.Sequence):
@@ -86,6 +214,15 @@ class DataGenerator(K.utils.Sequence):
         self.on_epoch_end()   # Generate the sequence
 
         self.num_batches = self.__len__()
+
+        if CHANNEL_LAST:
+            self.loader = vdms_loader(connection="hsw3.jf.intel.com",
+                                      scan_types={"mri": [240, 240, 155, 4],
+                                      "label": [240, 240, 155, 4]} )
+        else:
+            self.loader = vdms_loader(connection="hsw3.jf.intel.com",
+                                      scan_types={"mri": [240, 240, 155, 4],
+                                      "label": [240, 240, 155, 4]} )
 
         # Determine if axes are equal and can be rotated
         # If the axes aren't equal then we can't rotate them.
@@ -183,7 +320,7 @@ class DataGenerator(K.utils.Sequence):
         """
         The number of batches per epoch
         """
-        return self.num_images // self.batch_size
+        return len(self.list_IDs) // self.batch_size
 
     def __getitem__(self, index):
         """
@@ -191,7 +328,7 @@ class DataGenerator(K.utils.Sequence):
         """
         # Generate indicies of the batch
         indexes = np.sort(
-            self.indexes[(index*self.batch_size):((index+1)*self.batch_size)])
+            self.indexes[index*self.batch_size:(index+1)*self.batch_size])
 
         # Find list of IDs
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
@@ -229,7 +366,7 @@ class DataGenerator(K.utils.Sequence):
         If shuffle is true, then it will shuffle the training set
         after every epoch.
         """
-        self.indexes = np.arange(self.num_images)
+        self.indexes = np.arange(len(self.list_IDs))
         if self.shuffle:
             np.random.shuffle(self.indexes)
 
@@ -307,7 +444,8 @@ class DataGenerator(K.utils.Sequence):
         for channel in range(img.shape[-1]):
 
             img_temp = img[..., channel]
-            img_temp = (img_temp - np.mean(img_temp)) / np.std(img_temp)
+            if np.std(img_temp)!=0:
+              img_temp = (img_temp - np.mean(img_temp)) / np.std(img_temp)
 
             img[..., channel] = img_temp
 
@@ -325,9 +463,15 @@ class DataGenerator(K.utils.Sequence):
         imgs = np.zeros((self.batch_size, *self.dim, self.n_in_channels))
         msks = np.zeros((self.batch_size, *self.dim, self.n_out_channels))
 
-        for idx, fileIdx in enumerate(list_IDs_temp):
+        fileList = ["BRATS_{0:03d}".format(x) for x in list_IDs_temp]
+        #fileList = ["BRATS_301" for x in list_IDs_temp]
+        results = self.loader.get_batch(fileList)
 
-            img_temp = np.array(nib.load(self.imgFiles[fileIdx]).dataobj)
+        # results = self.loader.get_batch(
+        #     ["BRATS_301", "BRATS_020", "BRATS_047", "BRATS_024", "BRATS_397"])
+        img_temp, msk_temp = results["mri"], results["label"]
+
+        for idx, fileIdx in enumerate(list_IDs_temp):
 
             """
             "modality": {
@@ -336,13 +480,12 @@ class DataGenerator(K.utils.Sequence):
                  "2": "t1gd",
                  "3": "T2w"
             """
-            if self.n_in_channels == 1:
-                img = img_temp[:, :, :, [0]]  # FLAIR channel
-            else:
-                img = img_temp
 
-            # Get mask data
-            msk = np.array(nib.load(self.mskFiles[fileIdx]).dataobj)
+            if self.n_in_channels == 1:
+                img = img_temp[idx, :, :, :, 0]  # FLAIR channel
+                img = np.expand_dims(img, -1)
+            else:
+                img = img_temp[idx]
 
             """
             "labels": {
@@ -352,8 +495,10 @@ class DataGenerator(K.utils.Sequence):
                  "3": "enhancing tumour"}
              """
             # Combine all masks but background
-            msk[msk > 0] = 1.0
-            msk = np.expand_dims(msk, -1)
+            msk = msk_temp[idx]
+            msk = msk[:, :, :, [0]] + msk[:, :, :, [1]] \
+                + msk[:, :, :, [2]] + msk[:, :, :, [3]]
+            msk[msk > 1] = 1.0
 
             # Take a crop of the patch_dim size
             img, msk = self.crop_img(img, msk, self.augment)
