@@ -96,6 +96,9 @@ parser.add_argument("--output_directory",
 parser.add_argument("--hdf5_datafile",
                     default="../../data/decathlon/144x144/Task01_BrainTumour.h5",
                     help="the name and path of the HDF5 dataset")
+parser.add_argument("--output_frozen_model_dir",
+                    default="output/frozen_model",
+                    help="Directory where to save the TensorFlow frozen model")
 
 # OpenVINO-specific arguments:
 parser.add_argument("-number_iter", "--number_iter",
@@ -128,7 +131,7 @@ args = parser.parse_args()
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-os.environ["KMP_AFFINITY"] = "granularity=fine,compact,1,0"
+# os.environ["KMP_AFFINITY"] = "granularity=fine,compact,1,0"
 
 os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
 os.environ["INTRA_THREADS"] = str(args.num_threads)

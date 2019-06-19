@@ -209,6 +209,7 @@ class unet(object):
             name="encodeCb", filters=self.fms*4, **params)(encodeC)
 
         poolC = K.layers.MaxPooling2D(name="poolC", pool_size=(2, 2))(encodeC)
+#         model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="th"))
 
         encodeD = K.layers.Conv2D(name="encodeDa", filters=self.fms*8, **params)(poolC)
         if self.use_dropout:
