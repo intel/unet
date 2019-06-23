@@ -24,18 +24,12 @@ import ntpath
 import os
 import numpy as np
 import tensorflow as tf
-import keras as K
-#from tensorflow import keras as K
+from argparser import args
 
-CHANNEL_LAST = True
-if CHANNEL_LAST:
-    concat_axis = -1
-    data_format = "channels_last"
-
+if args.keras_api:
+    import keras as K
 else:
-    concat_axis = 1
-    data_format = "channels_first"
-
+    from tensorflow import keras as K
 
 class DataGenerator(K.utils.Sequence):
     """
@@ -289,12 +283,6 @@ class DataGenerator(K.utils.Sequence):
                 len(self.dim_to_rotate))]
             img = np.rot90(img, rot, axes=random_axis)  # Rotate axes 0 and 1
             msk = np.rot90(msk, rot, axes=random_axis)  # Rotate axes 0 and 1
-
-        # elif np.random.rand() > 0.5:
-        #     rot = np.random.choice([1, 2, 3])  # 90, 180, or 270 degrees
-        #     axis = np.random.choice([0, 1]) # Axis to rotate through
-        #     img = np.rot90(img, rot, axes=(axis,2))
-        #     msk = np.rot90(msk, rot, axes=(axis,2))
 
         return img, msk
 

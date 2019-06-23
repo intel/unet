@@ -52,6 +52,8 @@ parser.add_argument(
     help="the number of intraop threads")
 parser.add_argument("--batch_size", type=int, default=settings.BATCH_SIZE,
                     help="the batch size for training")
+parser.add_argument("--seed", type=int, default=816,
+                    help="Seed for random number generation")
 parser.add_argument("--crop_dim", type=int, default=-1,
                     help="Size to crop images (square, in pixels). If -1, then no cropping.")
 parser.add_argument(

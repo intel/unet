@@ -62,8 +62,10 @@ print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()
 
 print("Keras API version: {}".format(K.__version__))
 
-K.backend.set_session(SESS)
+if args.channels_first:
+    K.backend.set_image_data_format("channels_first")
 
+K.backend.set_session(SESS)
 
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """
@@ -78,11 +80,11 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("Loading the data from HDF5 file ...")
     print("-" * 30)
 
-    imgs_train, msks_train, imgs_validation, msks_validation, imgs_testing, msks_testing = \
+    imgs_train, msks_train, imgs_validation, msks_validation, \
+        imgs_testing, msks_testing = \
         load_data(hdf5_filename, args.batch_size,
-                  [args.crop_dim, args.crop_dim])
-
-    np.random.seed(816)
+                  [args.crop_dim, args.crop_dim],
+                  args.channels_first, args.seed)
 
     print("-" * 30)
     print("Creating and compiling model ...")
