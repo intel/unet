@@ -83,8 +83,8 @@ class unet(object):
 
         self.metrics = ["accuracy", self.dice_coef, self.soft_dice_coef]
 
-        # self.loss = self.dice_coef_loss
-        self.loss = self.combined_dice_ce_loss
+        self.loss = self.dice_coef_loss
+        #self.loss = self.combined_dice_ce_loss
 
         self.optimizer = K.optimizers.Adam(lr=self.learningrate)
 
@@ -177,13 +177,12 @@ class unet(object):
             else:
                 print("Using Transposed Deconvolution")
 
+        num_chan_in = imgs_shape[self.concat_axis]
+        num_chan_out = msks_shape[self.concat_axis]
+        
         if self.channels_first:
-            num_chan_in = imgs_shape[1]
-            num_chan_out = msks_shape[1]
             inputs = K.layers.Input([num_chan_in, None, None], name="MRImages")
         else:
-            num_chan_in = imgs_shape[-1]
-            num_chan_out = msks_shape[-1]
             inputs = K.layers.Input([None, None, num_chan_in], name="MRImages")
 
         # Convolution parameters
