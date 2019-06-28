@@ -70,6 +70,10 @@ parser.add_argument("--intraop_threads",
                     default=max(
                         len(psutil.Process().cpu_affinity())-num_data_loaders, 2),
                     help="Number of intraop threads")
+parser.add_argument("--keras_api",
+                    help="use keras instead of tf.keras",
+                    action="store_true",
+                    default=True)
 parser.add_argument("--interop_threads",
                     type=int,
                     default=1,

@@ -20,13 +20,15 @@
 
 import sys
 import os
-from argparse import ArgumentParser
+
 import numpy as np
 import logging as log
 from time import time
 from openvino.inference_engine import IENetwork, IEPlugin
-from dataloader import DataGenerator
 
+sys.path.append("..")  # Adds higher directory to python modules path.
+from argparse import ArgumentParser
+from dataloader import DataGenerator
 
 """
 OpenVINO Python Inference Script
@@ -35,9 +37,6 @@ and perform inference on a few validation samples
 from the Decathlon dataset.
 
 """
-
-sys.path.append("..")  # Adds higher directory to python modules path.
-
 
 def dice_score(pred, truth):
     """
