@@ -18,14 +18,17 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import keras as K
-#from tensorflow import keras as K
-
 import tensorflow as tf
 import numpy as np
 import datetime
 from tqdm import tqdm
 from argparser import args
+
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
+
 import nibabel as nib
 import os
 from dataloader import DataGenerator

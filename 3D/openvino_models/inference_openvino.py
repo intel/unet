@@ -43,8 +43,8 @@ def dice_score(pred, truth):
     Sorensen Dice score
     Measure of the overlap between the prediction and ground truth masks
     """
-    numerator = np.sum(pred * truth) * 2.0 + 1.0
-    denominator = np.sum(pred) + np.sum(truth) + 1.0
+    numerator = np.sum(np.round(pred) * truth) * 2.0
+    denominator = np.sum(np.round(pred)) + np.sum(truth)
 
     return numerator / denominator
 
@@ -55,22 +55,20 @@ def load_data(args):
     """
 
     validation_data_params = {"dim": (args.patch_dim, args.patch_dim, args.patch_dim),
-                              "batch_size": 1,
+                              "batch_size": 8,
                               "n_in_channels": args.number_input_channels,
                               "n_out_channels": 1,
                               "train_test_split": args.train_test_split,
                               "augment": False,
                               "shuffle": False,
                               "seed": args.random_seed}
-    validation_generator = DataGenerator(False, args.data_path,
+    testing_generator = DataGenerator("train", args.data_path,
                                          **validation_data_params)
-
-    # for batch_idx in tqdm(range(validation_generator.num_batches),
-    #                       desc="Predicting on batch"):
+    testing_generator.print_info()
 
     batch_idx = 0
-    imgs, msks = validation_generator.get_batch(batch_idx)
-    fileIDs = validation_generator.get_batch_fileIDs(batch_idx)
+    imgs, msks = testing_generator.get_batch(batch_idx)
+    fileIDs = testing_generator.get_batch_fileIDs(batch_idx)
 
     """
     OpenVINO uses channels first tensors (NCHWD).
@@ -156,6 +154,8 @@ def build_argparser():
                              "specified (CPU by default)", default="CPU",
                         type=str)
     parser.add_argument("-stats", "--stats", help="Plot the runtime statistics",
+                        default=False, action="store_true")
+    parser.add_argument("-plot", "--plot", help="Plot the predictions",
                         default=False, action="store_true")
     parser.add_argument("--patch_dim",
                         type=int,
@@ -280,15 +280,11 @@ def main():
     """
     Evaluate model with Dice metric
     """
-    for idx in range(img_indicies.shape[0]):
+    for idx in range(input_data.shape[0]):
         dice = dice_score(
             predictions[idx, 0, :, :, :], label_data[idx, 0, :, :, :])
         log.info("Image #{}: Dice score = {:.4f}".format(
             img_indicies[idx], dice))
-
-    if args.plot:
-        plot_predictions(predictions, input_data,
-                         label_data, img_indicies, args)
 
     del exec_net
     del plugin
