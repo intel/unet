@@ -21,16 +21,20 @@
 # mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 --oversubscribe --report-bindings python train_horovod.py
 
 
-import horovod.keras as hvd
+
 from dataloader import DataGenerator
 from model import unet
 import datetime
 import os
-from argparser import args
 import numpy as np
 import tensorflow as tf
-import keras as K
-#from tensorflow import keras as K
+from argparser import args
+if args.keras_api:
+    import keras as K
+    import horovod.keras as hvd
+else:
+    from tensorflow import keras as K
+    import horovod.tensorflow.keras as hvd
 
 CHANNELS_LAST = True
 
@@ -83,9 +87,14 @@ unet_model = unet(use_upsampling=args.use_upsampling,
 
 opt = hvd.DistributedOptimizer(unet_model.optimizer)
 
-unet_model.model.compile(optimizer=opt,
-              loss=unet_model.loss,
-              metrics=unet_model.metrics)
+if args.keras_api:
+    unet_model.model.compile(optimizer=opt,
+                  loss=unet_model.loss,
+                  metrics=unet_model.metrics)
+else:
+    unet_model.compile(optimizer=opt,
+                  loss=unet_model.loss,
+                  metrics=unet_model.metrics)
 
 if hvd.rank() == 0:
     start_time = datetime.datetime.now()
@@ -206,15 +215,26 @@ workers, use_multiprocessing: Generates multiple generator instances.
 num_data_loaders is defined in argparser.py
 """
 
-unet_model.model.fit_generator(training_generator,
-                    steps_per_epoch=steps_per_epoch,
-                    epochs=args.epochs, verbose=verbose,
-                    validation_data=validation_generator,
-                    # validation_steps=validation_steps,
-                    callbacks=callbacks,
-                    max_queue_size=args.num_prefetched_batches,
-                    workers=args.num_data_loaders,
-                    use_multiprocessing=False)  # True)
+if args.keras_api:
+    unet_model.model.fit_generator(training_generator,
+                                   steps_per_epoch=steps_per_epoch,
+                                   epochs=args.epochs, verbose=verbose,
+                                   validation_data=validation_generator,
+                                   # validation_steps=validation_steps,
+                                   callbacks=callbacks,
+                                   max_queue_size=args.num_prefetched_batches,
+                                   workers=args.num_data_loaders,
+                                   use_multiprocessing=False)  # True)
+else:
+    unet_model.fit_generator(training_generator,
+                                   steps_per_epoch=steps_per_epoch,
+                                   epochs=args.epochs, verbose=verbose,
+                                   validation_data=validation_generator,
+                                   # validation_steps=validation_steps,
+                                   callbacks=callbacks,
+                                   max_queue_size=args.num_prefetched_batches,
+                                   workers=args.num_data_loaders,
+                                   use_multiprocessing=False)  # True)
 
 if hvd.rank() == 0:
 
@@ -225,7 +245,7 @@ if hvd.rank() == 0:
                                       **validation_data_params)
     testing_generator.print_info()
 
-    m = model.evaluate_generator(testing_generator, verbose=1,
+    m = unet_model.model.evaluate_generator(testing_generator, verbose=1,
                                  max_queue_size=args.num_prefetched_batches,
                                  workers=args.num_data_loaders,
                                  use_multiprocessing=False)

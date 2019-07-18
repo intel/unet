@@ -23,16 +23,14 @@ import numpy as np
 import datetime
 from tqdm import tqdm
 from argparser import args
-
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
-
 import nibabel as nib
 import os
 from dataloader import DataGenerator
 from model import unet
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
 print("Started script on {}".format(datetime.datetime.now()))
 

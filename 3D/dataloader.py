@@ -23,9 +23,7 @@ import json
 import ntpath
 import os
 import numpy as np
-import tensorflow as tf
 from argparser import args
-
 if args.keras_api:
     import keras as K
 else:

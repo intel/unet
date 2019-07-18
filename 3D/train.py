@@ -16,15 +16,16 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from argparser import args
 from dataloader import DataGenerator
 from model import unet
 import datetime
 import os
-import numpy as np
 import tensorflow as tf
-import keras as K
-#from tensorflow import keras as K
+from argparser import args
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
 CHANNELS_LAST = True
 
