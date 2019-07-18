@@ -18,6 +18,9 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+# mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 --oversubscribe --report-bindings python train_horovod.py
+
+
 import horovod.keras as hvd
 from dataloader import DataGenerator
 from model import unet
@@ -29,6 +32,7 @@ import tensorflow as tf
 import keras as K
 #from tensorflow import keras as K
 
+CHANNELS_LAST = True
 
 hvd.init()
 
@@ -80,7 +84,7 @@ unet_model = unet(use_upsampling=args.use_upsampling,
 opt = hvd.DistributedOptimizer(unet_model.optimizer)
 
 unet_model.model.compile(optimizer=opt,
-              unet_model.loss,
+              loss=unet_model.loss,
               metrics=unet_model.metrics)
 
 if hvd.rank() == 0:
