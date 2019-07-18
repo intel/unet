@@ -75,7 +75,6 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-CHANNEL_LAST = True
 unet_model = unet(use_upsampling=args.use_upsampling,
                   learning_rate=args.lr,
                   n_cl_in=args.number_input_channels,
