@@ -18,7 +18,26 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 --oversubscribe --report-bindings python train_horovod.py
+# Using OpenMPI:
+# mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 \
+#        --oversubscribe --report-bindings python train_horovod.py
+# np :  Number of total processes (workers) = # nodes times # workers per node
+# --map-by ppr:2 Processes (workers) per resource = 2 workers per resource
+# --map-by socket Resource = socket
+# --map-by pe=10 Process elements = 10 cores per worker
+# --oversubscribe Allow more than one worker per resource
+# --report-bindings Report what nodes/sockets/cores are bound by each worker
+
+#
+# Using the Intel MPI:
+# mpirun -n 4 -H localhost -ppn 2  -print-rank-map  -genv I_MPI_PIN_DOMAIN=socket  \
+#        -genv OMP_NUM_THREADS=24 -genv OMP_PROC_BIND=true \
+#        -genv KMP_BLOCKTIME=1  python train_horovod.py
+#
+#   ppn:  Processes (workers) per node
+#   -print-rank-map  Report what nodes/sockets/cores are bound by each worker
+#   I_MPI_PIN_DOMAIN=socket pins a worker to a socket
+#   -n
 
 
 import horovod.keras as hvd
