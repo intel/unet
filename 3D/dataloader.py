@@ -61,6 +61,10 @@ class DataGenerator(K.utils.Sequence):
         Initialization
         """
         self.data_path = data_path
+
+        if setType not in ["train", "test", "validate"]:
+            print("Dataloader error.  You forgot to specify train, test, or validate.")
+            
         self.setType = setType
         self.dim = dim
         self.batch_size = batch_size
@@ -169,7 +173,7 @@ class DataGenerator(K.utils.Sequence):
         elif self.setType == "test":
             return testIdx
         else:
-            print("error with type of data: {}".format(self.setType))
+            print("Error. You forgot to specify train, test, or validate. Instead received {}".format(self.setType))
             return []
 
     def __len__(self):

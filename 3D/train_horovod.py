@@ -22,20 +22,22 @@
 
 
 import horovod.keras as hvd
+
 from dataloader import DataGenerator
 from model import unet
+
 import datetime
 import os
 from argparser import args
 import numpy as np
+
 import tensorflow as tf
-import keras as K
-#from tensorflow import keras as K
+#import keras as K
+from tensorflow import keras as K
 
 CHANNELS_LAST = True
 
 hvd.init()
-
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
@@ -153,33 +155,35 @@ callbacks = [
     checkpoint
 ]
 
-# Run the script  "load_brats_images.py" to generate these Numpy data files
-#imgs_test = np.load(os.path.join(sys.path[0],"imgs_test_3d.npy"))
-#msks_test = np.load(os.path.join(sys.path[0],"msks_test_3d.npy"))
-
-seed = hvd.rank()  # Make sure each worker gets different random seed
 training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                         "batch_size": args.bz,
                         "n_in_channels": args.number_input_channels,
                         "n_out_channels": 1,
                         "train_test_split": args.train_test_split,
+                        "validate_test_split": args.validate_test_split,
                         "augment": True,
                         "shuffle": True,
-                        "seed": seed}
+                        "seed": args.random_seed}
 
-training_generator = DataGenerator(True, args.data_path,
+training_generator = DataGenerator("train", args.data_path,
                                    **training_data_params)
+if (hvd.rank() == 0):
+    training_generator.print_info()
 
 validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                           "batch_size": 1,
                           "n_in_channels": args.number_input_channels,
                           "n_out_channels": 1,
                           "train_test_split": args.train_test_split,
+                          "validate_test_split": args.validate_test_split,
                           "augment": False,
                           "shuffle": False,
                           "seed": args.random_seed}
-validation_generator = DataGenerator(False, args.data_path,
+validation_generator = DataGenerator("validate", args.data_path,
                                      **validation_data_params)
+
+if (hvd.rank() == 0):
+    validation_generator.print_info()
 
 # Fit the model
 # Do at least 3 steps for training and validation
@@ -187,34 +191,15 @@ steps_per_epoch = max(3, training_generator.get_length()//(args.bz*hvd.size()))
 validation_steps = max(
     3, 3*training_generator.get_length()//(args.bz*hvd.size()))
 
-"""
-Keras Data Pipeline using Sequence generator
-https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
-
-The sequence generator allows for Keras to load batches at runtime.
-It's very useful in the case when your entire dataset won't fit into
-memory. The Keras sequence will load one batch at a time to
-feed to the model. You can specify pre-fetching of batches to
-make sure that an additional batch is in memory when the previous
-batch finishes processing.
-
-max_queue_size : Specifies how many batches will be prepared (pre-fetched)
-in the queue. Does not indicate multiple generator instances.
-
-workers, use_multiprocessing: Generates multiple generator instances.
-
-num_data_loaders is defined in argparser.py
-"""
-
 unet_model.model.fit_generator(training_generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=args.epochs, verbose=verbose,
                     validation_data=validation_generator,
-                    # validation_steps=validation_steps,
+                    #validation_steps=validation_steps,
                     callbacks=callbacks,
-                    max_queue_size=args.num_prefetched_batches,
-                    workers=args.num_data_loaders,
-                    use_multiprocessing=False)  # True)
+                    max_queue_size=1, #args.num_prefetched_batches,
+                    workers=1, #args.num_data_loaders,
+                    use_multiprocessing=True)
 
 if hvd.rank() == 0:
 
