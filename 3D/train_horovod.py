@@ -32,8 +32,11 @@ from argparser import args
 import numpy as np
 
 import tensorflow as tf
-#import keras as K
-from tensorflow import keras as K
+
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
 CHANNELS_LAST = True
 
