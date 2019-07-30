@@ -185,7 +185,7 @@ training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_
                         "validate_test_split": args.validate_test_split,
                         "augment": True,
                         "shuffle": True,
-                        "seed": args.random_seed}
+                        "seed": hvd.rank()}
 
 training_generator = DataGenerator("train", args.data_path,
                                    **training_data_params)
