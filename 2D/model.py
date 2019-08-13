@@ -83,8 +83,8 @@ class unet(object):
 
         self.metrics = ["accuracy", self.dice_coef, self.soft_dice_coef]
 
-        # self.loss = self.dice_coef_loss
-        self.loss = self.combined_dice_ce_loss
+        self.loss = self.dice_coef_loss
+        #self.loss = self.combined_dice_ce_loss
 
         self.optimizer = K.optimizers.Adam(lr=self.learningrate)
 
@@ -177,18 +177,21 @@ class unet(object):
             else:
                 print("Using Transposed Deconvolution")
 
-        num_chan_out = msks_shape[-1]
-
-        inputs = K.layers.Input(imgs_shape[1:], name="MRImages")
+        num_chan_in = imgs_shape[self.concat_axis]
+        num_chan_out = msks_shape[self.concat_axis]
+        
+        if self.channels_first:
+            inputs = K.layers.Input([num_chan_in, None, None], name="MRImages")
+        else:
+            inputs = K.layers.Input([None, None, num_chan_in], name="MRImages")
 
         # Convolution parameters
         params = dict(kernel_size=(3, 3), activation="relu",
-                      padding="same", data_format=self.data_format,
+                      padding="same",
                       kernel_initializer="he_uniform")
 
         # Transposed convolution parameters
-        params_trans = dict(data_format=self.data_format,
-                            kernel_size=(2, 2), strides=(2, 2),
+        params_trans = dict(kernel_size=(2, 2), strides=(2, 2),
                             padding="same")
 
 
@@ -203,8 +206,7 @@ class unet(object):
 
         encodeC = K.layers.Conv2D(name="encodeCa", filters=self.fms*4, **params)(poolB)
         if self.use_dropout:
-            encodeC = K.layers.SpatialDropout2D(dropout,
-                                                data_format=self.data_format)(encodeC)
+            encodeC = K.layers.SpatialDropout2D(dropout)(encodeC)
         encodeC = K.layers.Conv2D(
             name="encodeCb", filters=self.fms*4, **params)(encodeC)
 
@@ -213,8 +215,7 @@ class unet(object):
 
         encodeD = K.layers.Conv2D(name="encodeDa", filters=self.fms*8, **params)(poolC)
         if self.use_dropout:
-            encodeD = K.layers.SpatialDropout2D(dropout,
-                                                data_format=self.data_format)(encodeD)
+            encodeD = K.layers.SpatialDropout2D(dropout)(encodeD)
         encodeD = K.layers.Conv2D(
             name="encodeDb", filters=self.fms*8, **params)(encodeD)
 
@@ -280,7 +281,6 @@ class unet(object):
 
         prediction = K.layers.Conv2D(name="PredictionMask",
                                      filters=num_chan_out, kernel_size=(1, 1),
-                                     data_format=self.data_format,
                                      activation="sigmoid")(convOut)
 
         model = K.models.Model(inputs=[inputs], outputs=[prediction])

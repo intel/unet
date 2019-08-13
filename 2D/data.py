@@ -64,7 +64,8 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
 
     def __init__(self, datapath, dataset, datagen, start=0, end=None,
                  normalizer=None, crop_dim=128,
-                 use_augmentation=False, seed=816):
+                 use_augmentation=False, seed=args.seed,
+                 channels_first=args.channels_first):
         """
         This will need to keep up with the HDF5Matrix code
         base.  It allows us to do random image cropping and
@@ -75,10 +76,11 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
         self.seed = seed
         self.crop_dim = crop_dim
         self.idx = 0
+        self.channels_first = channels_first
 
         if h5py is None:
-            raise ImportError('The use of HDF5Matrix requires '
-                              'HDF5 and h5py installed.')
+            raise ImportError("The use of HDF5Matrix requires "
+                              "HDF5 and h5py installed.")
 
         if datapath not in list(self.refs.keys()):
             f = h5py.File(datapath, "r")
@@ -110,12 +112,18 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
                 (self.crop_dim[1] < self.original_width)):
             bshape[0] = self.crop_dim[0]
             bshape[1] = self.crop_dim[1]
-            self._base_shape = tuple(bshape)
+            base_shape = tuple(bshape)
             self.crop = True
         else:
             # Don't crop
-            self._base_shape = first_val.shape[1:]
+            base_shape = first_val.shape[1:]
             self.crop = False
+
+        if self.channels_first:
+            self._base_shape = tuple([base_shape[2], base_shape[0],
+                                      base_shape[1]])
+        else:
+            self._base_shape = base_shape
 
     def random_crop_img(self, img):
         """
@@ -149,7 +157,6 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
         """
         Grab a batch of images and do online data augmentation and cropping
         """
-
         data = super().__getitem__(key)
         self.idx += 1
         if len(data.shape) == 3:
@@ -161,7 +168,7 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
 
             img = self.random_crop_img(img)
 
-            if args.channels_first:  # NCHW
+            if self.channels_first:  # NCHW
                 outData = np.swapaxes(img, 1, 3)
             else:
                 outData = img
@@ -177,7 +184,7 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
 
             img = self.random_crop_img(img)
 
-            if args.channels_first:  # NCHW
+            if self.channels_first:  # NCHW
                 outData = np.swapaxes(img, 1, 3)
             else:
                 outData = img
@@ -185,7 +192,8 @@ class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
         return outData
 
 
-def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
+def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1],
+              channels_first=args.channels_first, seed=args.seed):
     """
     Load the data from the HDF5 file using the Keras HDF5 wrapper.
     """
@@ -202,19 +210,20 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
     image_datagen = K.preprocessing.image.ImageDataGenerator(**params)
     msk_datagen = K.preprocessing.image.ImageDataGenerator(**params)
 
-    random_seed = 816
     imgs_train = PreprocessHDF5Matrix(hdf5_data_filename,
                                       "imgs_train",
                                       image_datagen,
                                       crop_dim=crop_dim,
                                       use_augmentation=args.use_augmentation,
-                                      seed=random_seed)
+                                      seed=seed,
+                                      channels_first=channels_first)
     msks_train = PreprocessHDF5Matrix(hdf5_data_filename,
                                       "msks_train",
                                       msk_datagen,
                                       crop_dim=crop_dim,
                                       use_augmentation=args.use_augmentation,
-                                      seed=random_seed)
+                                      seed=seed,
+                                      channels_first=channels_first)
 
     # Validation dataset
     # No data augmentation
@@ -223,13 +232,15 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
                                            image_datagen,
                                            crop_dim=crop_dim,
                                            use_augmentation=False,  # Don't augment
-                                           seed=random_seed)
+                                           seed=seed,
+                                           channels_first=channels_first)
     msks_validation = PreprocessHDF5Matrix(hdf5_data_filename,
                                            "msks_validation",
                                            msk_datagen,
                                            crop_dim=crop_dim,
                                            use_augmentation=False,  # Don't augment
-                                           seed=random_seed)
+                                           seed=seed,
+                                           channels_first=channels_first)
 
     # Testing dataset
     # No data augmentation
@@ -238,13 +249,15 @@ def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1]):
                                         image_datagen,
                                         crop_dim=crop_dim,
                                         use_augmentation=False,  # Don't augment
-                                        seed=random_seed)
+                                        seed=seed,
+                                        channels_first=channels_first)
     msks_testing = PreprocessHDF5Matrix(hdf5_data_filename,
                                         "msks_testing",
                                         msk_datagen,
                                         crop_dim=crop_dim,
                                         use_augmentation=False,  # Don't augment
-                                        seed=random_seed)
+                                        seed=seed,
+                                        channels_first=channels_first)
 
     print("Batch size = {}".format(batch_size))
 

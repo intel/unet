@@ -21,7 +21,7 @@
 
 from distutils.sysconfig import get_python_lib
 from tensorflow.contrib.session_bundle import exporter
-import keras
+import keras as K
 import tensorflow as tf
 
 import os
@@ -36,15 +36,6 @@ parser.add_argument("--output_directory",
                     default="saved_2dunet_model_protobuf")
 
 args = parser.parse_args()
-
-
-def sensitivity(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
-    return 1
-
-
-def specificity(y_true, y_pred, axis=(1, 2, 3), smooth=1.):
-    return 1
-
 
 def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
     """
@@ -83,10 +74,10 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     Combined Dice and Binary Cross Entropy Loss
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
-        (1-weight)*keras.losses.binary_crossentropy(y_true, y_pred)
+        (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
 
 
-sess = keras.backend.get_session()
+sess = K.backend.get_session()
 
 print("Loading saved Keras model.")
 
@@ -94,19 +85,17 @@ print("Loading saved Keras model.")
 If there are other custom loss and metric functions you'll need to specify them
 and add them to the dictionary below.
 """
-model = keras.models.load_model(args.input_filename, custom_objects={
+model = K.models.load_model(args.input_filename, custom_objects={
                                 "dice_coef": dice_coef,
-                                "sensitivity": sensitivity,
-                                "specificity": specificity,
                                 "combined_dice_ce_loss": combined_dice_ce_loss,
                                 "dice_coef_loss": dice_coef_loss})
 
 
 print("Freezing the graph.")
-keras.backend.set_learning_phase(0)
+K.backend.set_learning_phase(0)
 
 signature = tf.saved_model.signature_def_utils.predict_signature_def(
-    inputs={'input': model.input}, outputs={'output': model.output})
+    inputs={"input": model.input}, outputs={"output": model.output})
 
 print("Saving the model to directory {}".format(args.output_directory))
 

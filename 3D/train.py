@@ -145,7 +145,7 @@ unet_model.model.fit_generator(training_generator,
                     callbacks=callbacks,
                     max_queue_size=args.num_prefetched_batches,
                     workers=args.num_data_loaders,
-                    use_multiprocessing=False)  # True seems to cause fork issue
+                    use_multiprocessing=True)  #False)  # True seems to cause fork issue
 
 # Evaluate final model on test holdout set
 testing_generator = DataGenerator("test", args.data_path,

@@ -19,9 +19,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import keras
+import keras as K
 import tensorflow as tf
-
 import os
 import argparse
 
@@ -73,10 +72,10 @@ def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1., weight=.9):
     Combined Dice and Binary Cross Entropy Loss
     """
     return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
-        (1-weight)*keras.losses.binary_crossentropy(y_true, y_pred)
+        (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
 
 
-sess = keras.backend.get_session()
+sess = K.backend.get_session()
 
 print("Loading saved Keras model.")
 
@@ -84,7 +83,7 @@ print("Loading saved Keras model.")
 If there are other custom loss and metric functions you'll need to specify them
 and add them to the dictionary below.
 """
-model = keras.models.load_model(args.input_filename, custom_objects={
+model = K.models.load_model(args.input_filename, custom_objects={
                                 "dice_coef": dice_coef,
                                 "combined_dice_ce_loss": combined_dice_ce_loss,
                                 "dice_coef_loss": dice_coef_loss})

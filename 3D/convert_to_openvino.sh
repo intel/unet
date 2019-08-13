@@ -19,7 +19,7 @@
 #
 
 # Setup OpenVINO environment
-source /opt/intel/computer_vision_sdk/bin/setupvars.sh
+source /opt/intel/openvino/bin/setupvars.sh
 
 # Convert model to TensorFlow Serving protobug format
 python convert_keras_to_tensorflow_serving_model.py
