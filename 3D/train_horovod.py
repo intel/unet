@@ -232,7 +232,7 @@ if hvd.rank() == 0:
                                       **validation_data_params)
     testing_generator.print_info()
 
-    m = model.evaluate_generator(testing_generator, verbose=1,
+    m = unet_model.model.evaluate_generator(testing_generator, verbose=1,
                                  max_queue_size=args.num_prefetched_batches,
                                  workers=args.num_data_loaders,
                                  use_multiprocessing=False)
