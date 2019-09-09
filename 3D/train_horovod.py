@@ -70,6 +70,12 @@ if (hvd.rank() == 0):  # Only print on worker 0
     print("Args = {}".format(args))
     print_summary = args.print_model
     verbose = 1
+
+    if CHANNELS_LAST:
+       print("Data format = channels_last")
+    else:
+       print("Data format = channels first")
+
     # os.system("lscpu")
     #os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))

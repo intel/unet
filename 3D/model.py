@@ -39,7 +39,7 @@ class unet(object):
             self.concat_axis = 1
             self.data_format = "channels_first"
 
-        print("Data format = " + self.data_format)
+        #print("Data format = " + self.data_format)
         K.backend.set_image_data_format(self.data_format)
 
         self.fms = feature_maps # 16 or 32 feature maps in the first convolutional layer
