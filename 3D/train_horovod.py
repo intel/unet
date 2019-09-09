@@ -19,6 +19,8 @@
 #
 
 # Using OpenMPI (https://www.open-mpi.org/software/ompi/v4.0/):
+# mpirun -np 4 -H host1,host2 -map-by ppr:1:socket:pe=24 --oversubscribe --report-bindings -mca btl_tcp_if_exclude lo,virbr0,virbr0-nic,enp94s0f1,eno1,eno2 bash run_unet_horovod.sh
+#
 # mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 \
 #        --oversubscribe --report-bindings python train_horovod.py
 # np :  Number of total processes (workers) = # nodes times # workers per node
