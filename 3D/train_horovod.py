@@ -148,7 +148,20 @@ callbacks = [
     #
     # Note: This callback must be in the list before the ReduceLROnPlateau,
     # TensorBoard or other metrics-based callbacks.
-    hvd.callbacks.MetricAverageCallback()
+    hvd.callbacks.MetricAverageCallback(),
+
+    # Horovod: using `lr = 1.0 * hvd.size()` from the very
+    # beginning leads to worse final
+    # accuracy. Scale the learning rate
+    # `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
+    # the first five epochs. See https://arxiv.org/abs/1706.02677
+    # for details.
+    hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=3, verbose=verbose),
+
+    # Reduce the learning rate if training plateaus.
+    K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.6,
+                                  verbose=verbose,
+                                  patience=5, min_lr=0.0001)
 ]
 
 if (hvd.rank() == 0):
