@@ -26,6 +26,8 @@ import numpy as np
 import tensorflow as tf
 from argparser import args
 
+TRAIN_TESTVAL_SEED = 816
+
 if args.keras_api:
     import keras as K
 else:
@@ -77,9 +79,12 @@ class DataGenerator(K.utils.Sequence):
         self.augment = augment
 
         self.seed = seed
+
+        np.random.seed(TRAIN_TESTVAL_SEED)  # Seed has to be same for all workers so that train/test/val lists are the same        
         self.list_IDs = self.get_file_list()
         self.num_images = self.get_length()
-
+        
+        np.random.seed(self.seed)  # Now seed workers differently so that the sequence is different for each worker
         self.on_epoch_end()   # Generate the sequence
 
         self.num_batches = self.__len__()
@@ -155,7 +160,6 @@ class DataGenerator(K.utils.Sequence):
             self.mskFiles[idx] = os.path.join(self.data_path,
                                               experiment_data["training"][idx]["label"])
 
-        np.random.seed(self.seed)
         idxList = np.random.permutation(idxList)  # Randomize list
 
         train_len = int(np.floor(numFiles * self.train_test_split)) # Number of training files
