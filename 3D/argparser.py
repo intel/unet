@@ -63,7 +63,7 @@ parser.add_argument("--validate_test_split",
                     help="Valdiation/test split (0-1)")
 parser.add_argument("--epochs",
                     type=int,
-                    default=2,
+                    default=40,
                     help="Number of epochs")
 parser.add_argument("--intraop_threads",
                     type=int,
@@ -109,5 +109,3 @@ args = parser.parse_args()
 
 args.num_data_loaders = num_data_loaders
 args.num_prefetched_batches = num_prefetched_batches
-
-print("Args = {}".format(args))

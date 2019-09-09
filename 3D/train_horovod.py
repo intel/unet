@@ -67,6 +67,7 @@ os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
 if (hvd.rank() == 0):  # Only print on worker 0
+    print("Args = {}".format(args))
     print_summary = args.print_model
     verbose = 1
     # os.system("lscpu")

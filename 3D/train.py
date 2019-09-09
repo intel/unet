@@ -26,6 +26,8 @@ import tensorflow as tf
 import keras as K
 #from tensorflow import keras as K
 
+print("Args = {}".format(args))
+
 CHANNELS_LAST = True
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
