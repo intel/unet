@@ -78,13 +78,7 @@ if (hvd.rank() == 0):  # Only print on worker 0
 else:  # Don't print on workers > 0
     print_summary = 0
     verbose = 0
-    # Horovod needs to have every worker do the same amount of work.
-    # Otherwise it will complain at the end of the epoch when
-    # worker 0 takes more time than the others to do validation,
-    # logging, and model checkpointing.
-    # We'll save the worker logs and models separately but only
-    # use the logs/saved model from worker 0.
-    args.saved_model = "./worker{}/3d_unet_decathlon.hdf5".format(hvd.rank())
+    
 
 # Optimize CPU threads for TensorFlow
 CONFIG = tf.ConfigProto(
@@ -130,13 +124,8 @@ checkpoint = K.callbacks.ModelCheckpoint(args.saved_model,
                                          save_best_only=True)
 
 # TensorBoard
-if (hvd.rank() == 0):
-    tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-        saved_model_directory, "tensorboard_logs"), update_freq="batch")
-else:
-    tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-        saved_model_directory, "tensorboard_logs_worker{}".format(hvd.rank())),
-        update_freq="batch")
+tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
+        saved_model_directory, "tensorboard_logs_worker{}".format(hvd.rank())))
 
 # NOTE:
 # Horovod talks about having callbacks for rank 0 and callbacks
@@ -159,23 +148,12 @@ callbacks = [
     #
     # Note: This callback must be in the list before the ReduceLROnPlateau,
     # TensorBoard or other metrics-based callbacks.
-    hvd.callbacks.MetricAverageCallback(),
-
-    # Horovod: using `lr = 1.0 * hvd.size()` from the very
-    # beginning leads to worse final
-    # accuracy. Scale the learning rate
-    # `lr = 1.0` ---> `lr = 1.0 * hvd.size()` during
-    # the first five epochs. See https://arxiv.org/abs/1706.02677
-    # for details.
-    hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=3, verbose=verbose),
-
-    # Reduce the learning rate if training plateaus.
-    K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.6,
-                                  verbose=verbose,
-                                  patience=5, min_lr=0.0001),
-    tb_logs,  # we need this here otherwise tensorboard delays rank 0
-    checkpoint
+    hvd.callbacks.MetricAverageCallback()
 ]
+
+if (hvd.rank() == 0):
+    callbacks.append(checkpoint)
+    callbacks.append(tb_logs)
 
 training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                         "batch_size": args.bz,
@@ -210,18 +188,17 @@ if (hvd.rank() == 0):
 # Fit the model
 # Do at least 3 steps for training and validation
 steps_per_epoch = max(3, training_generator.get_length()//(args.bz*hvd.size()))
-validation_steps = max(
-    3, 3*training_generator.get_length()//(args.bz*hvd.size()))
+validation_steps = max(3, validation_generator.get_length()//(args.bz*hvd.size()))
 
 unet_model.model.fit_generator(training_generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=args.epochs, verbose=verbose,
                     validation_data=validation_generator,
-                    #validation_steps=validation_steps,
+                    validation_steps=validation_steps,
                     callbacks=callbacks,
-                    max_queue_size=1, #args.num_prefetched_batches,
-                    workers=1, #args.num_data_loaders,
-                    use_multiprocessing=True)
+                    max_queue_size=args.num_prefetched_batches,
+                    workers=args.num_data_loaders,
+                    use_multiprocessing=False)
 
 if hvd.rank() == 0:
 
@@ -249,3 +226,4 @@ if hvd.rank() == 0:
     print("Stopped script on {}".format(stop_time))
     print("\nTotal time = {}".format(
         stop_time - start_time))
+

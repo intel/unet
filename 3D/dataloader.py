@@ -156,15 +156,16 @@ class DataGenerator(K.utils.Sequence):
                                               experiment_data["training"][idx]["label"])
 
         np.random.seed(self.seed)
-        randomIdx = np.random.random(numFiles)  # List of random numbers
-        # Random number go from 0 to 1. So anything above
-        # self.train_split is in the validation list.
-        trainIdx = idxList[randomIdx < self.train_test_split]
+        idxList = np.random.permutation(idxList)  # Randomize list
 
-        listIdx = idxList[randomIdx >= self.train_test_split]
-        randomIdx = np.random.random(len(listIdx))  # List of random numbers
-        validateIdx = listIdx[randomIdx >= self.validate_test_split]
-        testIdx = listIdx[randomIdx < self.validate_test_split]
+        train_len = int(np.floor(numFiles * self.train_test_split)) # Number of training files
+        test_val_len = numFiles - train_len
+        val_len = int(np.floor(test_val_len * self.validate_test_split))  # Number of validation files
+        test_len = test_val_len - val_len  # Number of testing files
+        
+        trainIdx = idxList[0:train_len]  # List of training indices
+        validateIdx = idxList[train_len:(train_len+val_len)]  # List of validation indices
+        testIdx = idxList[-test_len:]  # List of testing indices (last testIdx elements)
 
         if self.setType == "train":
             return trainIdx
@@ -196,7 +197,7 @@ class DataGenerator(K.utils.Sequence):
         # Generate data
         X, y = self.__data_generation(list_IDs_temp)
 
-        return X, y
+        return (X, y)
 
     def get_batch(self, index):
         """
