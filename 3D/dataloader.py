@@ -66,7 +66,7 @@ class DataGenerator(K.utils.Sequence):
 
         if setType not in ["train", "test", "validate"]:
             print("Dataloader error.  You forgot to specify train, test, or validate.")
-            
+
         self.setType = setType
         self.dim = dim
         self.batch_size = batch_size
@@ -80,10 +80,10 @@ class DataGenerator(K.utils.Sequence):
 
         self.seed = seed
 
-        np.random.seed(TRAIN_TESTVAL_SEED)  # Seed has to be same for all workers so that train/test/val lists are the same        
-        self.list_IDs = self.get_file_list()
+        np.random.seed(TRAIN_TESTVAL_SEED)  # Seed has to be same for all workers so that train/test/val lists are the same
+        self.list_IDs = self.create_file_list()
         self.num_images = self.get_length()
-        
+
         np.random.seed(self.seed)  # Now seed workers differently so that the sequence is different for each worker
         self.on_epoch_end()   # Generate the sequence
 
@@ -99,7 +99,16 @@ class DataGenerator(K.utils.Sequence):
         self.dim_to_rotate = equal_dim_axis
 
     def get_length(self):
+        """
+        Get the length of the list of file IDs associated with this data loader
+        """
         return len(self.list_IDs)
+
+    def get_file_list(self):
+        """
+        Get the list of file IDs associated with this data loader
+        """
+        return self.list_IDs
 
     def print_info(self):
         """
@@ -120,7 +129,7 @@ class DataGenerator(K.utils.Sequence):
         print("="*30)
         print("*"*30)
 
-    def get_file_list(self):
+    def create_file_list(self):
         """
         Get list of the files from the BraTS raw data
         Split into training and testing sets.
@@ -166,7 +175,7 @@ class DataGenerator(K.utils.Sequence):
         test_val_len = numFiles - train_len
         val_len = int(np.floor(test_val_len * self.validate_test_split))  # Number of validation files
         test_len = test_val_len - val_len  # Number of testing files
-        
+
         trainIdx = idxList[0:train_len]  # List of training indices
         validateIdx = idxList[train_len:(train_len+val_len)]  # List of validation indices
         testIdx = idxList[-test_len:]  # List of testing indices (last testIdx elements)
