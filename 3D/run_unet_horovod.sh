@@ -19,8 +19,8 @@
 #
 
 source ~/.bashrc
-conda activate tf
-cd ~/topologies/3D_UNet/keras_training_only_version/
-python train_horovod.py --bz 8  --intraop_threads 28
+conda activate unet
+cd /home/unet/unet/3D
+python train_horovod.py --bz 4 --data_path /home/unet/data/brats/Task01_BrainTumour/
 
 conda deactivate
