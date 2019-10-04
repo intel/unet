@@ -109,10 +109,8 @@ python train.py \
         --featuremaps $FEATURE_MAPS \
         --print_model \
         --keras_api \
-        --use_upsampling \
-        --use_augmentation \
-        --use_dropout
-
+        --use_augmentation 
+        
 echo " "
 echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
