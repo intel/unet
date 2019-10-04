@@ -70,7 +70,7 @@ parser.add_argument("--save_path",
 parser.add_argument("--output_filename",
 					default="decathlon_brats.h5",
 					help="Name of the output HDF5 file")
-parser.add_argument("--resize", type=int, default=144,
+parser.add_argument("--resize", type=int, default=240,
 					help="Resize height and width to this size. "
 					"Original size = 240")
 parser.add_argument("--split", type=float, default=0.85,
