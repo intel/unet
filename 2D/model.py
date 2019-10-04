@@ -270,7 +270,7 @@ class unet(object):
             up = K.layers.UpSampling2D(name="upA", size=(2, 2),
                                        interpolation="bilinear")(decodeA)
         else:
-            up = K.layers.Conv2DTranspose(name="transconvA", filters=fms,
+            up = K.layers.Conv2DTranspose(name="transconvA", filters=self.fms,
                                           **params_trans)(decodeA)
         concatA = K.layers.concatenate(
             [up, encodeA], axis=self.concat_axis, name="concatA")
