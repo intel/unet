@@ -88,7 +88,7 @@ def export_keras_to_tf(input_model, output_model):
     print("       --output_dir openvino_models/FP32/ \\")
     print("       --data_type FP32")
 
-
+    return prediction_node_names
 
 def main():
     argv = getInputParameters().parse_args()
