@@ -27,6 +27,7 @@ You can try custom models by modifying the code here.
 from argparser import args
 import os
 import time
+import shutil
 
 import tensorflow as tf  # conda install -c anaconda tensorflow
 
@@ -34,6 +35,9 @@ if args.keras_api:
     import keras as K
 else:
     from tensorflow import keras as K
+
+from tensorflow.python.framework import graph_util
+from tensorflow.python.framework import graph_io
 
 class unet(object):
     """
@@ -179,11 +183,18 @@ class unet(object):
 
         num_chan_in = imgs_shape[self.concat_axis]
         num_chan_out = msks_shape[self.concat_axis]
-        
-        if self.channels_first:
-            inputs = K.layers.Input([num_chan_in, None, None], name="MRImages")
-        else:
-            inputs = K.layers.Input([None, None, num_chan_in], name="MRImages")
+
+        # You can make the network work on variable input height and width
+        # if you pass None as the height and width
+        # if self.channels_first:
+        #     input_shape = [num_chan_in, None, None]
+        # else:
+        #     input_shape = [None, None, num_chan_in]
+
+        self.input_shape = imgs_shape[1:]
+        self.num_input_channels = num_chan_in
+
+        inputs = K.layers.Input(self.input_shape, name="MRImages")
 
         # Convolution parameters
         params = dict(kernel_size=(3, 3), activation="relu",
@@ -193,7 +204,6 @@ class unet(object):
         # Transposed convolution parameters
         params_trans = dict(kernel_size=(2, 2), strides=(2, 2),
                             padding="same")
-
 
         encodeA = K.layers.Conv2D(name="encodeAa", filters=self.fms, **params)(inputs)
         encodeA = K.layers.Conv2D(name="encodeAb", filters=self.fms, **params)(encodeA)
@@ -379,3 +389,56 @@ class unet(object):
         """
 
         return K.models.load_model(model_filename, custom_objects=self.custom_objects)
+
+
+    def save_frozen_model(self, model_filename):
+        """
+        Save frozen TensorFlow formatted model protobuf
+        """
+        model = self.load_model(model_filename)
+
+        # Change filename to protobuf extension
+        base = os.path.basename(model_filename)
+        output_model = os.path.splitext(base)[0] + ".pb"
+
+        # Set Keras to inference
+        K.backend._LEARNING_PHASE = tf.constant(0)
+        K.backend.set_learning_phase(False)
+        K.backend.set_learning_phase(0)
+        K.backend.set_image_data_format("channels_last")
+
+        num_output = len(model.outputs)
+        predictions = [None] * num_output
+        prediction_node_names = [None] * num_output
+
+        for i in range(num_output):
+            prediction_node_names[i] = "output_node" + str(i)
+            predictions[i] = tf.identity(model.outputs[i],
+                    name=prediction_node_names[i])
+
+        sess = K.backend.get_session()
+
+        constant_graph = graph_util.convert_variables_to_constants(sess,
+                         sess.graph.as_graph_def(), prediction_node_names)
+        infer_graph = graph_util.remove_training_nodes(constant_graph)
+
+        # Write protobuf of frozen model
+        frozen_dir = "./tf_protobuf/"
+        shutil.rmtree(frozen_dir, ignore_errors=True) # Remove existing directory
+        graph_io.write_graph(infer_graph, frozen_dir, output_model, as_text=False)
+
+        pb_filename = os.path.join(frozen_dir, output_model)
+        print("Frozen TensorFlow model written to: {}".format(pb_filename))
+        print("Convert this to OpenVINO by running:\n")
+        print("source /opt/intel/openvino/bin/setupvars.sh")
+        print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
+        print("       --input_model {} \\".format(pb_filename))
+
+        shape_string = "[1"
+        for idx in range(len(model.inputs[0].shape[1:])):
+            shape_string += ",{}".format(model.inputs[0].shape[idx+1])
+        shape_string += "]"
+
+        print("       --input_shape {} \\".format(shape_string))
+        print("       --output_dir openvino_models/FP32/ \\")
+        print("       --data_type FP32\n\n")

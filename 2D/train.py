@@ -86,6 +86,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
                   [args.crop_dim, args.crop_dim],
                   args.channels_first, args.seed)
 
+
     print("-" * 30)
     print("Creating and compiling model ...")
     print("-" * 30)
@@ -128,6 +129,14 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
 
     unet_model.evaluate_model(model_filename, imgs_testing, msks_testing)
 
+    """
+    Step 5: Save frozen TensorFlow version of model
+    This can be convert into OpenVINO format with model optimizer.
+    """
+    print("-" * 30)
+    print("Freezing model and saved to a TensorFlow protobuf ...")
+    print("-" * 30)
+    unet_model.save_frozen_model(model_filename)
 
 if __name__ == "__main__":
 
