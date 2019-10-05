@@ -80,16 +80,9 @@ NOTE: The U-Net model can be created with either Transposed Convolution layers o
 bash ${INTEL_OPENVINO_DIR}/inference_engine/samples/build_samples.sh
 ```
 
-This should cause all of the Intel&reg; OpenVINO&trade; shared libraries to be built on your system under the directory `${INTEL_CVSDK_DIR}/inference_engine/lib`. For CPU you'll need to link to `libcpu_extension_avx2.so`. For example,
+This should cause all of the Intel&reg; OpenVINO&trade; shared libraries to be built on your system under the directory `${INTEL_CVSDK_DIR}/inference_engine/lib`. For CPU you'll need to link to `libcpu_extension_avx2.so` or `libcpu_extension_avx512.so`. For example,
 
 ```
-python inference_openvino.py -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so
+python inference_openvino.py -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/intel64/libcpu_extension_avx2.so
 ```
 
-or
-
-```
-python inference_openvino.py -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/ubuntu_16.04/intel64/libcpu_extension_avx2.so
-```
-
-depending on your operating system.
