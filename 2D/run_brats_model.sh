@@ -40,7 +40,7 @@ fi
 
 DECATHLON_DIR=${1:-"../../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
-IMG_SIZE=${3:-240}  # This should be a multiple of 16
+IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
 INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
 
