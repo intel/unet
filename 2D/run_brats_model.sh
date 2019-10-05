@@ -86,9 +86,9 @@ echo "Converting Decathlon raw data to HDF5 file."
 # Resize should be a multiple of 16 because of the way the
 # max pooling and upsampling works in U-Net. The rule is
 # 2^n where n is the number of max pooling/upsampling concatenations.
-#python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
-#        --output_filename $MODEL_OUTPUT_FILENAME \
-#        --save_path $DECATHLON_DIR
+python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
+        --output_filename $MODEL_OUTPUT_FILENAME \
+        --save_path $DECATHLON_DIR
 
 echo " "
 echo "***********************************"
