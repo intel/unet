@@ -18,8 +18,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
-import psutil  # pip install psutil
+import psutil  
 import os
 
 DATA_PATH = os.path.join("../../data/decathlon/240x240/")
@@ -57,8 +56,9 @@ NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
 
 # Figure out how many physical cores we have available
-# Set floor to at least 2 threads
-NUM_INTRA_THREADS = max(len(psutil.Process().cpu_affinity()), 2)
+# Minimum of either the CPU affinity or the number of physical cores
+import multiprocessing
+NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(logical=False))
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
