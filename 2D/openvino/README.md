@@ -70,7 +70,7 @@ python ${INTEL_OPENVINO_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_m
 
 For example:
 
-```python create_validation_sample.py --hdf5_datafile ../../../data/decathlon/144x144/Task01_BrainTumour.h5```
+```python create_validation_sample.py --hdf5_datafile ../../../data/decathlon/Task01_BrainTumour.h5```
 
 5. The scripts `inference_keras.py` and `inference_openvino.py` load the `validation_data.npz` data file and run inference. Add the `--plot` argument to the command line and the script will plot figures for each prediction.
 
