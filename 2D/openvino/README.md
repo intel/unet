@@ -2,6 +2,8 @@
 
 ### How to freeze a saved TensorFlow*/Keras model and convert it to Intel&reg; OpenVINO&trade; format
 
+For more details, please see the [OpenVINO documentation](https://docs.openvinotoolkit.org/latest/_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html) 
+
 1. Convert your Keras model to TensorFlow* saved model fomat.
 
 Use the [tf.train.Saver](https://www.tensorflow.org/api_docs/python/tf/train/Saver) to save the model. The script
@@ -23,13 +25,11 @@ Model output shape =  (?, 144, 144, 1)
 
 This strips any remaining training nodes and turns variables into constants.
 
-The CONDA_PREFIX should be something like /home/bduser/anaconda3/envs/tf112_mkl_p36.
-It refers to where your Conda packages are installed for this environment.
-It'd be nice if there were an easier way to find freeze_graph.py
+If you have installed TensorFlow into the conda environment, then the TensorFlow `freeze_graph` program should be installed in the path. 
 
 ```
 mkdir frozen_model
-python ${CONDA_PREFIX}/lib/python3.6/site-packages/tensorflow/python/tools/freeze_graph.py --input_saved_model_dir saved_2dunet_model_protobuf --output_node_names PredictionMask/Sigmoid --output_graph frozen_model/saved_model_frozen.pb
+freeze_graph --input_saved_model_dir saved_2dunet_model_protobuf --output_node_names PredictionMask/Sigmoid --output_graph frozen_model/saved_model_frozen.pb
 ```
 
 3. Use the Intel&reg; OpenVINO&trade; model optimizer to convert the frozen TensorFlow* model to Intel&reg; OpenVINO&trade; IR format.
