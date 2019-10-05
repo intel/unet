@@ -436,8 +436,7 @@ if __name__ == "__main__":
 		  "training and validation HDF5 data file.")
 	print(args)
 
-	save_dir = os.path.join(
-		args.save_path, "{}x{}/".format(args.resize, args.resize))
+	save_dir = args.save_path
 
 	# Create directory
 	try:

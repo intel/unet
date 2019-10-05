@@ -118,7 +118,6 @@ echo "****************************************"
 
 python plot_inference_examples.py  \
         --data_path $DECATHLON_DIR \
-        --crop_dim $IMG_SIZE \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME
