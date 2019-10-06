@@ -120,4 +120,6 @@ python plot_inference_examples.py  \
         --data_path $DECATHLON_DIR \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
-        --inference_filename $INFERENCE_FILENAME
+        --inference_filename $INFERENCE_FILENAME \
+        --crop_dim $IMG_SIZE
+        

@@ -186,12 +186,13 @@ class unet(object):
 
         # You can make the network work on variable input height and width
         # if you pass None as the height and width
-        # if self.channels_first:
-        #     input_shape = [num_chan_in, None, None]
-        # else:
-        #     input_shape = [None, None, num_chan_in]
+        if self.channels_first:
+             self.input_shape = [num_chan_in, None, None]
+        else:
+             self.input_shape = [None, None, num_chan_in]
 
-        self.input_shape = imgs_shape[1:]
+#        self.input_shape = imgs_shape[1:]
+
         self.num_input_channels = num_chan_in
 
         inputs = K.layers.Input(self.input_shape, name="MRImages")

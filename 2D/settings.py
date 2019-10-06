@@ -21,8 +21,8 @@
 import psutil  
 import os
 
-DATA_PATH = os.path.join("../../data/decathlon/240x240/")
-DATA_FILENAME = "decathlon_brats.h5"
+DATA_PATH = os.path.join("../../data/decathlon/")
+DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME = "unet_model_for_decathlon.hdf5"
 
