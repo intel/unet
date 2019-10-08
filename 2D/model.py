@@ -392,7 +392,7 @@ class unet(object):
         return K.models.load_model(model_filename, custom_objects=self.custom_objects)
 
 
-    def save_frozen_model(self, model_filename):
+    def save_frozen_model(self, model_filename, input_shape):
         """
         Save frozen TensorFlow formatted model protobuf
         """
@@ -436,8 +436,8 @@ class unet(object):
         print("       --input_model {} \\".format(pb_filename))
 
         shape_string = "[1"
-        for idx in range(len(model.inputs[0].shape[1:])):
-            shape_string += ",{}".format(model.inputs[0].shape[idx+1])
+        for idx in range(len(input_shape[1:])):
+            shape_string += ",{}".format(input_shape[idx+1])
         shape_string += "]"
 
         print("       --input_shape {} \\".format(shape_string))

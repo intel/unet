@@ -136,7 +136,7 @@ def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     print("-" * 30)
     print("Freezing model and saved to a TensorFlow protobuf ...")
     print("-" * 30)
-    unet_model.save_frozen_model(model_filename)
+    unet_model.save_frozen_model(model_filename, imgs_testing.shape)
 
 if __name__ == "__main__":
 
