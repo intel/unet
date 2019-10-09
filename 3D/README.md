@@ -76,7 +76,7 @@ To convert the trained model to [Intel&reg; OpenVINO&trade;](https://software.in
 
 1. Download and install [Intel&reg; OpenVINO&trade;](https://software.intel.com/en-us/openvino-toolkit) (2019 R2). Start the Intel&reg; OpenVINO&trade; environment: 
 ```
-source /opt/intel/computer_vision_sdk/bin/setupvars.sh
+source /opt/intel/openvino/bin/setupvars.sh
 ```
 
 2. After training finishes, the `train.py` will save a frozen TensorFlow protobuf for you and give you the command to run the Intel&reg; OpenVINO&trade; model optimizer command to convert the model:
