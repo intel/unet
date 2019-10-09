@@ -22,8 +22,8 @@ import os
 import argparse
 import psutil
 
-num_data_loaders = 4
-num_prefetched_batches = 4
+num_data_loaders = 2
+num_prefetched_batches = 3
 
 parser = argparse.ArgumentParser(
     description="Train 3D U-Net model", add_help=True,
@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("--bz",
                     type=int,
-                    default=8,
+                    default=4,
                     help="Batch size")
 parser.add_argument("--patch_height",
                     type=int,
@@ -109,5 +109,3 @@ args = parser.parse_args()
 
 args.num_data_loaders = num_data_loaders
 args.num_prefetched_batches = num_prefetched_batches
-
-print("Args = {}".format(args))

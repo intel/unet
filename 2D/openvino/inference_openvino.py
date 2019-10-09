@@ -34,7 +34,7 @@ from the Decathlon dataset.
 
 You'll need the extension library to handle the Resize_Bilinear operations.
 
-python inference_openvino.py -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so
+python inference_openvino.py -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/intel64/libcpu_extension_avx2.so
 
 """
 

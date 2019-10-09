@@ -18,16 +18,29 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 --oversubscribe --report-bindings python train_horovod.py
+# Using OpenMPI (https://www.open-mpi.org/software/ompi/v4.0/):
+# mpirun -np 4 -H host1,host2 -map-by ppr:1:socket:pe=24 --oversubscribe --report-bindings -mca btl_tcp_if_exclude lo,virbr0,virbr0-nic,enp94s0f1,eno1,eno2 bash run_unet_horovod.sh
+#
+# mpirun -np 4 -H localhost --map-by ppr:2:socket:pe=10 \
+#        --oversubscribe --report-bindings python train_horovod.py
+# np :  Number of total processes (workers) = # nodes times # workers per node
+# --map-by ppr:2 Processes (workers) per resource = 2 workers per resource
+# --map-by socket Resource = socket
+# --map-by pe=10 Process elements = 10 cores per worker
+# --oversubscribe Allow more than one worker per resource
+# --report-bindings Report what nodes/sockets/cores are bound by each worker
 
+#
+# Using the Intel MPI:
+# mpirun -n 4 -H localhost -ppn 2  -print-rank-map  -genv I_MPI_PIN_DOMAIN=socket  \
+#        -genv OMP_NUM_THREADS=24 -genv OMP_PROC_BIND=true \
+#        -genv KMP_BLOCKTIME=1  python train_horovod.py
+#
+#   ppn:  Processes (workers) per node
+#   -print-rank-map  Report what nodes/sockets/cores are bound by each worker
+#   I_MPI_PIN_DOMAIN=socket pins a worker to a socket
+#   -n
 
-
-from dataloader import DataGenerator
-from model import unet
-import datetime
-import os
-import numpy as np
-import tensorflow as tf
 from argparser import args
 if args.keras_api:
     import keras as K
@@ -40,15 +53,21 @@ CHANNELS_LAST = True
 
 hvd.init()
 
-
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
 os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
 if (hvd.rank() == 0):  # Only print on worker 0
+    print("Args = {}".format(args))
     print_summary = args.print_model
     verbose = 1
+
+    if CHANNELS_LAST:
+       print("Data format = channels_last")
+    else:
+       print("Data format = channels first")
+
     # os.system("lscpu")
     #os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
@@ -58,13 +77,7 @@ if (hvd.rank() == 0):  # Only print on worker 0
 else:  # Don't print on workers > 0
     print_summary = 0
     verbose = 0
-    # Horovod needs to have every worker do the same amount of work.
-    # Otherwise it will complain at the end of the epoch when
-    # worker 0 takes more time than the others to do validation,
-    # logging, and model checkpointing.
-    # We'll save the worker logs and models separately but only
-    # use the logs/saved model from worker 0.
-    args.saved_model = "./worker{}/3d_unet_decathlon.hdf5".format(hvd.rank())
+    
 
 # Optimize CPU threads for TensorFlow
 CONFIG = tf.ConfigProto(
@@ -114,13 +127,8 @@ checkpoint = K.callbacks.ModelCheckpoint(args.saved_model,
                                          save_best_only=True)
 
 # TensorBoard
-if (hvd.rank() == 0):
-    tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-        saved_model_directory, "tensorboard_logs"), update_freq="batch")
-else:
-    tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-        saved_model_directory, "tensorboard_logs_worker{}".format(hvd.rank())),
-        update_freq="batch")
+tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
+        saved_model_directory, "tensorboard_logs_worker{}".format(hvd.rank())))
 
 # NOTE:
 # Horovod talks about having callbacks for rank 0 and callbacks
@@ -156,85 +164,57 @@ callbacks = [
     # Reduce the learning rate if training plateaus.
     K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.6,
                                   verbose=verbose,
-                                  patience=5, min_lr=0.0001),
-    tb_logs,  # we need this here otherwise tensorboard delays rank 0
-    checkpoint
+                                  patience=5, min_lr=0.0001)
 ]
 
-# Run the script  "load_brats_images.py" to generate these Numpy data files
-#imgs_test = np.load(os.path.join(sys.path[0],"imgs_test_3d.npy"))
-#msks_test = np.load(os.path.join(sys.path[0],"msks_test_3d.npy"))
+if (hvd.rank() == 0):
+    callbacks.append(checkpoint)
+    callbacks.append(tb_logs)
 
-seed = hvd.rank()  # Make sure each worker gets different random seed
 training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                         "batch_size": args.bz,
                         "n_in_channels": args.number_input_channels,
                         "n_out_channels": 1,
                         "train_test_split": args.train_test_split,
+                        "validate_test_split": args.validate_test_split,
                         "augment": True,
                         "shuffle": True,
-                        "seed": seed}
+                        "seed": hvd.rank()}
 
-training_generator = DataGenerator(True, args.data_path,
+training_generator = DataGenerator("train", args.data_path,
                                    **training_data_params)
+if (hvd.rank() == 0):
+    training_generator.print_info()
 
 validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
                           "batch_size": 1,
                           "n_in_channels": args.number_input_channels,
                           "n_out_channels": 1,
                           "train_test_split": args.train_test_split,
+                          "validate_test_split": args.validate_test_split,
                           "augment": False,
                           "shuffle": False,
                           "seed": args.random_seed}
-validation_generator = DataGenerator(False, args.data_path,
+validation_generator = DataGenerator("validate", args.data_path,
                                      **validation_data_params)
+
+if (hvd.rank() == 0):
+    validation_generator.print_info()
 
 # Fit the model
 # Do at least 3 steps for training and validation
 steps_per_epoch = max(3, training_generator.get_length()//(args.bz*hvd.size()))
-validation_steps = max(
-    3, 3*training_generator.get_length()//(args.bz*hvd.size()))
+validation_steps = max(3, validation_generator.get_length()//(args.bz*hvd.size()))
 
-"""
-Keras Data Pipeline using Sequence generator
-https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
-
-The sequence generator allows for Keras to load batches at runtime.
-It's very useful in the case when your entire dataset won't fit into
-memory. The Keras sequence will load one batch at a time to
-feed to the model. You can specify pre-fetching of batches to
-make sure that an additional batch is in memory when the previous
-batch finishes processing.
-
-max_queue_size : Specifies how many batches will be prepared (pre-fetched)
-in the queue. Does not indicate multiple generator instances.
-
-workers, use_multiprocessing: Generates multiple generator instances.
-
-num_data_loaders is defined in argparser.py
-"""
-
-if args.keras_api:
-    unet_model.model.fit_generator(training_generator,
-                                   steps_per_epoch=steps_per_epoch,
-                                   epochs=args.epochs, verbose=verbose,
-                                   validation_data=validation_generator,
-                                   # validation_steps=validation_steps,
-                                   callbacks=callbacks,
-                                   max_queue_size=args.num_prefetched_batches,
-                                   workers=args.num_data_loaders,
-                                   use_multiprocessing=False)  # True)
-else:
-    unet_model.fit_generator(training_generator,
-                                   steps_per_epoch=steps_per_epoch,
-                                   epochs=args.epochs, verbose=verbose,
-                                   validation_data=validation_generator,
-                                   # validation_steps=validation_steps,
-                                   callbacks=callbacks,
-                                   max_queue_size=args.num_prefetched_batches,
-                                   workers=args.num_data_loaders,
-                                   use_multiprocessing=False)  # True)
-
+unet_model.model.fit_generator(training_generator,
+                    steps_per_epoch=steps_per_epoch,
+                    epochs=args.epochs, verbose=verbose,
+                    validation_data=validation_generator,
+                    validation_steps=validation_steps,
+                    callbacks=callbacks,
+                    max_queue_size=args.num_prefetched_batches,
+                    workers=args.num_data_loaders,
+                    use_multiprocessing=False)
 if hvd.rank() == 0:
 
     """
@@ -261,3 +241,4 @@ if hvd.rank() == 0:
     print("Stopped script on {}".format(stop_time))
     print("\nTotal time = {}".format(
         stop_time - start_time))
+

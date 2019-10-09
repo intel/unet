@@ -18,12 +18,11 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
-import psutil  # pip install psutil
+import psutil  
 import os
 
-DATA_PATH = os.path.join("../../data/decathlon/240x240/")
-DATA_FILENAME = "decathlon_brats.h5"
+DATA_PATH = os.path.join("../../data/decathlon/")
+DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME = "unet_model_for_decathlon.hdf5"
 
@@ -57,14 +56,15 @@ NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
 
 # Figure out how many physical cores we have available
-# Set floor to at least 2 threads
-NUM_INTRA_THREADS = max(len(psutil.Process().cpu_affinity()), 2)
+# Minimum of either the CPU affinity or the number of physical cores
+import multiprocessing
+NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(logical=False))
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 # 28 DEC 2018: tf.keras has some bugs in the use of HDF5 and with the custom
 # loss function. Recommend to use Keras API when in doubt.
 # If true, then use bilinear interpolation. Otherwise, transposed convolution
-USE_UPSAMPLING = True
+USE_UPSAMPLING = False
 USE_AUGMENTATION = True  # Use data augmentation during training
-USE_DROPOUT = True  # Use spatial dropout in model
+USE_DROPOUT = False  # Use spatial dropout in model

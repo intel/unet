@@ -40,7 +40,7 @@ fi
 
 DECATHLON_DIR=${1:-"../../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
-IMG_SIZE=${3:-144}  # This should be a multiple of 16
+IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
 INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
 
@@ -88,7 +88,7 @@ echo "Converting Decathlon raw data to HDF5 file."
 # 2^n where n is the number of max pooling/upsampling concatenations.
 python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
         --output_filename $MODEL_OUTPUT_FILENAME \
-        --save_path $DECATHLON_DIR --resize=$IMG_SIZE
+        --save_path $DECATHLON_DIR
 
 echo " "
 echo "***********************************"
@@ -101,24 +101,25 @@ echo "Run U-Net training on BraTS Decathlon dataset"
 python train.py \
         --epochs $NUM_EPOCHS  \
         --learningrate $LEARNING_RATE \
-        --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
+        --data_path $DECATHLON_DIR \
+        --crop_dim $IMG_SIZE \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
         --featuremaps $FEATURE_MAPS \
         --print_model \
         --keras_api \
-        --use_upsampling \
-        --use_augmentation \
-        --use_dropout
-
+        --use_augmentation 
+        
 echo " "
 echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
 echo "****************************************"
 
 python plot_inference_examples.py  \
-        --data_path $DECATHLON_DIR/${IMG_SIZE}x${IMG_SIZE} \
+        --data_path $DECATHLON_DIR \
         --data_filename $MODEL_OUTPUT_FILENAME \
         --output_path $MODEL_OUTPUT_DIR \
-        --inference_filename $INFERENCE_FILENAME
+        --inference_filename $INFERENCE_FILENAME \
+        --crop_dim $IMG_SIZE
+        

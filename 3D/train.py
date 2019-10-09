@@ -27,7 +27,14 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
+print("Args = {}".format(args))
+
 CHANNELS_LAST = True
+
+if CHANNELS_LAST:
+   print("Data format = channels_last")
+else:
+   print("Data format = channels_first")
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
