@@ -23,7 +23,6 @@ import json
 import ntpath
 import os
 import numpy as np
-import tensorflow as tf
 from argparser import args
 
 TRAIN_TESTVAL_SEED = 816

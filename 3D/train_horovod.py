@@ -41,23 +41,13 @@
 #   I_MPI_PIN_DOMAIN=socket pins a worker to a socket
 #   -n
 
-
-import horovod.keras as hvd
-
-from dataloader import DataGenerator
-from model import unet
-
-import datetime
-import os
 from argparser import args
-import numpy as np
-
-import tensorflow as tf
-
 if args.keras_api:
     import keras as K
+    import horovod.keras as hvd
 else:
     from tensorflow import keras as K
+    import horovod.tensorflow.keras as hvd
 
 CHANNELS_LAST = True
 
@@ -98,7 +88,6 @@ SESS = tf.Session(config=CONFIG)
 
 K.backend.set_session(SESS)
 
-CHANNEL_LAST = True
 unet_model = unet(use_upsampling=args.use_upsampling,
                   learning_rate=args.lr,
                   n_cl_in=args.number_input_channels,
@@ -110,9 +99,14 @@ unet_model = unet(use_upsampling=args.use_upsampling,
 
 opt = hvd.DistributedOptimizer(unet_model.optimizer)
 
-unet_model.model.compile(optimizer=opt,
-              loss=unet_model.loss,
-              metrics=unet_model.metrics)
+if args.keras_api:
+    unet_model.model.compile(optimizer=opt,
+                  loss=unet_model.loss,
+                  metrics=unet_model.metrics)
+else:
+    unet_model.compile(optimizer=opt,
+                  loss=unet_model.loss,
+                  metrics=unet_model.metrics)
 
 if hvd.rank() == 0:
     start_time = datetime.datetime.now()
@@ -221,7 +215,6 @@ unet_model.model.fit_generator(training_generator,
                     max_queue_size=args.num_prefetched_batches,
                     workers=args.num_data_loaders,
                     use_multiprocessing=False)
-
 if hvd.rank() == 0:
 
     """

@@ -18,10 +18,12 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import numpy as np
 import tensorflow as tf
-import keras as K
-#from tensorflow import keras as K
+from argparser import args
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
 class unet(object):
 

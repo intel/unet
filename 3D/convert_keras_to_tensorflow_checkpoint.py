@@ -18,12 +18,15 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-import keras as K
 import tensorflow as tf
 from model import unet
-
 import os
 import argparse
+from argparser import args
+if args.keras_api:
+    import keras as K
+else:
+    from tensorflow import keras as K
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_filename",

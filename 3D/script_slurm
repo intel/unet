@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --job-name=3d-unet-horovod
+#SBATCH -o /home/loic.mcgill/logs/%x_%j.out # %x job name, %N for node name, %j for jobID
+#SBATCH --partition=6252
+#SBATCH --nodes=10
+
+data_path=/mnt/lustrefs/mcgill/decathlon/Task01_BrainTumour/
+script_path=/home/loic.mcgill/scripts/unet/3D/train_horovod.py
+
+mpirun -n 20 -ppn 2 -print-rank-map -genv I_MPI_PIN_DOMAIN=socket -genv OMP_NUM_THREADS=24 -genv OMP_PROC_BIND=true -genv KMP_BLOCKTIME=1 python3 $script_path --keras_api --intraop_threads 24 --data_path $data_path
