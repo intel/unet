@@ -19,11 +19,13 @@
 #
 
 import tensorflow as tf
+
 from argparser import args
 if args.keras_api:
     import keras as K
 else:
     from tensorflow import keras as K
+
 
 class unet(object):
 
