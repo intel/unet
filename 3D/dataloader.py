@@ -180,10 +180,43 @@ class DataGenerator(K.utils.Sequence):
         testIdx = idxList[-test_len:]  # List of testing indices (last testIdx elements)
 
         if self.setType == "train":
+
+            with open("train.csv", "w") as writeFile:
+                fileList = {}
+                for idx in trainIdx:
+                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
+
+                for img in sorted(fileList):
+                    writeFile.write("{},{}\n".format(img, fileList[img]))
+
+            writeFile.close()
+
             return trainIdx
         elif self.setType == "validate":
+
+            with open("validate.csv", "w") as writeFile:
+                fileList = {}
+                for idx in validateIdx:
+                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
+
+                for img in sorted(fileList):
+                    writeFile.write("{},{}\n".format(img, fileList[img]))
+
+            writeFile.close()
+
             return validateIdx
         elif self.setType == "test":
+
+            with open("test.csv", "w") as writeFile:
+                fileList = {}
+                for idx in testIdx:
+                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
+
+                for img in sorted(fileList):
+                    writeFile.write("{},{}\n".format(img, fileList[img]))
+
+            writeFile.close()
+
             return testIdx
         else:
             print("Error. You forgot to specify train, test, or validate. Instead received {}".format(self.setType))
