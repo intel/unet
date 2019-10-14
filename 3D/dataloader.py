@@ -250,22 +250,6 @@ class DataGenerator(K.utils.Sequence):
         """
         return self.__getitem__(index)
 
-    def get_batch_fileIDs(self, index):
-        """
-        Get the original filenames for the batch at this index
-        """
-        indexes = np.sort(
-            self.indexes[index*self.batch_size:(index+1)*self.batch_size])
-        fileIDs = {}
-
-        for idx, fileIdx in enumerate(indexes):
-            name = self.imgFiles[fileIdx]
-            filename = ntpath.basename(name)  # Strip all but filename
-            filename = os.path.splitext(filename)[0]
-            fileIDs[idx] = os.path.splitext(filename)[0]
-
-        return fileIDs
-
     def on_epoch_end(self):
         """
         Updates indices after each epoch
@@ -350,6 +334,12 @@ class DataGenerator(K.utils.Sequence):
 
         return img
 
+    def get_batch_fileIDs(self):
+        """
+        Get the file IDs of the last batch that was loaded.
+        """
+        return self.fileIDs
+
     def __data_generation(self, list_IDs_temp):
         """
         Generates data containing batch_size samples
@@ -362,9 +352,15 @@ class DataGenerator(K.utils.Sequence):
         imgs = np.zeros((self.batch_size, *self.dim, self.n_in_channels))
         msks = np.zeros((self.batch_size, *self.dim, self.n_out_channels))
 
+        self.fileIDs = {}
+
         for idx, fileIdx in enumerate(list_IDs_temp):
 
             img_temp = np.array(nib.load(self.imgFiles[fileIdx]).dataobj)
+
+            filename = ntpath.basename(self.imgFiles[fileIdx])  # Strip all but filename
+            filename = os.path.splitext(filename)[0]
+            self.fileIDs[idx] = os.path.splitext(filename)[0]
 
             """
             "modality": {

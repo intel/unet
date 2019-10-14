@@ -33,6 +33,8 @@ from argparse import ArgumentParser
 
 import nibabel as nib
 
+from tqdm import tqdm
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 """
@@ -105,18 +107,24 @@ def load_data(imgFile, mskFile, crop_dim, n_channels, n_out_channels, openVINO_o
 
     for idx in range(len(imgFile)):
 
-        img = np.array(nib.load(imgFile[idx]).dataobj)
+        img_temp = np.array(nib.load(imgFile[idx]).dataobj)
         msk = np.array(nib.load(mskFile[idx]).dataobj)
+
+        if n_channels == 1:
+            img = img_temp[:, :, :, [0]]  # FLAIR channel
+        else:
+            img = img_temp
 
         # Add channels to mask
         msk[msk > 0] = 1.0
         msk = np.expand_dims(msk, -1)
 
-        # z-normalize the pixel values
-        img = z_normalize_img(img)
 
         # Crop the image to the input size
         img, msk = crop_img(img, msk, crop_dim, n_channels, n_out_channels)
+
+        # z-normalize the pixel values
+        img = z_normalize_img(img)
 
         fileIDs.append(os.path.basename(imgFile[idx]))
 
@@ -283,6 +291,7 @@ def main():
                 imgFiles.append(row[0])
                 mskFiles.append(row[1])
 
+
     input_data, label_data_ov, img_indicies = load_data(imgFiles, mskFiles, crop_dim,
                 n_channels, n_out_channels, openVINO_order=True)
 
@@ -307,7 +316,7 @@ def main():
 
     log.info("Starting OpenVINO inference")
     ov_times = []
-    for idx in range(0, input_data.shape[0]):
+    for idx in tqdm(range(0, input_data.shape[0])):
 
         start_time = time()
 
@@ -317,35 +326,44 @@ def main():
 
         predictions_ov[idx, ] = res[out_blob]
 
+        #print("{}, {}".format(imgFiles[idx], dice_score(res[out_blob],label_data_ov[idx])))
+
+
     log.info("Finished OpenVINO inference")
 
     del exec_net
     del plugin
 
+
     input_data, label_data_keras, img_indicies = load_data(imgFiles, mskFiles, crop_dim,
                         n_channels, n_out_channels, openVINO_order=False)
     model = K.models.load_model("./saved_model/3d_unet_decathlon.hdf5", compile=False)
+
 
     predictions_keras = np.zeros((input_data.shape[0],
                             height_out, width_out, depth_out, n_out_channels))
 
     log.info("Starting Keras inference")
     keras_times = []
-    for idx in range(0, input_data.shape[0]):
+    for idx in tqdm(range(input_data.shape[0])):
 
         start_time = time()
         res = model.predict(input_data[[idx],...,:n_channels])
+
         keras_times.append(time() - start_time)
+
+        #print("{}, {}".format(imgFiles[idx], dice_score(res,label_data_keras[idx])))
 
         predictions_keras[idx] = res
 
     log.info("Finished Keras inference")
 
+
     """
     Evaluate model with Dice metric
     """
     out_channel = 0
-    for idx in range(input_data.shape[0]):
+    for idx in tqdm(range(input_data.shape[0])):
 
         dice_ov = dice_score(
             predictions_ov[idx, out_channel, :, :, :], label_data_ov[idx, out_channel, :, :, :])
@@ -353,7 +371,7 @@ def main():
         dice_keras = dice_score(
             predictions_keras[idx, :, :, :, out_channel], label_data_keras[idx, :, :, :, out_channel])
 
-        log.info("Image #{}: OpenVINO Dice score = {:f}, Keras Dice score = {:f}".format(
+        log.info("Image file {}: OpenVINO Dice score = {:f}, Keras Dice score = {:f}".format(
             img_indicies[idx], dice_ov, dice_keras))
 
     log.info("OpenVINO inference times = {} seconds".format(ov_times))

@@ -32,6 +32,18 @@ if args.keras_api:
 else:
     from tensorflow import keras as K
 
+
+def dice_score(pred, truth):
+    """
+    Sorensen Dice score
+    Measure of the overlap between the prediction and ground truth masks
+    """
+    numerator = np.sum(np.round(pred) * truth) * 2.0
+    denominator = np.sum(np.round(pred)) + np.sum(truth)
+
+    return numerator / denominator
+
+
 print("Started script on {}".format(datetime.datetime.now()))
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
@@ -88,7 +100,7 @@ for batch_idx in tqdm(range(testing_generator.num_batches),
                       desc="Predicting on batch"):
 
     imgs, msks = testing_generator.get_batch(batch_idx)
-    fileIDs = testing_generator.get_batch_fileIDs(batch_idx)
+    fileIDs = testing_generator.get_batch_fileIDs()
 
     preds = model.predict_on_batch(imgs)
 
@@ -107,6 +119,8 @@ for batch_idx in tqdm(range(testing_generator.num_batches),
         pred = nib.Nifti1Image(preds[idx, :, :, :, 0], np.eye(4))
         pred.to_filename(os.path.join(save_directory,
                                       "{}_pred.nii.gz".format(fileIDs[idx])))
+
+        print("\n{}, Dice = {:f}".format(fileIDs[idx], dice_score(preds[idx, :, :, :, 0],msks[idx, :, :, :, 0])))
 
 print("\n\n\nModel predictions saved to directory: {}".format(save_directory))
 print("Stopped script on {}".format(datetime.datetime.now()))
