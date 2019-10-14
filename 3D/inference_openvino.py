@@ -27,9 +27,10 @@ import logging as log
 from time import time
 from openvino.inference_engine import IENetwork, IEPlugin
 
+import tensorflow as tf
 import keras as K
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import nibabel as nib
 
@@ -190,7 +191,8 @@ def print_stats(exec_net, input_data, n_channels, batch_size, input_blob, out_bl
 
 def build_argparser():
 
-    parser = ArgumentParser()
+    parser = ArgumentParser(description="Performs inference using OpenVINO. Compares to Keras model.",
+                            formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument("-number_iter", "--number_iter",
                         help="Number of iterations", default=5, type=int)
     parser.add_argument("-l", "--cpu_extension",
@@ -212,8 +214,26 @@ def build_argparser():
     parser.add_argument("--csv_file",
                         default="test.csv",
                         help="CSV list of files to test")
-    parser.add_argument("--openvino_model", type=str, help="The saved OpenVINO XML file", required=True)
+    parser.add_argument("--openvino_model", type=str, help="The saved OpenVINO XML file",
+                        default="./openvino_models/FP32/3d_unet_decathlon.xml")
+    parser.add_argument("--keras_model", type=str, help="Keras model filename",
+                        default="./saved_model/3d_unet_decathlon.hdf5")
     return parser
+
+def read_csv_file(filename):
+    """
+    Read the CSV file with the image and mask filenames
+    """
+    imgFiles = []
+    mskFiles = []
+    with open(filename, "rt") as f:
+        data = csv.reader(f)
+        for row in data:
+            if len(row) > 0:
+                imgFiles.append(row[0])
+                mskFiles.append(row[1])
+
+    return imgFiles, mskFiles, len(imgFiles)
 
 
 def main():
@@ -221,6 +241,8 @@ def main():
     log.basicConfig(format="[ %(levelname)s ] %(message)s",
                     level=log.INFO, stream=sys.stdout)
     args = build_argparser().parse_args()
+
+    log.info(args)
 
     log.info("Loading test data from file: {}".format(args.csv_file))
 
@@ -269,6 +291,15 @@ def main():
     input_blob = next(iter(net.inputs))  # Name of the input layer
     out_blob = next(iter(net.outputs))   # Name of the output layer
 
+    log.info("The network inputs are:")
+    for idx, input_layer in enumerate(net.inputs.keys()):
+        log.info("{}: {}, shape = {} [N,C,D,H,W]".format(idx,input_layer,net.inputs[input_layer].shape))
+
+    log.info("The network outputs are:")
+    for idx, output_layer in enumerate(net.outputs.keys()):
+        log.info("{}: {}, shape = {} [N,C,D,H,W]".format(idx,output_layer,net.outputs[output_layer].shape))
+
+
     batch_size, n_channels, depth, height, width = net.inputs[input_blob].shape
     batch_size, n_out_channels, depth_out, height_out, width_out = net.outputs[
         out_blob].shape
@@ -281,19 +312,19 @@ def main():
 
     # Load data
     crop_dim = [height, width, depth]
-
-    imgFiles = []
-    mskFiles = []
-    with open(args.csv_file, "rt") as f:
-        data = csv.reader(f)
-        for row in data:
-            if len(row) > 0:
-                imgFiles.append(row[0])
-                mskFiles.append(row[1])
+    """
+    Read the CSV file with the filenames of the images and masks
+    """
+    imgFiles, mskFiles, num_imgs = read_csv_file(args.csv_file)
 
 
-    input_data, label_data_ov, img_indicies = load_data(imgFiles, mskFiles, crop_dim,
-                n_channels, n_out_channels, openVINO_order=True)
+    """
+    Load the data for OpenVINO
+    """
+    input_data, label_data_ov, img_indicies = load_data(imgFiles, mskFiles,
+                crop_dim, n_channels, n_out_channels, openVINO_order=True)
+
+
 
     # Loading model to the plugin
     exec_net = plugin.load(network=net)
@@ -311,12 +342,12 @@ def main():
     Essentially, this looks exactly like a feed_dict for TensorFlow inference
     """
     # Go through the sample validation dataset to plot predictions
-    predictions_ov = np.zeros((input_data.shape[0], n_out_channels,
+    predictions_ov = np.zeros((num_imgs, n_out_channels,
                             depth_out, height_out, width_out))
 
     log.info("Starting OpenVINO inference")
     ov_times = []
-    for idx in tqdm(range(0, input_data.shape[0])):
+    for idx in tqdm(range(0, num_imgs)):
 
         start_time = time()
 
@@ -334,18 +365,28 @@ def main():
     del exec_net
     del plugin
 
+    """
+    Load the data for Keras
+    """
+    input_data, label_data_keras, img_indicies = load_data(imgFiles, mskFiles,
+                        crop_dim, n_channels, n_out_channels,
+                        openVINO_order=False)
 
-    input_data, label_data_keras, img_indicies = load_data(imgFiles, mskFiles, crop_dim,
-                        n_channels, n_out_channels, openVINO_order=False)
-    model = K.models.load_model("./saved_model/3d_unet_decathlon.hdf5", compile=False)
+    # Load OpenVINO model for inference
+    model = K.models.load_model(args.keras_model, compile=False)
 
+    # Inference only Keras
+    K.backend._LEARNING_PHASE = tf.constant(0)
+    K.backend.set_learning_phase(False)
+    K.backend.set_learning_phase(0)
+    K.backend.set_image_data_format("channels_last")
 
-    predictions_keras = np.zeros((input_data.shape[0],
+    predictions_keras = np.zeros((num_imgs,
                             height_out, width_out, depth_out, n_out_channels))
 
     log.info("Starting Keras inference")
     keras_times = []
-    for idx in tqdm(range(input_data.shape[0])):
+    for idx in tqdm(range(num_imgs)):
 
         start_time = time()
         res = model.predict(input_data[[idx],...,:n_channels])
@@ -358,24 +399,54 @@ def main():
 
     log.info("Finished Keras inference")
 
+    save_directory = "predictions_openvino"
+    try:
+        os.stat(save_directory)
+    except:
+        os.mkdir(save_directory)
 
     """
     Evaluate model with Dice metric
     """
     out_channel = 0
-    for idx in tqdm(range(input_data.shape[0])):
+    for idx in tqdm(range(num_imgs)):
 
-        dice_ov = dice_score(
-            predictions_ov[idx, out_channel, :, :, :], label_data_ov[idx, out_channel, :, :, :])
+        img = input_data[[idx],...,:n_channels]
+        ground_truth = label_data_keras[idx, :, :, :, out_channel]
 
-        dice_keras = dice_score(
-            predictions_keras[idx, :, :, :, out_channel], label_data_keras[idx, :, :, :, out_channel])
+        # Transpose the OpenVINO prediction back to NCHWD (to be consistent with Keras)
+        pred_ov = np.transpose(predictions_ov, [0,3,4,2,1])[idx, :, :, :, out_channel]
+        pred_keras = predictions_keras[idx, :, :, :, out_channel]
 
-        log.info("Image file {}: OpenVINO Dice score = {:f}, Keras Dice score = {:f}".format(
-            img_indicies[idx], dice_ov, dice_keras))
+        dice_ov = dice_score(pred_ov, ground_truth)
+        dice_keras = dice_score(pred_keras, ground_truth)
 
-    log.info("OpenVINO inference times = {} seconds".format(ov_times))
-    log.info("Keras inference times = {} seconds".format(keras_times))
+        dice_compare = dice_score(pred_ov, pred_keras)
+
+        # img = nib.Nifti1Image(imgs[idx, :, :, :, 0], np.eye(4))
+        # img.to_filename(os.path.join(save_directory,
+        #                              "{}_img.nii.gz".format(fileIDs[idx])))
+        #
+        # msk = nib.Nifti1Image(msks[idx, :, :, :, 0], np.eye(4))
+        # msk.to_filename(os.path.join(save_directory,
+        #                              "{}_msk.nii.gz".format(fileIDs[idx])))
+        #
+        # predictions_ov = nib.Nifti1Image(preds[idx, :, :, :, 0], np.eye(4))
+        # pred_ov.to_filename(os.path.join(save_directory,
+        #                               "{}_pred_ov.nii.gz".format(fileIDs[idx])))
+
+        log.info("Image file {}: OpenVINO Dice score = {:f}, "
+            "Keras/TF Dice score = {:f}, Comparing Dice Score = {:f}".format(
+            img_indicies[idx], dice_ov, dice_keras, dice_compare))
+
+    log.info("Average inference time: \n"
+             "OpenVINO = {} seconds (s.d. {})\n "
+             "Keras/TF = {} seconds (s.d. {})\n".format(np.mean(ov_times),
+             np.std(ov_times),
+             np.mean(keras_times),
+             np.std(keras_times)))
+    log.info("Raw OpenVINO inference times = {} seconds".format(ov_times))
+    log.info("Raw Keras inference times = {} seconds".format(keras_times))
 
 
 if __name__ == '__main__':
