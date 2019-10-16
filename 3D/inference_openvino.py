@@ -133,8 +133,8 @@ def load_data(imgFile, mskFile, crop_dim, n_channels, n_out_channels, openVINO_o
         msks[idx] = msk
 
     if openVINO_order:
-        imgs = imgs.transpose((0, 4, 3, 1, 2))
-        msks = msks.transpose((0, 4, 3, 1, 2))
+        imgs = imgs.transpose((0, 4, 1, 2, 3))
+        msks = msks.transpose((0, 4, 1, 2, 3))
 
     return imgs, msks, fileIDs
 
@@ -263,7 +263,7 @@ def main():
     """
     This code checks to see if all of the graphs in the IR are
     compatible with OpenVINO. If not, then you'll need to probably
-    try to load in an extension library from ${INTEL_CVSDK_DIR}/inference_engine/lib
+    try to load in an extension library from ${INTEL_OPENVINO_DIR}/inference_engine/lib
     """
     if "CPU" in plugin.device:
         supported_layers = plugin.get_supported_layers(net)
@@ -293,11 +293,11 @@ def main():
 
     log.info("The network inputs are:")
     for idx, input_layer in enumerate(net.inputs.keys()):
-        log.info("{}: {}, shape = {} [N,C,D,H,W]".format(idx,input_layer,net.inputs[input_layer].shape))
+        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,input_layer,net.inputs[input_layer].shape))
 
     log.info("The network outputs are:")
     for idx, output_layer in enumerate(net.outputs.keys()):
-        log.info("{}: {}, shape = {} [N,C,D,H,W]".format(idx,output_layer,net.outputs[output_layer].shape))
+        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,output_layer,net.outputs[output_layer].shape))
 
 
     batch_size, n_channels, depth, height, width = net.inputs[input_blob].shape
@@ -415,13 +415,12 @@ def main():
         ground_truth = label_data_keras[idx, :, :, :, out_channel]
 
         # Transpose the OpenVINO prediction back to NCHWD (to be consistent with Keras)
-        pred_ov = np.transpose(predictions_ov, [0,3,4,2,1])[idx, :, :, :, out_channel]
+        pred_ov = np.transpose(predictions_ov, [0,2,3,4,1])[idx, :, :, :, out_channel]
         pred_keras = predictions_keras[idx, :, :, :, out_channel]
 
         dice_ov = dice_score(pred_ov, ground_truth)
         dice_keras = dice_score(pred_keras, ground_truth)
 
-        dice_compare = dice_score(pred_ov, pred_keras)
 
         # img = nib.Nifti1Image(imgs[idx, :, :, :, 0], np.eye(4))
         # img.to_filename(os.path.join(save_directory,
@@ -436,8 +435,8 @@ def main():
         #                               "{}_pred_ov.nii.gz".format(fileIDs[idx])))
 
         log.info("Image file {}: OpenVINO Dice score = {:f}, "
-            "Keras/TF Dice score = {:f}, Comparing Dice Score = {:f}".format(
-            img_indicies[idx], dice_ov, dice_keras, dice_compare))
+            "Keras/TF Dice score = {:f}, Maximum absolute pixel difference OV versus Keras/TF = {:.2e}".format(
+            img_indicies[idx], dice_ov, dice_keras, np.mean(np.abs(pred_ov - pred_keras))))
 
     log.info("Average inference time: \n"
              "OpenVINO = {} seconds (s.d. {})\n "
