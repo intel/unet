@@ -411,7 +411,8 @@ def main():
     out_channel = 0
     for idx in tqdm(range(num_imgs)):
 
-        img = input_data[[idx],...,:n_channels]
+        filename = os.path.splitext(os.path.splitext(img_indicies[idx])[0])[0]
+        img = input_data[idx,...,:n_channels]
         ground_truth = label_data_keras[idx, :, :, :, out_channel]
 
         # Transpose the OpenVINO prediction back to NCHWD (to be consistent with Keras)
@@ -422,17 +423,17 @@ def main():
         dice_keras = dice_score(pred_keras, ground_truth)
 
 
-        # img = nib.Nifti1Image(imgs[idx, :, :, :, 0], np.eye(4))
-        # img.to_filename(os.path.join(save_directory,
-        #                              "{}_img.nii.gz".format(fileIDs[idx])))
-        #
-        # msk = nib.Nifti1Image(msks[idx, :, :, :, 0], np.eye(4))
-        # msk.to_filename(os.path.join(save_directory,
-        #                              "{}_msk.nii.gz".format(fileIDs[idx])))
-        #
-        # predictions_ov = nib.Nifti1Image(preds[idx, :, :, :, 0], np.eye(4))
-        # pred_ov.to_filename(os.path.join(save_directory,
-        #                               "{}_pred_ov.nii.gz".format(fileIDs[idx])))
+        img_nib = nib.Nifti1Image(img, np.eye(4))
+        img_nib.to_filename(os.path.join(save_directory,
+                                      "{}_img.nii.gz".format(filename)))
+        
+        msk_nib = nib.Nifti1Image(ground_truth, np.eye(4))
+        msk_nib.to_filename(os.path.join(save_directory,
+                                      "{}_msk.nii.gz".format(filename)))
+        
+        pred_ov_nib = nib.Nifti1Image(pred_ov, np.eye(4))
+        pred_ov_nib.to_filename(os.path.join(save_directory,
+                                       "{}_pred_ov.nii.gz".format(filename)))
 
         log.info("Image file {}: OpenVINO Dice score = {:f}, "
             "Keras/TF Dice score = {:f}, Maximum absolute pixel difference OV versus Keras/TF = {:.2e}".format(
