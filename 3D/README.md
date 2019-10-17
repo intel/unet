@@ -87,7 +87,7 @@ python ${INTEL_OPENVINO_DIR}/deployment_tools/model_optimizer/mo_tf.py --input_m
 
 5. The saved model should be located in the `openvino_models/FP32` subfolder.
 
-6. A sample inference script for the OpenVINO version of the model can be found `infernece_openvino.py`. It compares the prediction of the Intel&reg; OpenVINO&trade; model with the Keras/TensorFlow* model.
+6. A sample inference script for the OpenVINO version of the model can be found `inference_openvino.py`. It compares the prediction of the Intel&reg; OpenVINO&trade; model with the Keras/TensorFlow* model. There is also a Jupyter Notebook which does the same comparison.
 
 REFERENCES:
 1. Menze BH, Jakab A, Bauer S, Kalpathy-Cramer J, Farahani K, Kirby J, Burren Y, Porz N, Slotboom J, Wiest R, Lanczi L, Gerstner E, Weber MA, Arbel T, Avants BB, Ayache N, Buendia P, Collins DL, Cordier N, Corso JJ, Criminisi A, Das T, Delingette H, Demiralp Γ, Durst CR, Dojat M, Doyle S, Festa J, Forbes F, Geremia E, Glocker B, Golland P, Guo X, Hamamci A, Iftekharuddin KM, Jena R, John NM, Konukoglu E, Lashkari D, Mariz JA, Meier R, Pereira S, Precup D, Price SJ, Raviv TR, Reza SM, Ryan M, Sarikaya D, Schwartz L, Shin HC, Shotton J, Silva CA, Sousa N, Subbanna NK, Szekely G, Taylor TJ, Thomas OM, Tustison NJ, Unal G, Vasseur F, Wintermark M, Ye DH, Zhao L, Zhao B, Zikic D, Prastawa M, Reyes M, Van Leemput K. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
