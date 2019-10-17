@@ -87,8 +87,8 @@ echo "Converting Decathlon raw data to HDF5 file."
 # max pooling and upsampling works in U-Net. The rule is
 # 2^n where n is the number of max pooling/upsampling concatenations.
 python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
-        --output_filename $MODEL_OUTPUT_FILENAME \
-        --save_path $DECATHLON_DIR
+       --output_filename $MODEL_OUTPUT_FILENAME \
+       --save_path $DECATHLON_DIR
 
 echo " "
 echo "***********************************"
@@ -99,18 +99,18 @@ echo "Run U-Net training on BraTS Decathlon dataset"
 # Run training script
 # The settings.py file contains the model training.
 python train.py \
-        --epochs $NUM_EPOCHS  \
-        --learningrate $LEARNING_RATE \
-        --data_path $DECATHLON_DIR \
-        --crop_dim $IMG_SIZE \
-        --data_filename $MODEL_OUTPUT_FILENAME \
-        --output_path $MODEL_OUTPUT_DIR \
-        --inference_filename $INFERENCE_FILENAME \
-        --featuremaps $FEATURE_MAPS \
-        --print_model \
-        --keras_api \
-        --use_augmentation 
-        
+       --epochs $NUM_EPOCHS  \
+       --learningrate $LEARNING_RATE \
+       --data_path $DECATHLON_DIR \
+       --crop_dim $IMG_SIZE \
+       --data_filename $MODEL_OUTPUT_FILENAME \
+       --output_path $MODEL_OUTPUT_DIR \
+       --inference_filename $INFERENCE_FILENAME \
+       --featuremaps $FEATURE_MAPS \
+       --print_model \
+       --keras_api \
+       --use_augmentation
+
 echo " "
 echo "****************************************"
 echo "Step 3 of 3: Run sample inference script"
@@ -122,4 +122,3 @@ python plot_inference_examples.py  \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
         --crop_dim $IMG_SIZE
-        

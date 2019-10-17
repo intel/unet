@@ -57,6 +57,8 @@ parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
                     type=int, help="Number of intra-op-parallelism threads")
 parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
                     type=int, help="Number of inter-op-parallelism threads")
+parser.add_argument("--crop_dim", default=128,
+                    type=int, help="Crop dimension for images")
 
 args = parser.parse_args()
 
@@ -104,6 +106,16 @@ def plot_results(model, imgs_validation, msks_validation,
     img = imgs_validation[[img_no], ]
     msk = msks_validation[[img_no], ]
 
+    # Crop the image
+    height = img.shape[1]
+    width = img.shape[2]
+    if (args.crop_dim != -1) and (args.crop_dim < height) and (args.crop_dim < width):
+        startx = (height - args.crop_dim) // 2
+        starty = (width - args.crop_dim) // 2
+        img = img[:,startx:(startx+args.crop_dim),starty:(starty+args.crop_dim),:]
+        msk = msk[:,startx:(startx+args.crop_dim),starty:(starty+args.crop_dim),:]
+
+
     pred_mask = model.predict(img)
 
     plt.figure(figsize=(10, 10))
@@ -149,7 +161,7 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_testing = [40, 61, 102, 210, 371,
+    indicies_testing = [50, 61, 102, 210, 371,
                         400, 1093, 2222, 3540, 4485,
                         5566, 5675, 6433]
 
