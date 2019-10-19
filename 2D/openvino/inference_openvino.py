@@ -18,7 +18,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-from openvino.inference_engine import IENetwork, IEPlugin
+from openvino.inference_engine import IENetwork, IECore
 from time import time
 import logging as log
 import numpy as np
@@ -38,17 +38,17 @@ python inference_openvino.py -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/intel
 
 """
 
-
-def dice_score(pred, truth):
+def dice_score(y_true, y_pred, smooth=1.):
     """
-    Sorensen Dice score
-    Measure of the overlap between the prediction and ground truth masks
+    Sorensen Dice coefficient
     """
-    numerator = np.sum(pred * truth) * 2.0 + 1.0
-    denominator = np.sum(pred) + np.sum(truth) + 1.0
+    y_true = np.round(y_true)
+    y_pred = np.round(y_pred)
+    numerator = 2.0 * np.sum(y_true * y_pred) + smooth
+    denominator = np.sum(y_true) + np.sum(y_pred) + smooth
+    coef = numerator / denominator
 
-    return numerator / denominator
-
+    return coef
 
 def plot_predictions(predictions, input_data, label_data, img_indicies, args):
     """
@@ -129,17 +129,13 @@ def load_data():
     return input_data, msks_data, img_indicies
 
 
-def load_model(fp16=False):
+def load_model(model, fp16=False):
     """
     Load the OpenVINO model.
     """
     log.info("Loading U-Net model to the plugin")
 
-    if fp16:  # Floating point 16 is for Myriad X
-        model_xml = "./models/FP16/saved_model.xml"
-    else:     # FP32 for most devices
-        model_xml = "./models/FP32/saved_model.xml"
-
+    model_xml = model
     model_bin = os.path.splitext(model_xml)[0] + ".bin"
 
     return model_xml, model_bin
@@ -206,6 +202,8 @@ def build_argparser():
                         default=4, type=int)
     parser.add_argument("-stats", "--stats", help="Plot the runtime statistics",
                         default=False, action="store_true")
+    parser.add_argument("-m", "--model", help="OpenVINO model filename",
+                        default="../openvino_models/FP32/saved_model.xml")
     return parser
 
 
@@ -215,49 +213,25 @@ def main():
                     level=log.INFO, stream=sys.stdout)
     args = build_argparser().parse_args()
 
-    # Plugin initialization for specified device and
-    #     load extensions library if specified
-    plugin = IEPlugin(device=args.device, plugin_dirs=args.plugin_dir)
+    ie = IECore()
     if args.cpu_extension and "CPU" in args.device:
-        plugin.add_cpu_extension(args.cpu_extension)
+        ie.add_extension(args.cpu_extension, "CPU")
+
 
     # Read IR
-    # If using MYRIAD then we need to load FP16 model version
-    model_xml, model_bin = load_model(args.device == "MYRIAD")
-
+    model_xml, model_bin = load_model(args.model, args.device=="MYRIAD")
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
-    # net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
 
-    """
-    This code checks to see if all of the graphs in the IR are
-    compatible with OpenVINO. If not, then you'll need to probably
-    try to load in an extension library from ${INTEL_CVSDK_DIR}/inference_engine/lib
-    """
-    if "CPU" in plugin.device:
-        supported_layers = plugin.get_supported_layers(net)
-        not_supported_layers = [
-            l for l in net.layers.keys() if l not in supported_layers]
+    if "CPU" in args.device:
+        supported_layers = ie.query_network(net, "CPU")
+        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
         if len(not_supported_layers) != 0:
-            log.error("Following layers are not supported by the plugin "
-                      " for specified device {}:\n {}".
-                      format(plugin.device, ", ".join(not_supported_layers)))
-            log.error("Please try to specify cpu extensions library path "
-                      "in sample's command line parameters using -l "
+            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
+                      format(args.device, ', '.join(not_supported_layers)))
+            log.error("Please try to specify cpu extensions library path in sample's command line parameters using -l "
                       "or --cpu_extension command line argument")
-            log.error(
-                "On CPU this is usually -l ${INTEL_CVSDK_DIR}/inference_engine/lib/centos_7.4/intel64/libcpu_extension_avx2.so")
-            log.error(
-                "You may need to build the OpenVINO samples directory for this library to be created on your system.")
-            log.error(
-                "e.g. bash ${INTEL_CVSDK_DIR}/inference_engine/samples/build_samples.sh will trigger the library to be built.")
-            log.error(
-                "Replace 'centos_7.4' with the pathname on your computer e.g. ('ubuntu_16.04')")
             sys.exit(1)
-
-    assert len(net.inputs.keys()
-               ) == 1, "Sample supports only single input topologies"
-    assert len(net.outputs) == 1, "Sample supports only single output topologies"
 
     """
     Ask OpenVINO for input and output tensor names and sizes
@@ -265,15 +239,23 @@ def main():
     input_blob = next(iter(net.inputs))  # Name of the input layer
     out_blob = next(iter(net.outputs))   # Name of the output layer
 
-    batch_size, n_channels, height, width = net.inputs[input_blob].shape
-    batch_size, n_out_channels, height_out, width_out = net.outputs[out_blob].shape
-    net.batch_size = batch_size
-
     # Load data
     input_data, label_data, img_indicies = load_data()
 
+    batch_size = 1
+    n_channels = input_data.shape[1]
+    height = input_data.shape[2]
+    width = input_data.shape[3]
+
+    # Reshape the OpenVINO network to accept the different image input shape
+    # NOTE: This only works for some models (e.g. fully convolutional)
+    net.reshape({input_blob:(batch_size,n_channels,height,width)})
+    batch_size, n_channels, height, width = net.inputs[input_blob].shape
+    batch_size, n_out_channels, height_out, width_out = net.outputs[out_blob].shape
+
     # Loading model to the plugin
-    exec_net = plugin.load(network=net)
+    log.info("Loading model to the plugin")
+    exec_net = ie.load_network(network=net, device_name=args.device)
     del net
 
     if args.stats:
@@ -316,7 +298,6 @@ def main():
                          label_data, img_indicies, args)
 
     del exec_net
-    del plugin
 
 
 if __name__ == '__main__':

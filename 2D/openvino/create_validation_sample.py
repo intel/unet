@@ -39,8 +39,7 @@ args = parser.parse_args()
 
 with h5py.File(args.hdf5_datafile, "r") as df:
 
-    indicies_validation = [40, 61, 400, 1100, 4385,
-                           5566, 5673, 6433, 7864, 8899, 9003, 9722, 10591]
+    indicies_validation = [22, 40, 56, 61, 400, 1100, 2229, 3136, 4385]
     imgs_validation = df["imgs_validation"][indicies_validation, ]
     msks_validation = df["msks_validation"][indicies_validation, ]
 

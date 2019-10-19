@@ -25,7 +25,7 @@ import csv
 import numpy as np
 import logging as log
 from time import time
-from openvino.inference_engine import IENetwork, IEPlugin
+from openvino.inference_engine import IENetwork, IECore
 
 import tensorflow as tf
 import keras as K
@@ -246,69 +246,31 @@ def main():
 
     log.info("Loading test data from file: {}".format(args.csv_file))
 
-    # Plugin initialization for specified device and
-    #     load extensions library if specified
-    plugin = IEPlugin(device=args.device, plugin_dirs=args.plugin_dir)
+    ie = IECore()
     if args.cpu_extension and "CPU" in args.device:
-        plugin.add_cpu_extension(args.cpu_extension)
+        ie.add_extension(args.cpu_extension, "CPU")
+
 
     # Read IR
-    # If using MYRIAD then we need to load FP16 model version
-    model_xml, model_bin = load_model(args.openvino_model, args.device == "MYRIAD")
-
+    model_xml, model_bin = load_model(args.model, args.device=="MYRIAD")
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
-    # net = IENetwork.from_ir(model=model_xml, weights=model_bin) # Old API
 
-    """
-    This code checks to see if all of the graphs in the IR are
-    compatible with OpenVINO. If not, then you'll need to probably
-    try to load in an extension library from ${INTEL_OPENVINO_DIR}/inference_engine/lib
-    """
-    if "CPU" in plugin.device:
-        supported_layers = plugin.get_supported_layers(net)
-        not_supported_layers = [
-            l for l in net.layers.keys() if l not in supported_layers]
+    if "CPU" in args.device:
+        supported_layers = ie.query_network(net, "CPU")
+        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
         if len(not_supported_layers) != 0:
-            log.error("Following layers are not supported by the plugin "
-                      " for specified device {}:\n {}".
-                      format(plugin.device, ", ".join(not_supported_layers)))
-            log.error("Please try to specify cpu extensions library path "
-                      "in sample's command line parameters using -l "
+            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
+                      format(args.device, ', '.join(not_supported_layers)))
+            log.error("Please try to specify cpu extensions library path in sample's command line parameters using -l "
                       "or --cpu_extension command line argument")
-            log.error(
-                "On CPU this is usually -l ${INTEL_OPENVINO_DIR}/inference_engine/lib/intel64/libcpu_extension_avx2.so")
-            log.error(
-                "You may need to build the OpenVINO samples directory for this library to be created on your system.")
-            log.error(
-                "e.g. bash ${INTEL_OPENVINO_DIR}/inference_engine/samples/build_samples.sh will trigger the library to be built.")
             sys.exit(1)
-
 
     """
     Ask OpenVINO for input and output tensor names and sizes
     """
     input_blob = next(iter(net.inputs))  # Name of the input layer
     out_blob = next(iter(net.outputs))   # Name of the output layer
-
-    log.info("The network inputs are:")
-    for idx, input_layer in enumerate(net.inputs.keys()):
-        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,input_layer,net.inputs[input_layer].shape))
-
-    log.info("The network outputs are:")
-    for idx, output_layer in enumerate(net.outputs.keys()):
-        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,output_layer,net.outputs[output_layer].shape))
-
-
-    batch_size, n_channels, depth, height, width = net.inputs[input_blob].shape
-    batch_size, n_out_channels, depth_out, height_out, width_out = net.outputs[
-        out_blob].shape
-
-    # If you use batch sizes > 1 you'll need to update the for loops below to pass more than 1 image at a time
-    batch_size = 1
-    net.batch_size = batch_size
-
-    log.info("Batch size = {}".format(batch_size))
 
     # Load data
     crop_dim = [height, width, depth]
@@ -325,9 +287,29 @@ def main():
                 crop_dim, n_channels, n_out_channels, openVINO_order=True)
 
 
+    # Reshape the OpenVINO network to accept the different image input shape
+    # NOTE: This only works for some models (e.g. fully convolutional)
+    batch_size = 1
+    n_channels = imgFiles.shape[1]
+    height = imgFiles.shape[2]
+    width = imgFiles.shape[3]
+    depth = imgFiles.shape[4]
+
+    net.reshape({input_blob:(batch_size,n_channels,height,width,depth)})
+    batch_size, n_channels, height, width, depth = net.inputs[input_blob].shape
+    batch_size, n_out_channels, height_out, width_out, depth_out = net.outputs[out_blob].shape
+
+    log.info("The network inputs are:")
+    for idx, input_layer in enumerate(net.inputs.keys()):
+        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,input_layer,net.inputs[input_layer].shape))
+
+    log.info("The network outputs are:")
+    for idx, output_layer in enumerate(net.outputs.keys()):
+        log.info("{}: {}, shape = {} [N,C,H,W,D]".format(idx,output_layer,net.outputs[output_layer].shape))
 
     # Loading model to the plugin
-    exec_net = plugin.load(network=net)
+    log.info("Loading model to the plugin")
+    exec_net = ie.load_network(network=net, device_name=args.device)
     del net
 
     if args.stats:
@@ -363,7 +345,6 @@ def main():
     log.info("Finished OpenVINO inference")
 
     del exec_net
-    del plugin
 
     """
     Load the data for Keras
@@ -426,11 +407,11 @@ def main():
         img_nib = nib.Nifti1Image(img, np.eye(4))
         img_nib.to_filename(os.path.join(save_directory,
                                       "{}_img.nii.gz".format(filename)))
-        
+
         msk_nib = nib.Nifti1Image(ground_truth, np.eye(4))
         msk_nib.to_filename(os.path.join(save_directory,
                                       "{}_msk.nii.gz".format(filename)))
-        
+
         pred_ov_nib = nib.Nifti1Image(pred_ov, np.eye(4))
         pred_ov_nib.to_filename(os.path.join(save_directory,
                                        "{}_pred_ov.nii.gz".format(filename)))

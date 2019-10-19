@@ -424,7 +424,7 @@ class unet(object):
         infer_graph = graph_util.remove_training_nodes(constant_graph)
 
         # Write protobuf of frozen model
-        frozen_dir = "./tf_protobuf/"
+        frozen_dir = "./frozen_model/"
         shutil.rmtree(frozen_dir, ignore_errors=True) # Remove existing directory
         graph_io.write_graph(infer_graph, frozen_dir, output_model, as_text=False)
 

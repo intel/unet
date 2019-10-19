@@ -34,13 +34,16 @@ parser = argparse.ArgumentParser(
     description="Inference example for trained 2D U-Net model on BraTS.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--inference_filename", default="models/keras/unet_model_for_decathlon.hdf5",
+parser.add_argument("--inference_filename", default="../output/unet_model_for_decathlon.hdf5",
                     help="the Keras inference model filename")
 
 args = parser.parse_args()
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
-os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+num_threads = 10
+num_inter_threads = 1
+
+os.environ["OMP_NUM_THREADS"] = str(num_threads)
 os.environ["KMP_BLOCKTIME"] = "1"
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
@@ -49,63 +52,24 @@ For best CPU speed set the number of intra and inter threads
 to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
-CONFIG = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
-                        inter_op_parallelism_threads=args.num_inter_threads)
-                        
+CONFIG = tf.ConfigProto(intra_op_parallelism_threads=num_threads,
+                        inter_op_parallelism_threads=num_inter_threads)
+
 SESS = tf.Session(config=CONFIG)
 
-K.backend.set_session(SESS)                        
-                        
+K.backend.set_session(SESS)
+
 def calc_dice(y_true, y_pred, smooth=1.):
     """
     Sorensen Dice coefficient
     """
+    y_true = np.round(y_true)
+    y_pred = np.round(y_pred)
     numerator = 2.0 * np.sum(y_true * y_pred) + smooth
     denominator = np.sum(y_true) + np.sum(y_pred) + smooth
     coef = numerator / denominator
 
     return coef
-
-
-def dice_coef(y_true, y_pred, axis=(1, 2), smooth=1.):
-    """
-    Sorenson (Soft) Dice
-    \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
-    where T is ground truth mask and P is the prediction mask
-    """
-    intersection = tf.reduce_sum(y_true * y_pred, axis=axis)
-    union = tf.reduce_sum(y_true + y_pred, axis=axis)
-    numerator = tf.constant(2.) * intersection + smooth
-    denominator = union + smooth
-    coef = numerator / denominator
-
-    return tf.reduce_mean(coef)
-
-
-def dice_coef_loss(target, prediction, axis=(1, 2), smooth=1.):
-    """
-    Sorenson (Soft) Dice loss
-    Using -log(Dice) as the loss since it is better behaved.
-    Also, the log allows avoidance of the division which
-    can help prevent underflow when the numbers are very small.
-    """
-    intersection = tf.reduce_sum(prediction * target, axis=axis)
-    p = tf.reduce_sum(prediction, axis=axis)
-    t = tf.reduce_sum(target, axis=axis)
-    numerator = tf.reduce_mean(intersection + smooth)
-    denominator = tf.reduce_mean(t + p + smooth)
-    dice_loss = -tf.log(2.*numerator) + tf.log(denominator)
-
-    return dice_loss
-
-
-def combined_dice_ce_loss(y_true, y_pred, axis=(1, 2), smooth=1.,
-                          weight=0.9):
-    """
-    Combined Dice and Binary Cross Entropy Loss
-    """
-    return weight*dice_coef_loss(y_true, y_pred, axis, smooth) + \
-        (1-weight)*K.losses.binary_crossentropy(y_true, y_pred)
 
 
 def plot_results(model, img, msk, img_no, png_directory):
@@ -162,10 +126,7 @@ if __name__ == "__main__":
     print("Using Keras model: {}".format(args.inference_filename))
 
     # Load model
-    model = K.models.load_model(args.inference_filename, custom_objects={
-        "combined_dice_ce_loss": combined_dice_ce_loss,
-        "dice_coef_loss": dice_coef_loss,
-        "dice_coef": dice_coef})
+    model = K.models.load_model(args.inference_filename, compile=False)
 
     # Create output directory for images
     png_directory = "inference_examples_keras"

@@ -40,7 +40,7 @@ fi
 
 DECATHLON_DIR=${1:-"../../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
-IMG_SIZE=${3:-128}  # This should be a multiple of 16
+IMG_SIZE=${3:-144}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
 INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
 
@@ -78,7 +78,7 @@ fi
 
 echo " "
 echo "******************************************"
-echo "Step 1 of 3: Convert raw data to HDF5 file"
+echo "Step 1 of 4: Convert raw data to HDF5 file"
 echo "******************************************"
 
 echo "Converting Decathlon raw data to HDF5 file."
@@ -92,7 +92,7 @@ python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
 
 echo " "
 echo "***********************************"
-echo "Step 2 of 3: Train U-Net on dataset"
+echo "Step 2 of 4: Train U-Net on dataset"
 echo "***********************************"
 
 echo "Run U-Net training on BraTS Decathlon dataset"
@@ -113,7 +113,7 @@ python train.py \
 
 echo " "
 echo "****************************************"
-echo "Step 3 of 3: Run sample inference script"
+echo "Step 3 of 4: Run sample inference script"
 echo "****************************************"
 
 python plot_inference_examples.py  \
@@ -122,3 +122,18 @@ python plot_inference_examples.py  \
         --output_path $MODEL_OUTPUT_DIR \
         --inference_filename $INFERENCE_FILENAME \
         --crop_dim $IMG_SIZE
+
+echo " "
+echo "********************************************************"
+echo "Step 4 of 4: Converting the TensorFlow model to OpenVINO"
+echo "********************************************************"
+echo "If you have OpenVINO installed, then you can run the following command"
+echo "to create the OpenVINO model."
+echo ""
+echo "source /opt/intel/openvino/bin/setupvars.sh"
+echo "python ${INTEL_OPENVINO_DIR}/deployment_tools/model_optimizer/mo_tf.py \\"
+echo "   --input_model ./frozen_model/unet_model_for_decathlon.pb \\"
+echo "   --input_shape [1,${IMG_SIZE},${IMG_SIZE},4] \\"
+echo "   --output_dir openvino_models/FP32/ \\"
+echo "   --data_type FP32  --model_name saved_model"
+echo " "
