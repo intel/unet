@@ -252,7 +252,7 @@ def main():
 
 
     # Read IR
-    model_xml, model_bin = load_model(args.model, args.device=="MYRIAD")
+    model_xml, model_bin = load_model(args.openvino_model, args.device=="MYRIAD")
     log.info("Loading network files:\n\t{}\n\t{}".format(model_xml, model_bin))
     net = IENetwork(model=model_xml, weights=model_bin)
 
@@ -273,6 +273,8 @@ def main():
     out_blob = next(iter(net.outputs))   # Name of the output layer
 
     # Load data
+    batch_size, n_channels, height, width, depth = net.inputs[input_blob].shape
+    batch_size, n_out_channels, height_out, width_out, depth_out = net.outputs[out_blob].shape
     crop_dim = [height, width, depth]
     """
     Read the CSV file with the filenames of the images and masks
@@ -290,10 +292,10 @@ def main():
     # Reshape the OpenVINO network to accept the different image input shape
     # NOTE: This only works for some models (e.g. fully convolutional)
     batch_size = 1
-    n_channels = imgFiles.shape[1]
-    height = imgFiles.shape[2]
-    width = imgFiles.shape[3]
-    depth = imgFiles.shape[4]
+    n_channels = input_data.shape[1]
+    height = input_data.shape[2]
+    width = input_data.shape[3]
+    depth = input_data.shape[4]
 
     net.reshape({input_blob:(batch_size,n_channels,height,width,depth)})
     batch_size, n_channels, height, width, depth = net.inputs[input_blob].shape
