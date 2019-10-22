@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2019 Intel Corporation
@@ -25,7 +24,7 @@ import os
 import sys
 import numpy as np
 import tensorflow as tf
-import keras as K
+from tensorflow import keras as K
 import argparse
 
 import matplotlib.pyplot as plt
