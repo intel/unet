@@ -60,7 +60,7 @@ import multiprocessing
 NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(logical=False))
 
 CHANNELS_FIRST = False
-USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
+USE_KERAS_API = False   # If true, then use Keras API. Otherwise, use tf.keras
 # 28 DEC 2018: tf.keras has some bugs in the use of HDF5 and with the custom
 # loss function. Recommend to use Keras API when in doubt.
 # If true, then use bilinear interpolation. Otherwise, transposed convolution
