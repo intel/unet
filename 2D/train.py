@@ -37,25 +37,8 @@ import numpy as np
 
 from argparser import args
 
-"""
-For best CPU speed set the number of intra and inter threads
-to take advantage of multi-core systems.
-See https://github.com/intel/mkl-dnn
-"""
-#CONFIG = tf.ConfigProto(intra_op_parallelism_threads=args.num_threads,
-#                        inter_op_parallelism_threads=args.num_inter_threads)
-
-#SESS = tf.Session(config=CONFIG)
-SESS = tf.Session()
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
-os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
-os.environ["KMP_BLOCKTIME"] = "1"
-
-# If hyperthreading is enabled, then use
-os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
-
-# If hyperthreading is NOT enabled, then use
-#os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+tf.config.threading.set_intra_op_parallelism_threads(args.num_threads)
+tf.config.threading.set_inter_op_parallelism_threads(args.num_inter_threads)
 
 if args.keras_api:
     import keras as K
@@ -69,8 +52,6 @@ print("Keras API version: {}".format(K.__version__))
 
 if args.channels_first:
     K.backend.set_image_data_format("channels_first")
-
-K.backend.set_session(SESS)
 
 def train_and_predict(data_path, data_filename, batch_size, n_epoch):
     """

@@ -40,16 +40,6 @@ if CHANNELS_LAST:
 else:
    print("Data format = channels_first")
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
-os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
-os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-
-# If hyperthreading is enabled, then use
-os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
-
-# If hyperthreading is NOT enabled, then use
-#os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
-
 # os.system("lscpu")
 start_time = datetime.datetime.now()
 print("Started script on {}".format(start_time))
@@ -114,14 +104,8 @@ def save_frozen_model(model_filename, input_shape):
 
 
 
-# Optimize CPU threads for TensorFlow
-CONFIG = tf.ConfigProto(
-    inter_op_parallelism_threads=args.interop_threads,
-    intra_op_parallelism_threads=args.intraop_threads)
-
-SESS = tf.Session(config=CONFIG)
-
-K.backend.set_session(SESS)
+tf.config.threading.set_intra_op_parallelism_threads(args.intraop_threads)
+tf.config.threading.set_inter_op_parallelism_threads(args.interop_threads)
 
 unet_model = unet(use_upsampling=args.use_upsampling,
                   learning_rate=args.lr,

@@ -109,3 +109,13 @@ args = parser.parse_args()
 
 args.num_data_loaders = num_data_loaders
 args.num_prefetched_batches = num_prefetched_batches
+
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+
+os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+os.environ["KMP_AFFINITY"] = "granularity=fine,compact,1,0"
+
+os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
+os.environ["INTRA_THREADS"] = str(args.intraop_threads)
+os.environ["INTER_THREADS"] = str(args.interop_threads)
+os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
