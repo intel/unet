@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # -*- coding: utf-8 -*-
 #
@@ -18,7 +17,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-import psutil  
+import psutil
 import os
 
 DATA_PATH = os.path.join("../../data/decathlon/")
