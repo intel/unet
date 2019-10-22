@@ -28,7 +28,7 @@ from time import time
 from openvino.inference_engine import IENetwork, IECore
 
 import tensorflow as tf
-import keras as K
+fom tensorflow import keras as K
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 

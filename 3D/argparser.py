@@ -73,7 +73,7 @@ parser.add_argument("--intraop_threads",
 parser.add_argument("--keras_api",
                     help="use keras instead of tf.keras",
                     action="store_true",
-                    default=True)
+                    default=False)
 parser.add_argument("--interop_threads",
                     type=int,
                     default=1,
