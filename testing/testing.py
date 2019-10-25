@@ -34,7 +34,7 @@ parser.add_argument("--dim_length",
                     help="Tensor cube length of side")
 parser.add_argument("--num_channels",
                     type = int,
-                    default=1,
+                    default=4,
                     help="Number of channels")
 parser.add_argument("--num_outputs",
                     type = int,
@@ -50,6 +50,11 @@ parser.add_argument("--lr",
                     type = float,
                     default=0.001,
                     help="Learning rate")
+
+parser.add_argument("--fms",
+                    type = int,
+                    default=16,
+                    help="Feature maps at first level")
 
 parser.add_argument("--num_datapoints",
                     type = int,
@@ -101,7 +106,7 @@ parser.add_argument("--ngraph",
                     help="Use ngraph")
 parser.add_argument("--keras_api",
                     action="store_true",
-                    default=False,
+                    default=True,
                     help="Use Keras API. False=Use tf.keras")
 parser.add_argument("--channels_first",
                     action="store_true",
@@ -177,19 +182,6 @@ else:        # Define shape of the tensors (3D)
                         args.dim_length,
                         args.num_outputs)
 
-# Optimize CPU threads for TensorFlow
-config = tf.ConfigProto(
-        inter_op_parallelism_threads=args.interop_threads,
-        intra_op_parallelism_threads=args.intraop_threads)
-
-# Configure only as much GPU memory as needed during runtime
-# Default is to use the entire GPU memory
-config.gpu_options.allow_growth = True
-
-sess = tf.Session(config=config)
-
-K.backend.set_session(sess)
-
 
 def dice_coef(y_true, y_pred, axis=(1,2,3), smooth=1.0):
    intersection = tf.reduce_sum(y_true * K.backend.round(y_pred), axis=axis)
@@ -211,12 +203,12 @@ def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1.0):
     t = tf.reduce_sum(target, axis=axis)
     numerator = tf.reduce_mean(2. * intersection + smooth)
     denominator = tf.reduce_mean(t + p + smooth)
-    dice_loss = -tf.log(numerator) + tf.log(denominator)
+    dice_loss = -tf.math.log(numerator) + tf.math.log(denominator)
 
     return dice_loss
 
 if args.channels_first:
-    concat_axis = -1
+    concat_axis = 1
     data_format = "channels_first"
 else:
     concat_axis = -1
@@ -225,105 +217,112 @@ else:
 def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
             print_summary = False, return_model=False):
     """
-    3D U-Net model
+    3D U-Net
     """
-    print("3D U-Net Segmentation")
+    def ConvolutionBlock(x, name, fms, params):
+        """
+        Convolutional block of layers
+        Per the original paper this is back to back 3D convs
+        with batch norm and then ReLU.
+        """
 
-    inputs = K.layers.Input(shape=input_img, name="Input_Image")
+        x = K.layers.Conv3D(filters=fms, **params, name=name+"_conv0")(x)
+        x = K.layers.BatchNormalization(name=name+"_bn0")(x)
+        x = K.layers.Activation("relu", name=name+"_relu0")(x)
+
+        x = K.layers.Conv3D(filters=fms, **params, name=name+"_conv1")(x)
+        x = K.layers.BatchNormalization(name=name+"_bn1")(x)
+        x = K.layers.Activation("relu", name=name)(x)
+
+        return x
+
+    inputs = K.layers.Input(shape=input_img, name="MRImages")
 
     params = dict(kernel_size=(3, 3, 3), activation=None,
                   padding="same", data_format=data_format,
                   kernel_initializer="he_uniform")
 
-    conv1 = K.layers.Conv3D(name="conv1a", filters=32, **params)(inputs)
-    conv1 = K.layers.BatchNormalization()(conv1)
-    conv1 = K.layers.Activation("relu")(conv1)
-    conv1 = K.layers.Conv3D(name="conv1b", filters=64, **params)(conv1)
-    conv1 = K.layers.BatchNormalization()(conv1)
-    conv1 = K.layers.Activation("relu")(conv1)
-    pool1 = K.layers.MaxPooling3D(name="pool1", pool_size=(2, 2, 2))(conv1)
+    # Transposed convolution parameters
+    params_trans = dict(data_format=data_format,
+                        kernel_size=(2, 2, 2), strides=(2, 2, 2),
+                        padding="same")
 
-    conv2 = K.layers.Conv3D(name="conv2a", filters=64, **params)(pool1)
-    conv2 = K.layers.BatchNormalization()(conv2)
-    conv2 = K.layers.Activation("relu")(conv2)
-    conv2 = K.layers.Conv3D(name="conv2b", filters=128, **params)(conv2)
-    conv2 = K.layers.BatchNormalization()(conv2)
-    conv2 = K.layers.Activation("relu")(conv2)
-    pool2 = K.layers.MaxPooling3D(name="pool2", pool_size=(2, 2, 2))(conv2)
 
-    conv3 = K.layers.Conv3D(name="conv3a", filters=128, **params)(pool2)
-    conv3 = K.layers.BatchNormalization()(conv3)
-    conv3 = K.layers.Activation("relu")(conv3)
-    conv3 = K.layers.Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
-    conv3 = K.layers.Conv3D(name="conv3b", filters=256, **params)(conv3)
-    conv3 = K.layers.BatchNormalization()(conv3)
-    conv3 = K.layers.Activation("relu")(conv3)
-    pool3 = K.layers.MaxPooling3D(name="pool3", pool_size=(2, 2, 2))(conv3)
+    # BEGIN - Encoding path
+    encodeA = ConvolutionBlock(inputs, "encodeA", args.fms, params)
+    poolA = K.layers.MaxPooling3D(name="poolA", pool_size=(2, 2, 2))(encodeA)
 
-    conv4 = K.layers.Conv3D(name="conv4a", filters=256, **params)(pool3)
-    conv4 = K.layers.BatchNormalization()(conv4)
-    conv4 = K.layers.Activation("relu")(conv4)
-    conv4 = K.layers.Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
-    conv4 = K.layers.Conv3D(name="conv4b", filters=512, **params)(conv4)
-    conv4 = K.layers.BatchNormalization()(conv4)
-    conv4 = K.layers.Activation("relu")(conv4)
+    encodeB = ConvolutionBlock(poolA, "encodeB", args.fms*2, params)
+    poolB = K.layers.MaxPooling3D(name="poolB", pool_size=(2, 2, 2))(encodeB)
+
+    encodeC = ConvolutionBlock(poolB, "encodeC", args.fms*4, params)
+    poolC = K.layers.MaxPooling3D(name="poolC", pool_size=(2, 2, 2))(encodeC)
+
+    encodeD = ConvolutionBlock(poolC, "encodeD", args.fms*8, params)
+    poolD = K.layers.MaxPooling3D(name="poolD", pool_size=(2, 2, 2))(encodeD)
+
+    encodeE = ConvolutionBlock(poolD, "encodeE", args.fms*16, params)
+    # END - Encoding path
+
+    # BEGIN - Decoding path
+    if use_upsampling:
+        up = K.layers.UpSampling3D(name="upE", size=(2, 2, 2))(encodeE)
+    else:
+        up = K.layers.Conv3DTranspose(name="transconvE", filters=args.fms*8,
+                                      **params_trans)(encodeE)
+    concatD = K.layers.concatenate(
+        [up, encodeD], axis=concat_axis, name="concatD")
+
+    decodeC = ConvolutionBlock(concatD, "decodeC", args.fms*8, params)
 
     if use_upsampling:
-        up = K.layers.UpSampling3D(name="up4", size=(2, 2, 2))(conv4)
+        up = K.layers.UpSampling3D(name="upC", size=(2, 2, 2))(decodeC)
     else:
-        up = K.layers.Conv3DTranspose(name="transConv4", filters=512, data_format=data_format,
-                           kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="same")(conv4)
+        up = K.layers.Conv3DTranspose(name="transconvC", filters=args.fms*4,
+                                      **params_trans)(decodeC)
+    concatC = K.layers.concatenate(
+        [up, encodeC], axis=concat_axis, name="concatC")
 
-    up4 = K.layers.concatenate([up, conv3], axis=concat_axis)
-
-    conv5 = K.layers.Conv3D(name="conv5a", filters=256, **params)(up4)
-    conv5 = K.layers.BatchNormalization()(conv5)
-    conv5 = K.layers.Activation("relu")(conv5)
-    conv5 = K.layers.Conv3D(name="conv5b", filters=256, **params)(conv5)
-    conv5 = K.layers.BatchNormalization()(conv5)
-    conv5 = K.layers.Activation("relu")(conv5)
+    decodeB = ConvolutionBlock(concatC, "decodeB", args.fms*4, params)
 
     if use_upsampling:
-        up = K.layers.UpSampling3D(name="up5", size=(2, 2, 2))(conv5)
+        up = K.layers.UpSampling3D(name="upB", size=(2, 2, 2))(decodeB)
     else:
-        up = K.layers.Conv3DTranspose(name="transConv5", filters=256, data_format=data_format,
-                           kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="same")(conv5)
+        up = K.layers.Conv3DTranspose(name="transconvB", filters=args.fms*2,
+                                      **params_trans)(decodeB)
+    concatB = K.layers.concatenate(
+        [up, encodeB], axis=concat_axis, name="concatB")
 
-    up5 = K.layers.concatenate([up, conv2], axis=concat_axis)
-
-    conv6 = K.layers.Conv3D(name="conv6a", filters=128, **params)(up5)
-    conv6 = K.layers.BatchNormalization()(conv6)
-    conv6 = K.layers.Activation("relu")(conv6)
-    conv6 = K.layers.Conv3D(name="conv6b", filters=128, **params)(conv6)
-    conv6 = K.layers.BatchNormalization()(conv6)
-    conv6 = K.layers.Activation("relu")(conv6)
+    decodeA = ConvolutionBlock(concatB, "decodeA", args.fms*2, params)
 
     if use_upsampling:
-        up = K.layers.UpSampling3D(name="up6", size=(2, 2, 2))(conv6)
+        up = K.layers.UpSampling3D(name="upA", size=(2, 2, 2))(decodeA)
     else:
-        up = K.layers.Conv3DTranspose(name="transConv6", filters=128, data_format=data_format,
-                           kernel_size=(2, 2, 2), strides=(2, 2, 2), padding="same")(conv6)
+        up = K.layers.Conv3DTranspose(name="transconvA", filters=args.fms,
+                                      **params_trans)(decodeA)
+    concatA = K.layers.concatenate(
+        [up, encodeA], axis=concat_axis, name="concatA")
 
-    up6 = K.layers.concatenate([up, conv1], axis=concat_axis)
+    # END - Decoding path
 
-    conv7 = K.layers.Conv3D(name="conv7a", filters=64, **params)(up6)
-    conv7 = K.layers.BatchNormalization()(conv7)
-    conv7 = K.layers.Activation("relu")(conv7)
-    conv7 = K.layers.Conv3D(name="conv7b", filters=64, **params)(conv7)
-    conv7 = K.layers.BatchNormalization()(conv7)
-    conv7 = K.layers.Activation("relu")(conv7)
-    pred = K.layers.Conv3D(name="Prediction", filters=n_out, kernel_size=(1, 1, 1),
-                    data_format=data_format, activation="sigmoid")(conv7)
+    convOut = ConvolutionBlock(concatA, "convOut", args.fms, params)
+
+    prediction = K.layers.Conv3D(name="PredictionMask",
+                                 filters=n_out, kernel_size=(1, 1, 1),
+                                 data_format=data_format,
+                                 activation="sigmoid")(convOut)
+
+    model = K.models.Model(inputs=[inputs], outputs=[prediction])
 
     if return_model:
-        model = K.models.Model(inputs=[inputs], outputs=[pred])
+        model = K.models.Model(inputs=[inputs], outputs=[prediction])
 
         if print_summary:
             print(model.summary())
 
-        return pred, model
+        return prediction, model
     else:
-        return pred
+        return prediction
 
 def unet2D(input_tensor, use_upsampling=False,
             n_out=1, dropout=0.2, print_summary = False, return_model=False):
@@ -344,7 +343,7 @@ def unet2D(input_tensor, use_upsampling=False,
                         kernel_size=(2, 2), strides=(2, 2),
                         padding="same")
 
-    fms = 64
+    fms = args.fms
 
     conv1 = K.layers.Conv2D(name="conv1a", filters=fms, **params)(inputs)
     conv1 = K.layers.Conv2D(name="conv1b", filters=fms, **params)(conv1)
@@ -369,7 +368,7 @@ def unet2D(input_tensor, use_upsampling=False,
     conv5 = K.layers.Conv2D(name="conv5a", filters=fms*16, **params)(pool4)
     conv5 = K.layers.Conv2D(name="conv5b", filters=fms*16, **params)(conv5)
 
-    if args.use_upsampling:
+    if use_upsampling:
         up = K.layers.UpSampling2D(name="up6", size=(2, 2))(conv5)
     else:
         up = K.layers.Conv2DTranspose(name="transConv6", filters=fms*8,
@@ -379,7 +378,7 @@ def unet2D(input_tensor, use_upsampling=False,
     conv6 = K.layers.Conv2D(name="conv6a", filters=fms*8, **params)(up6)
     conv6 = K.layers.Conv2D(name="conv6b", filters=fms*8, **params)(conv6)
 
-    if args.use_upsampling:
+    if use_upsampling:
         up = K.layers.UpSampling2D(name="up7", size=(2, 2))(conv6)
     else:
         up = K.layers.Conv2DTranspose(name="transConv7", filters=fms*4,
@@ -389,7 +388,7 @@ def unet2D(input_tensor, use_upsampling=False,
     conv7 = K.layers.Conv2D(name="conv7a", filters=fms*4, **params)(up7)
     conv7 = K.layers.Conv2D(name="conv7b", filters=fms*4, **params)(conv7)
 
-    if args.use_upsampling:
+    if use_upsampling:
         up = K.layers.UpSampling2D(name="up8", size=(2, 2))(conv7)
     else:
         up = K.layers.Conv2DTranspose(name="transConv8", filters=fms*2,
@@ -399,7 +398,7 @@ def unet2D(input_tensor, use_upsampling=False,
     conv8 = K.layers.Conv2D(name="conv8a", filters=fms*2, **params)(up8)
     conv8 = K.layers.Conv2D(name="conv8b", filters=fms*2, **params)(conv8)
 
-    if args.use_upsampling:
+    if use_upsampling:
         up = K.layers.UpSampling2D(name="up9", size=(2, 2))(conv8)
     else:
         up = K.layers.Conv2DTranspose(name="transConv9", filters=fms,
