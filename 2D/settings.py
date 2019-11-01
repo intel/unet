@@ -50,7 +50,7 @@ PRINT_MODEL = True  # Print the model
 # CPU specific parameters for multi-threading.
 # These can help take advantage of multi-core CPU systems
 # and significantly boosts training speed with MKL-DNN TensorFlow.
-BLOCKTIME = 1
+BLOCKTIME = 1000
 NUM_INTER_THREADS = 1
 # Default is to use the number of physical cores available
 
@@ -58,6 +58,7 @@ NUM_INTER_THREADS = 1
 # Minimum of either the CPU affinity or the number of physical cores
 import multiprocessing
 NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(logical=False))
+
 
 CHANNELS_FIRST = False
 USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
