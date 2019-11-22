@@ -390,7 +390,9 @@ class unet(object):
         """
         Load a model from Keras file
         """
-
+        if args.use_pconv:
+            self.custom_objects.update( {'PConv2D' : PConv2D} )
+            
         return K.models.load_model(model_filename, custom_objects=self.custom_objects)
 
 
