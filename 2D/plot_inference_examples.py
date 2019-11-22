@@ -21,7 +21,6 @@
 """
 Takes a trained model and performs inference on a few validation examples.
 """
-from model import unet
 import os
 
 import numpy as np
@@ -149,6 +148,10 @@ if __name__ == "__main__":
     files_testing = df["testing_input_files"]
 
     # Load model
+    if args.use_pconv:
+        from model_pconv import unet
+    else:
+        from model import unet    
     unet_model = unet()
     model = unet_model.load_model(model_filename)
 
