@@ -99,6 +99,9 @@ class unet(object):
             "dice_coef": self.dice_coef,
             "soft_dice_coef": self.soft_dice_coef}
 
+        if args.use_pconv:
+            self.custom_objects.update( {'PConv2D' : PConv2D} )
+            
         self.blocktime = blocktime
         self.num_threads = num_threads
         self.num_inter_threads = num_inter_threads
@@ -389,10 +392,7 @@ class unet(object):
     def load_model(self, model_filename):
         """
         Load a model from Keras file
-        """
-        if args.use_pconv:
-            self.custom_objects.update( {'PConv2D' : PConv2D} )
-            
+        """ 
         return K.models.load_model(model_filename, custom_objects=self.custom_objects)
 
 
