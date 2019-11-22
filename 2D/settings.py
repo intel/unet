@@ -68,3 +68,4 @@ USE_KERAS_API = True   # If true, then use Keras API. Otherwise, use tf.keras
 USE_UPSAMPLING = False
 USE_AUGMENTATION = True  # Use data augmentation during training
 USE_DROPOUT = False  # Use spatial dropout in model
+USE_PCONV = False   # If True, Partial Convolution based padding will be used. See https://arxiv.org/pdf/1811.11718.pdf

@@ -53,10 +53,10 @@ parser.add_argument("--seed", type=int, default=816,
                     help="Seed for random number generation")
 parser.add_argument("--crop_dim", type=int, default=-1,
                     help="Size to crop images (square, in pixels). If -1, then no cropping.")
-parser.add_argument("--blocktime",type=int,    
+parser.add_argument("--blocktime",type=int,
                     default=settings.BLOCKTIME,
                     help="blocktime")
-parser.add_argument("--epochs", type=int, 
+parser.add_argument("--epochs", type=int,
                     default=settings.EPOCHS,
                     help="number of epochs to train")
 parser.add_argument("--learningrate",type=float,
@@ -71,21 +71,24 @@ parser.add_argument("--featuremaps",type=int,
 parser.add_argument("--keras_api",help="use keras instead of tf.keras",
                     action="store_true",
                     default=settings.USE_KERAS_API)
+parser.add_argument("--use_pconv",help="use partial convolution based padding",
+                    action="store_true",
+                    default=settings.USE_PCONV)
 parser.add_argument("--channels_first", help="use channels first data format",
                     action="store_true", default=settings.CHANNELS_FIRST)
 parser.add_argument("--print_model", help="print the model",
-                    action="store_true", 
+                    action="store_true",
                     default=settings.PRINT_MODEL)
-parser.add_argument("--use_dropout", 
+parser.add_argument("--use_dropout",
                     default=settings.USE_DROPOUT,
                     help="add spatial dropout layers 3/4",
-                    action="store_true", 
+                    action="store_true",
                     )
-parser.add_argument("--use_augmentation", 
+parser.add_argument("--use_augmentation",
                     default=settings.USE_AUGMENTATION,
                     help="use data augmentation on training images",
                     action="store_true")
-parser.add_argument("--output_pngs", 
+parser.add_argument("--output_pngs",
                     default="inference_examples",
                     help="the directory for the output prediction pngs")
 parser.add_argument("--input_filename",
@@ -108,7 +111,7 @@ parser.add_argument("-l", "--cpu_extension",
                     help="MKLDNN (CPU)-targeted custom layers. "
                     "Absolute path to a shared library with "
                     "the kernels impl.", type=str)
-parser.add_argument("-pp", "--plugin_dir", 
+parser.add_argument("-pp", "--plugin_dir",
                     help="Path to a plugin folder",
                     type=str, default=None)
 parser.add_argument("-d", "--device",
@@ -117,13 +120,13 @@ parser.add_argument("-d", "--device",
                     "will look for a suitable plugin for device "
                     "specified (CPU by default)", default="CPU",
                     type=str)
-parser.add_argument("-plot", "--plot", 
+parser.add_argument("-plot", "--plot",
                     help="Plot results",
                     default=True, action="store_true")
 parser.add_argument("-rows_per_image", "--rows_per_image",
                     help="Number of rows per plot (when -plot = True)",
                     default=4, type=int)
-parser.add_argument("-stats", "--stats", 
+parser.add_argument("-stats", "--stats",
                     help="Plot the runtime statistics",
                     default=False, action="store_true")
 
