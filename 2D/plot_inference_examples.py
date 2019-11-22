@@ -47,7 +47,9 @@ parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
                     help="the Keras inference model filename")
-
+parser.add_argument("--use_pconv",help="use partial convolution based padding",
+                    action="store_true",
+                    default=settings.USE_PCONV)
 parser.add_argument("--output_pngs", default="inference_examples",
                     help="the directory for the output prediction pngs")
 
