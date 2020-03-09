@@ -177,18 +177,23 @@ else:        # Define shape of the tensors (3D)
                         args.dim_length,
                         args.num_outputs)
 
-# Optimize CPU threads for TensorFlow
-config = tf.ConfigProto(
-        inter_op_parallelism_threads=args.interop_threads,
-        intra_op_parallelism_threads=args.intraop_threads)
+if tf.__version__ < "2":
+    """
+    Configuration for TensorFlow 1.x
+    """
 
-# Configure only as much GPU memory as needed during runtime
-# Default is to use the entire GPU memory
-config.gpu_options.allow_growth = True
+    # Optimize CPU threads for TensorFlow
+    config = tf.ConfigProto(
+            inter_op_parallelism_threads=args.interop_threads,
+            intra_op_parallelism_threads=args.intraop_threads)
 
-sess = tf.Session(config=config)
+    # Configure only as much GPU memory as needed during runtime
+    # Default is to use the entire GPU memory
+    config.gpu_options.allow_growth = True
 
-K.backend.set_session(sess)
+    sess = tf.Session(config=config)
+
+    K.backend.set_session(sess)
 
 
 def dice_coef(y_true, y_pred, axis=(1,2,3), smooth=1.0):
@@ -211,7 +216,11 @@ def dice_coef_loss(target, prediction, axis=(1,2,3), smooth=1.0):
     t = tf.reduce_sum(target, axis=axis)
     numerator = tf.reduce_mean(2. * intersection + smooth)
     denominator = tf.reduce_mean(t + p + smooth)
-    dice_loss = -tf.log(numerator) + tf.log(denominator)
+
+    if tf.__version__ < "2":
+        dice_loss = -tf.log(numerator) + tf.log(denominator)
+    else:
+        dice_loss = -tf.math.log(numerator) + tf.math.log(denominator)
 
     return dice_loss
 
