@@ -62,7 +62,8 @@ else:
     from tensorflow import keras as K
 
 print("TensorFlow version: {}".format(tf.__version__))
-print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
+from tensorflow.python import pywrap_tensorflow
+print("Intel MKL-DNN is enabled = {}".format(pywrap_tensorflow.IsMklEnabled()))
 
 print("Keras API version: {}".format(K.__version__))
 
