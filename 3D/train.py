@@ -56,7 +56,8 @@ print("Started script on {}".format(start_time))
 
 #os.system("uname -a")
 print("TensorFlow version: {}".format(tf.__version__))
-print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
+from tensorflow.python import pywrap_tensorflow
+print("Intel MKL-DNN is enabled = {}".format(pywrap_tensorflow.IsMklEnabled()))
 
 print("Keras API version: {}".format(K.__version__))
 
