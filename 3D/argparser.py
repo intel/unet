@@ -70,10 +70,6 @@ parser.add_argument("--intraop_threads",
                     default=max(
                         len(psutil.Process().cpu_affinity())-num_data_loaders, 2),
                     help="Number of intraop threads")
-parser.add_argument("--keras_api",
-                    help="use keras instead of tf.keras",
-                    action="store_true",
-                    default=True)
 parser.add_argument("--interop_threads",
                     type=int,
                     default=1,
@@ -94,7 +90,11 @@ parser.add_argument("--use_upsampling",
                     action="store_true",
                     default=False,
                     help="Use upsampling instead of transposed convolution")
-datapath = "../../data/decathlon/Task01_BrainTumour/"
+
+if os.getenv("BRATS_DATA"):
+    datapath = os.getenv("BRATS_DATA")
+else:
+    datapath = "../../data/decathlon/Task01_BrainTumour/"
 parser.add_argument("--data_path",
                     default=datapath,
                     help="Root directory for Medical Decathlon dataset")

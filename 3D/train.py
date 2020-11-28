@@ -22,10 +22,7 @@ import datetime
 import os
 import tensorflow as tf
 from argparser import args
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
+from tensorflow import keras as K
 
 from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import graph_io
@@ -56,72 +53,12 @@ print("Started script on {}".format(start_time))
 
 #os.system("uname -a")
 print("TensorFlow version: {}".format(tf.__version__))
-print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
-
-print("Keras API version: {}".format(K.__version__))
-
-def save_frozen_model(model_filename, input_shape):
-    """
-    Save frozen TensorFlow formatted model protobuf
-    """
-    model = K.models.load_model(model_filename, compile=None)
-
-    # Change filename to protobuf extension
-    base = os.path.basename(model_filename)
-    output_model = os.path.splitext(base)[0] + ".pb"
-
-    # Set Keras to inference
-    K.backend._LEARNING_PHASE = tf.constant(0)
-    K.backend.set_learning_phase(False)
-    K.backend.set_learning_phase(0)
-    K.backend.set_image_data_format("channels_last")
-
-    num_output = len(model.outputs)
-    predictions = [None] * num_output
-    prediction_node_names = [None] * num_output
-
-    for i in range(num_output):
-        prediction_node_names[i] = "output_node" + str(i)
-        predictions[i] = tf.identity(model.outputs[i],
-                name=prediction_node_names[i])
-
-    sess = K.backend.get_session()
-
-    constant_graph = graph_util.convert_variables_to_constants(sess,
-                     sess.graph.as_graph_def(), prediction_node_names)
-    infer_graph = graph_util.remove_training_nodes(constant_graph)
-
-    # Write protobuf of frozen model
-    frozen_dir = "./tf_protobuf/"
-    shutil.rmtree(frozen_dir, ignore_errors=True) # Remove existing directory
-    graph_io.write_graph(infer_graph, frozen_dir, output_model, as_text=False)
-
-    pb_filename = os.path.join(frozen_dir, output_model)
-    print("\n\nFrozen TensorFlow model written to: {}".format(pb_filename))
-    print("Convert this to OpenVINO by running:\n")
-    print("source /opt/intel/openvino/bin/setupvars.sh")
-    print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
-    print("       --input_model {} \\".format(pb_filename))
-
-    shape_string = "[1"
-    for idx in range(len(input_shape[1:])):
-        shape_string += ",{}".format(input_shape[idx+1])
-    shape_string += "]"
-
-    print("       --input_shape {} \\".format(shape_string))
-    print("       --output_dir openvino_models/FP32/ \\")
-    print("       --data_type FP32\n\n")
-
-
-
-# Optimize CPU threads for TensorFlow
-CONFIG = tf.ConfigProto(
-    inter_op_parallelism_threads=args.interop_threads,
-    intra_op_parallelism_threads=args.intraop_threads)
-
-SESS = tf.Session(config=CONFIG)
-
-K.backend.set_session(SESS)
+major_version = int(tf.__version__.split(".")[0])
+if major_version >= 2:
+   from tensorflow.python import _pywrap_util_port
+   print("MKL enabled:", _pywrap_util_port.IsMklEnabled())
+else:
+   print("MKL enabled:", tf.pywrap_tensorflow.IsMklEnabled())
 
 unet_model = unet(use_upsampling=args.use_upsampling,
                   learning_rate=args.lr,
@@ -210,7 +147,7 @@ workers, use_multiprocessing: Generates multiple generator instances.
 num_data_loaders is defined in argparser.py
 """
 
-unet_model.model.fit_generator(training_generator,
+unet_model.model.fit(training_generator,
                     epochs=args.epochs, verbose=1,
                     validation_data=validation_generator,
                     callbacks=callbacks,
@@ -232,11 +169,6 @@ scores = unet_model.model.evaluate_generator(testing_generator, verbose=1)
 print("Final model metrics on test dataset:")
 for idx, name in enumerate(unet_model.model.metrics_names):
     print("{} \t= {}".format(name, scores[idx]))
-
-# Save a frozen version of the model for use in OpenVINO
-save_frozen_model(args.saved_model,
-                 [1, args.patch_height, args.patch_width, args.patch_depth,
-                 args.number_input_channels])
 
 stop_time = datetime.datetime.now()
 print("Started script on {}".format(start_time))

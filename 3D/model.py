@@ -21,11 +21,7 @@
 import tensorflow as tf
 
 from argparser import args
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
-
+from tensorflow import keras as K
 
 class unet(object):
 
@@ -116,7 +112,7 @@ class unet(object):
         t = tf.reduce_sum(target, axis=axis)
         numerator = tf.reduce_mean(intersection + smooth)
         denominator = tf.reduce_mean(t + p + smooth)
-        dice_loss = -tf.log(2.*numerator) + tf.log(denominator)
+        dice_loss = -tf.math.log(2.*numerator) + tf.math.log(denominator)
 
         return dice_loss
 

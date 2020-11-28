@@ -42,12 +42,8 @@
 #   -n
 
 from argparser import args
-if args.keras_api:
-    import keras as K
-    import horovod.keras as hvd
-else:
-    from tensorflow import keras as K
-    import horovod.tensorflow.keras as hvd
+from tensorflow import keras as K
+import horovod.tensorflow.keras as hvd
 
 from tensorflow.python.framework import graph_util
 from tensorflow.python.framework import graph_io
@@ -62,59 +58,6 @@ os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
 os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
-def save_frozen_model(model_filename, input_shape):
-    """
-    Save frozen TensorFlow formatted model protobuf
-    """
-    model = K.models.load_model(model_filename, compile=None)
-
-    # Change filename to protobuf extension
-    base = os.path.basename(model_filename)
-    output_model = os.path.splitext(base)[0] + ".pb"
-
-    # Set Keras to inference
-    K.backend._LEARNING_PHASE = tf.constant(0)
-    K.backend.set_learning_phase(False)
-    K.backend.set_learning_phase(0)
-    K.backend.set_image_data_format("channels_last")
-
-    num_output = len(model.outputs)
-    predictions = [None] * num_output
-    prediction_node_names = [None] * num_output
-
-    for i in range(num_output):
-        prediction_node_names[i] = "output_node" + str(i)
-        predictions[i] = tf.identity(model.outputs[i],
-                name=prediction_node_names[i])
-
-    sess = K.backend.get_session()
-
-    constant_graph = graph_util.convert_variables_to_constants(sess,
-                     sess.graph.as_graph_def(), prediction_node_names)
-    infer_graph = graph_util.remove_training_nodes(constant_graph)
-
-    # Write protobuf of frozen model
-    frozen_dir = "./tf_protobuf/"
-    shutil.rmtree(frozen_dir, ignore_errors=True) # Remove existing directory
-    graph_io.write_graph(infer_graph, frozen_dir, output_model, as_text=False)
-
-    pb_filename = os.path.join(frozen_dir, output_model)
-    print("\n\nFrozen TensorFlow model written to: {}".format(pb_filename))
-    print("Convert this to OpenVINO by running:\n")
-    print("source /opt/intel/openvino/bin/setupvars.sh")
-    print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
-    print("       --input_model {} \\".format(pb_filename))
-
-    shape_string = "[1"
-    for idx in range(len(input_shape[1:])):
-        shape_string += ",{}".format(input_shape[idx+1])
-    shape_string += "]"
-
-    print("       --input_shape {} \\".format(shape_string))
-    print("       --output_dir openvino_models/FP32/ \\")
-    print("       --data_type FP32\n\n")
-
-
 
 if (hvd.rank() == 0):  # Only print on worker 0
     print("Args = {}".format(args))
@@ -126,25 +69,19 @@ if (hvd.rank() == 0):  # Only print on worker 0
     else:
        print("Data format = channels first")
 
-    # os.system("lscpu")
-    #os.system("uname -a")
     print("TensorFlow version: {}".format(tf.__version__))
-    print("Intel MKL-DNN is enabled = {}".format(tf.pywrap_tensorflow.IsMklEnabled()))
-    print("Keras API version: {}".format(K.__version__))
+    major_version = int(tf.__version__.split(".")[0])
+    if major_version >= 2:
+       from tensorflow.python import _pywrap_util_port
+       print("MKL enabled:", _pywrap_util_port.IsMklEnabled())
+    else:
+       print("MKL enabled:", tf.pywrap_tensorflow.IsMklEnabled())
+
 
 else:  # Don't print on workers > 0
     print_summary = 0
     verbose = 0
 
-
-# Optimize CPU threads for TensorFlow
-CONFIG = tf.ConfigProto(
-    inter_op_parallelism_threads=args.interop_threads,
-    intra_op_parallelism_threads=args.intraop_threads)
-
-SESS = tf.Session(config=CONFIG)
-
-K.backend.set_session(SESS)
 
 unet_model = unet(use_upsampling=args.use_upsampling,
                   learning_rate=args.lr,
@@ -264,7 +201,7 @@ if (hvd.rank() == 0):
 steps_per_epoch = max(3, training_generator.get_length()//(args.bz*hvd.size()))
 validation_steps = max(3, validation_generator.get_length()//(args.bz*hvd.size()))
 
-unet_model.model.fit_generator(training_generator,
+unet_model.model.fit(training_generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=args.epochs, verbose=verbose,
                     validation_data=validation_generator,
