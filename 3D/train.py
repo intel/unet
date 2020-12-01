@@ -1,176 +1,108 @@
-#!/usr/bin/env python
+#
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2020 Intel Corporation
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, version 3.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
-
-from dataloader import DataGenerator
-from model import unet
-import datetime
-import os
-import tensorflow as tf
-from argparser import args
+# SPDX-License-Identifier: EPL-2.0
+#
+import tensorflow as tf   # TensorFlow 2
 from tensorflow import keras as K
 
-from tensorflow.python.framework import graph_util
-from tensorflow.python.framework import graph_io
-import shutil
+import os
+import datetime
 
-print("Args = {}".format(args))
+from argparser import args
+from dataloader import DatasetGenerator
+from model import dice_coef, soft_dice_coef, dice_loss, unet_3d
 
-CHANNELS_LAST = True
+def test_intel_tensorflow():
+    """
+    Check if Intel version of TensorFlow is installed
+    """
+    from tensorflow.python import _pywrap_util_port
+    DNNL = _pywrap_util_port.IsMklEnabled()
+    if DNNL:
+        print("Intel-optimized TensorFlow with DNNL is enabled.")
+    else:
+        print("TensorFlow is not enabled with Intel optimizations for CPU.")
 
-if CHANNELS_LAST:
-   print("Data format = channels_last")
-else:
-   print("Data format = channels_first")
+test_intel_tensorflow()  # Prints if Intel-optimized TensorFlow is used.
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
-os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
-os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+"""
+crop_dim = Dimensions to crop the input tensor
+"""
+crop_dim = (args.tile_height, args.tile_width,
+            args.tile_depth, args.number_input_channels)
 
-# If hyperthreading is enabled, then use
-os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+"""
+1. Load the dataset
+"""
+brats_datafiles = DatasetGenerator(crop_dim,
+             data_path=args.data_path,
+             batch_size=args.batch_size,
+             train_test_split=args.train_test_split,
+             validate_test_split=args.validate_test_split,
+             number_output_classes=args.number_output_classes,
+             random_seed=args.random_seed)
 
-# If hyperthreading is NOT enabled, then use
-#os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+brats_datafiles.print_info()  # Print dataset information
 
-# os.system("lscpu")
-start_time = datetime.datetime.now()
-print("Started script on {}".format(start_time))
+"""
+2. Create the TensorFlow model
+"""
+model = unet_3d(input_dim=crop_dim, filters=args.filters,
+            number_output_classes=args.number_output_classes,
+            use_upsampling=args.use_upsampling,
+            concat_axis=-1, model_name=args.saved_model_name)
 
-#os.system("uname -a")
-print("TensorFlow version: {}".format(tf.__version__))
-major_version = int(tf.__version__.split(".")[0])
-if major_version >= 2:
-   from tensorflow.python import _pywrap_util_port
-   print("MKL enabled:", _pywrap_util_port.IsMklEnabled())
-else:
-   print("MKL enabled:", tf.pywrap_tensorflow.IsMklEnabled())
+local_opt = K.optimizers.Adam()
+model.compile(loss=dice_loss,
+             metrics=[dice_coef, soft_dice_coef],
+             optimizer=local_opt)
 
-unet_model = unet(use_upsampling=args.use_upsampling,
-                  learning_rate=args.lr,
-                  n_cl_in=args.number_input_channels,
-                  n_cl_out=1,  # single channel (greyscale)
-                  feature_maps = args.featuremaps,
-                  dropout=0.2,
-                  print_summary=args.print_model,
-                  channels_last = CHANNELS_LAST)  # channels first or last
-
-unet_model.model.compile(optimizer=unet_model.optimizer,
-              loss=unet_model.loss,
-              metrics=unet_model.metrics)
-
-# Save best model to hdf5 file
-saved_model_directory = os.path.dirname(args.saved_model)
-try:
-    os.stat(saved_model_directory)
-except:
-    os.mkdir(saved_model_directory)
-
-# If there is a current saved file, then load weights and start from
-# there.
-if os.path.isfile(args.saved_model):
-    unet_model.model.load_weights(args.saved_model)
-
-checkpoint = K.callbacks.ModelCheckpoint(args.saved_model,
+checkpoint = K.callbacks.ModelCheckpoint(args.saved_model_name,
                                          verbose=1,
                                          save_best_only=True)
 
 # TensorBoard
-currentDT = datetime.datetime.now()
-tb_logs = K.callbacks.TensorBoard(log_dir=os.path.join(
-    saved_model_directory, "tensorboard_logs", currentDT.strftime("%Y/%m/%d-%H:%M:%S")), update_freq="batch")
+logs_dir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+tb_logs = K.callbacks.TensorBoard(log_dir=logs_dir)
 
-# Keep reducing learning rate if we get to plateau
-reduce_lr = K.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2,
-                                          patience=5, min_lr=0.0001)
+callbacks = [checkpoint, tb_logs]
 
-callbacks = [checkpoint, tb_logs, reduce_lr]
-
-training_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
-                        "batch_size": args.bz,
-                        "n_in_channels": args.number_input_channels,
-                        "n_out_channels": 1,
-                        "train_test_split": args.train_test_split,
-                        "validate_test_split": args.validate_test_split,
-                        "augment": True,
-                        "shuffle": True,
-                        "seed": args.random_seed}
-
-training_generator = DataGenerator("train", args.data_path,
-                                   **training_data_params)
-training_generator.print_info()
-
-validation_data_params = {"dim": (args.patch_height, args.patch_width, args.patch_depth),
-                          "batch_size": 1,
-                          "n_in_channels": args.number_input_channels,
-                          "n_out_channels": 1,
-                          "train_test_split": args.train_test_split,
-                          "validate_test_split": args.validate_test_split,
-                          "augment": False,
-                          "shuffle": False,
-                          "seed": args.random_seed}
-validation_generator = DataGenerator("validate", args.data_path,
-                                     **validation_data_params)
-validation_generator.print_info()
-
-# Fit the model
 """
-Keras Data Pipeline using Sequence generator
-https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
-
-The sequence generator allows for Keras to load batches at runtime.
-It's very useful in the case when your entire dataset won't fit into
-memory. The Keras sequence will load one batch at a time to
-feed to the model. You can specify pre-fetching of batches to
-make sure that an additional batch is in memory when the previous
-batch finishes processing.
-
-max_queue_size : Specifies how many batches will be prepared (pre-fetched)
-in the queue. Does not indicate multiple generator instances.
-
-workers, use_multiprocessing: Generates multiple generator instances.
-
-num_data_loaders is defined in argparser.py
+3. Train the model
 """
+model.fit(brats_datafiles.get_train(), epochs=args.epochs,
+          validation_data=brats_datafiles.get_validate(),
+          callbacks=callbacks)
 
-unet_model.model.fit(training_generator,
-                    epochs=args.epochs, verbose=1,
-                    validation_data=validation_generator,
-                    callbacks=callbacks,
-                    max_queue_size=args.num_prefetched_batches,
-                    workers=args.num_data_loaders,
-                    use_multiprocessing=False)  #False)  # True seems to cause fork issue
+"""
+4. Load best model on validation dataset and run on the test
+dataset to show generalizability
+"""
+best_model = K.models.load_model(saved_model_name,
+             custom_objects={"dice_loss":dice_loss,
+                             "dice_coef":dice_coef,
+                             "soft_dice_coef":soft_dice_coef})
 
+loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_datafiles.get_test())
 
-# Evaluate final model on test holdout set
-testing_generator = DataGenerator("test", args.data_path,
-                                     **validation_data_params)
-testing_generator.print_info()
+print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
 
-# Load the best model
-print("Loading the best model: {}".format(args.saved_model))
-unet_model.model.load_weights(args.saved_model)
-scores = unet_model.model.evaluate_generator(testing_generator, verbose=1)
-
-print("Final model metrics on test dataset:")
-for idx, name in enumerate(unet_model.model.metrics_names):
-    print("{} \t= {}".format(name, scores[idx]))
-
-stop_time = datetime.datetime.now()
-print("Started script on {}".format(start_time))
-print("Stopped script on {}".format(stop_time))
-print("\nTotal time for training model = {}".format(stop_time - start_time))
+"""
+5. Save the best model without the optimizer
+"""
+best_model.save_model(saved_model_name + "_no_optimizer", include_optimizer=False)

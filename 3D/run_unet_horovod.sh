@@ -19,8 +19,8 @@
 #
 
 source ~/.bashrc
-conda activate unet
+conda activate decathlon
 cd /home/unet/unet/3D
-python train_horovod.py --bz 4 --data_path /home/unet/data/brats/Task01_BrainTumour/
+python train_horovod.py --batch_size 4 --data_path /home/unet/data/decathlon/Task01_BrainTumour/
 
 conda deactivate
