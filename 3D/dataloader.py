@@ -31,7 +31,8 @@ class DatasetGenerator:
                  train_test_split=args.train_test_split,
                  validate_test_split=args.validate_test_split,
                  number_output_classes=args.number_output_classes,
-                 random_seed=args.random_seed):
+                 random_seed=args.random_seed,
+                 shard=0):
 
         self.data_path = data_path
         self.batch_size = batch_size
@@ -40,6 +41,7 @@ class DatasetGenerator:
         self.validate_test_split = validate_test_split
         self.number_output_classes = number_output_classes
         self.random_seed = random_seed
+        self.shard = shard # For Horovod, gives different shard per worker
 
         self.create_file_list()
 
@@ -290,16 +292,24 @@ class DatasetGenerator:
         """
         Create a TensorFlow data loader
         """
-
-        numTrain = int(self.numFiles * self.train_test_split)
-        numValTest = self.numFiles - numTrain
+        self.num_train = int(self.numFiles * self.train_test_split)
+        numValTest = self.numFiles - self.num_train
 
         ds = tf.data.Dataset.range(self.numFiles).shuffle(self.numFiles, self.random_seed) # Shuffle the dataset
 
-        ds_train = ds.take(numTrain)
-        ds_val_test = ds.skip(numTrain)
-        ds_val = ds_val_test.take(int(numValTest * self.validate_test_split))
-        ds_test = ds_val_test.skip(int(numValTest * self.validate_test_split))
+        """
+        Horovod Sharding
+        Here we are not actually dividing the dataset into shards
+        but instead just reshuffling the training dataset for every
+        shard. Then in the training loop we just go through the training
+        dataset but the number of steps is divided by the number of shards.
+        """
+        ds_train = ds.take(self.num_train).shuffle(self.num_train, self.shard) # Reshuffle based on shard
+        ds_val_test = ds.skip(self.num_train)
+        self.num_val = int(numValTest * self.validate_test_split)
+        self.num_test = self.num_train - self.num_val
+        ds_val = ds_val_test.take(self.num_val)
+        ds_test = ds_val_test.skip(self.num_val)
 
         ds_train = ds_train.map(lambda x: tf.py_function(self.read_nifti_file,
                                 [x, True], [tf.float32, tf.float32]),

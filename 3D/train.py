@@ -85,15 +85,15 @@ callbacks = [checkpoint, tb_logs]
 """
 3. Train the model
 """
-model.fit(brats_datafiles.get_train(), epochs=args.epochs,
-          validation_data=brats_datafiles.get_validate(),
-          callbacks=callbacks)
+# model.fit(brats_datafiles.get_train(), epochs=args.epochs,
+#           validation_data=brats_datafiles.get_validate(),
+#           callbacks=callbacks)
 
 """
 4. Load best model on validation dataset and run on the test
 dataset to show generalizability
 """
-best_model = K.models.load_model(saved_model_name,
+best_model = K.models.load_model(args.saved_model_name,
              custom_objects={"dice_loss":dice_loss,
                              "dice_coef":dice_coef,
                              "soft_dice_coef":soft_dice_coef})
@@ -105,4 +105,4 @@ print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
 """
 5. Save the best model without the optimizer
 """
-best_model.save_model(saved_model_name + "_no_optimizer", include_optimizer=False)
+K.models.save_model(best_model, args.saved_model_name + "_no_optimizer", include_optimizer=False)
