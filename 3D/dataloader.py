@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2020 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,122 +17,42 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+from argparser import args
+import tensorflow as tf
+import numpy as np
 
 import nibabel as nib
-import json
-import ntpath
-import os
-import numpy as np
-from argparser import args
 
-TRAIN_TESTVAL_SEED = 816
+class DatasetGenerator:
 
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
+    def __init__(self, crop_dim,
+                 data_path=args.data_path,
+                 batch_size=args.batch_size,
+                 train_test_split=args.train_test_split,
+                 validate_test_split=args.validate_test_split,
+                 number_output_classes=args.number_output_classes,
+                 random_seed=args.random_seed):
 
-class DataGenerator(K.utils.Sequence):
-    """
-    Generates data for Keras/TensorFlow
-
-    This uses the Keras Sequence which is a better data pipeline.
-    It will allow for multiple data generator processes and
-    batch pre-fetching.
-
-    If you have a different type of dataset, you'll just need to
-    change the loading code in self.__data_generation to return
-    the correct image and label.
-
-    """
-
-    def __init__(self,
-                 setType,     # ["train", "validate", "test"]
-                 data_path,    # File path for data
-                 train_test_split=0.85,  # Train test split
-                 validate_test_split=0.5,  # Validation/test split
-                 batch_size=8,  # batch size
-                 dim=(128, 128, 128),  # Dimension of images/masks
-                 n_in_channels=1,  # Number of channels in image
-                 n_out_channels=1,  # Number of channels in mask
-                 shuffle=True,  # Shuffle list after each epoch
-                 augment=False,   # Augment images
-                 seed=816):     # Seed for random number generator
-        """
-        Initialization
-        """
         self.data_path = data_path
-
-        if setType not in ["train", "test", "validate"]:
-            print("Dataloader error.  You forgot to specify train, test, or validate.")
-
-        self.setType = setType
-        self.dim = dim
         self.batch_size = batch_size
+        self.crop_dim = crop_dim
         self.train_test_split = train_test_split
         self.validate_test_split = validate_test_split
+        self.number_output_classes = number_output_classes
+        self.random_seed = random_seed
 
-        self.n_in_channels = n_in_channels
-        self.n_out_channels = n_out_channels
-        self.shuffle = shuffle
-        self.augment = augment
+        self.create_file_list()
 
-        self.seed = seed
-
-        np.random.seed(TRAIN_TESTVAL_SEED)  # Seed has to be same for all workers so that train/test/val lists are the same
-        self.list_IDs = self.create_file_list()
-        self.num_images = self.get_length()
-
-        np.random.seed(self.seed)  # Now seed workers differently so that the sequence is different for each worker
-        self.on_epoch_end()   # Generate the sequence
-
-        self.num_batches = self.__len__()
-
-        # Determine if axes are equal and can be rotated
-        # If the axes aren't equal then we can't rotate them.
-        equal_dim_axis = []
-        for idx in range(0, len(dim)):
-            for jdx in range(idx+1, len(dim)):
-                if dim[idx] == dim[jdx]:
-                    equal_dim_axis.append([idx, jdx])  # Valid rotation axes
-        self.dim_to_rotate = equal_dim_axis
-
-    def get_length(self):
-        """
-        Get the length of the list of file IDs associated with this data loader
-        """
-        return len(self.list_IDs)
-
-    def get_file_list(self):
-        """
-        Get the list of file IDs associated with this data loader
-        """
-        return self.list_IDs
-
-    def print_info(self):
-        """
-        Print the dataset information
-        """
-
-        print("*"*30)
-        print("="*30)
-        print("Number of {} images = {}".format(self.setType, self.num_images))
-        print("Dataset name:        ", self.name)
-        print("Dataset description: ", self.description)
-        print("Tensor image size:   ", self.tensorImageSize)
-        print("Dataset release:     ", self.release)
-        print("Dataset reference:   ", self.reference)
-        print("Input channels:      ", self.input_channels)
-        print("Output labels:       ", self.output_channels)
-        print("Dataset license:     ", self.license)
-        print("="*30)
-        print("*"*30)
+        self.ds_train, self.ds_val, self.ds_test = self.get_dataset()
 
     def create_file_list(self):
         """
         Get list of the files from the BraTS raw data
         Split into training and testing sets.
         """
+        import os
+        import json
+
         json_filename = os.path.join(self.data_path, "dataset.json")
 
         try:
@@ -150,175 +70,33 @@ class DataGenerator(K.utils.Sequence):
         self.license = experiment_data["licence"]
         self.reference = experiment_data["reference"]
         self.tensorImageSize = experiment_data["tensorImageSize"]
+        self.numFiles = experiment_data["numTraining"]
 
         """
-        Randomize the file list. Then separate into training and
-        validation lists. We won't use the testing set since we
-        don't have ground truth masks for this.
+        Create a dictionary of tuples with image filename and label filename
         """
-        numFiles = experiment_data["numTraining"]
-        idxList = np.arange(numFiles)  # List of file indices
+        self.filenames = {}
+        for idx in range(self.numFiles):
+            self.filenames[idx] = [os.path.join(self.data_path,
+                                              experiment_data["training"][idx]["image"]),
+                                    os.path.join(self.data_path,
+                                              experiment_data["training"][idx]["label"])]
 
-        self.imgFiles = {}
-        self.mskFiles = {}
-
-        for idx in idxList:
-            self.imgFiles[idx] = os.path.join(self.data_path,
-                                              experiment_data["training"][idx]["image"])
-            self.mskFiles[idx] = os.path.join(self.data_path,
-                                              experiment_data["training"][idx]["label"])
-
-        idxList = np.random.permutation(idxList)  # Randomize list
-
-        train_len = int(np.floor(numFiles * self.train_test_split)) # Number of training files
-        test_val_len = numFiles - train_len
-        val_len = int(np.floor(test_val_len * self.validate_test_split))  # Number of validation files
-        test_len = test_val_len - val_len  # Number of testing files
-
-        trainIdx = idxList[0:train_len]  # List of training indices
-        validateIdx = idxList[train_len:(train_len+val_len)]  # List of validation indices
-        testIdx = idxList[-test_len:]  # List of testing indices (last testIdx elements)
-
-        if self.setType == "train":
-
-            with open("train.csv", "w") as writeFile:
-                fileList = {}
-                for idx in trainIdx:
-                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
-
-                for img in sorted(fileList):
-                    writeFile.write("{},{}\n".format(img, fileList[img]))
-
-            writeFile.close()
-
-            return trainIdx
-        elif self.setType == "validate":
-
-            with open("validate.csv", "w") as writeFile:
-                fileList = {}
-                for idx in validateIdx:
-                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
-
-                for img in sorted(fileList):
-                    writeFile.write("{},{}\n".format(img, fileList[img]))
-
-            writeFile.close()
-
-            return validateIdx
-        elif self.setType == "test":
-
-            with open("test.csv", "w") as writeFile:
-                fileList = {}
-                for idx in testIdx:
-                    fileList[self.imgFiles[idx]] = self.mskFiles[idx]
-
-                for img in sorted(fileList):
-                    writeFile.write("{},{}\n".format(img, fileList[img]))
-
-            writeFile.close()
-
-            return testIdx
-        else:
-            print("Error. You forgot to specify train, test, or validate. Instead received {}".format(self.setType))
-            return []
-
-    def __len__(self):
+    def print_info(self):
         """
-        The number of batches per epoch
-        """
-        return self.num_images // self.batch_size
-
-    def __getitem__(self, index):
-        """
-        Generate one batch of data
-        """
-        # Generate indicies of the batch
-        indexes = np.sort(
-            self.indexes[(index*self.batch_size):((index+1)*self.batch_size)])
-
-        # Find list of IDs
-        list_IDs_temp = [self.list_IDs[k] for k in indexes]
-
-        # Generate data
-        X, y = self.__data_generation(list_IDs_temp)
-
-        return (X, y)
-
-    def get_batch(self, index):
-        """
-        Public method to get one batch of data
-        """
-        return self.__getitem__(index)
-
-    def on_epoch_end(self):
-        """
-        Updates indices after each epoch
-        If shuffle is true, then it will shuffle the training set
-        after every epoch.
-        """
-        self.indexes = np.arange(self.num_images)
-        if self.shuffle:
-            np.random.shuffle(self.indexes)
-
-    def crop_img(self, img, msk, randomize=True):
-        """
-        Crop the image and mask
+        Print the dataset information
         """
 
-        slices = []
-
-        # Only randomize half when asked
-        randomize = randomize and (np.random.rand() > 0.5)
-
-        for idx in range(len(self.dim)):  # Go through each dimension
-
-            cropLen = self.dim[idx]
-            imgLen = img.shape[idx]
-
-            start = (imgLen-cropLen)//2
-
-            ratio_crop = 0.20  # Crop up this this % of pixels for offset
-            # Number of pixels to offset crop in this dimension
-            offset = int(np.floor(start*ratio_crop))
-
-            if offset > 0:
-                if randomize:
-                    start += np.random.choice(range(-offset, offset))
-                    if ((start + cropLen) > imgLen):  # Don't fall off the image
-                        start = (imgLen-cropLen)//2
-            else:
-                start = 0
-
-            slices.append(slice(start, start+cropLen))
-
-        # No slicing along channels
-        slices.append(slice(0, self.n_in_channels))
-
-        return img[tuple(slices)], msk[tuple(slices)]
-
-    def augment_data(self, img, msk):
-        """
-        Data augmentation
-        Flip image and mask. Rotate image and mask.
-        """
-
-        if np.random.rand() > 0.5:
-            # Random 0,1 (axes to flip)
-            ax = np.random.choice(np.arange(len(self.dim)-1))
-            img = np.flip(img, ax)
-            msk = np.flip(msk, ax)
-
-        elif (len(self.dim_to_rotate) > 0) and (np.random.rand() > 0.5):
-            rot = np.random.choice([1, 2, 3])  # 90, 180, or 270 degrees
-
-            # This will choose the axes to rotate
-            # Axes must be equal in size
-            random_axis = self.dim_to_rotate[np.random.choice(
-                len(self.dim_to_rotate))]
-            img = np.rot90(img, rot, axes=random_axis)  # Rotate axes 0 and 1
-            msk = np.rot90(msk, rot, axes=random_axis)  # Rotate axes 0 and 1
-
-        return img, msk
+        print("="*30)
+        print("Dataset name:        ", self.name)
+        print("Dataset description: ", self.description)
+        print("Tensor image size:   ", self.tensorImageSize)
+        print("Dataset release:     ", self.release)
+        print("Dataset reference:   ", self.reference)
+        print("Input channels:      ", self.input_channels)
+        print("Output labels:       ", self.output_channels)
+        print("Dataset license:     ", self.license)
+        print("="*30)
 
     def z_normalize_img(self, img):
         """
@@ -334,70 +112,236 @@ class DataGenerator(K.utils.Sequence):
 
         return img
 
-    def get_batch_fileIDs(self):
-        """
-        Get the file IDs of the last batch that was loaded.
-        """
-        return self.fileIDs
-
-    def __data_generation(self, list_IDs_temp):
-        """
-        Generates data containing batch_size samples
-
-        This just reads the list of filename to load.
-        Change this to suit your dataset.
-        """
-
-        # Make empty arrays for the images and mask batches
-        imgs = np.zeros((self.batch_size, *self.dim, self.n_in_channels))
-        msks = np.zeros((self.batch_size, *self.dim, self.n_out_channels))
-
-        self.fileIDs = {}
-
-        for idx, fileIdx in enumerate(list_IDs_temp):
-
-            img_temp = np.array(nib.load(self.imgFiles[fileIdx]).dataobj)
-
-            filename = ntpath.basename(self.imgFiles[fileIdx])  # Strip all but filename
-            filename = os.path.splitext(filename)[0]
-            self.fileIDs[idx] = os.path.splitext(filename)[0]
-
+    def crop(self, img, msk, randomize):
             """
-            "modality": {
-                 "0": "FLAIR",
-                 "1": "T1w",
-                 "2": "t1gd",
-                 "3": "T2w"
+            Randomly crop the image and mask
             """
-            if self.n_in_channels == 1:
-                img = img_temp[:, :, :, [0]]  # FLAIR channel
-            else:
-                img = img_temp
 
-            # Get mask data
-            msk = np.array(nib.load(self.mskFiles[fileIdx]).dataobj)
+            slices = []
 
-            """
-            "labels": {
-                 "0": "background",
-                 "1": "edema",
-                 "2": "non-enhancing tumor",
-                 "3": "enhancing tumour"}
-             """
-            # Combine all masks but background
+            # Do we randomize?
+            is_random = randomize and np.random.rand() > 0.5
+
+            for idx in range(len(img.shape)-1):  # Go through each dimension
+
+                cropLen = self.crop_dim[idx]
+                imgLen = img.shape[idx]
+
+                start = (imgLen-cropLen)//2
+
+                ratio_crop = 0.20  # Crop up this this % of pixels for offset
+                # Number of pixels to offset crop in this dimension
+                offset = int(np.floor(start*ratio_crop))
+
+                if offset > 0:
+                    if is_random:
+                        start += np.random.choice(range(-offset, offset))
+                        if ((start + cropLen) > imgLen):  # Don't fall off the image
+                            start = (imgLen-cropLen)//2
+                else:
+                    start = 0
+
+                slices.append(slice(start, start+cropLen))
+
+            return img[tuple(slices)], msk[tuple(slices)]
+
+    def augment_data(self, img, msk):
+        """
+        Data augmentation
+        Flip image and mask. Rotate image and mask.
+        """
+
+        # Determine if axes are equal and can be rotated
+        # If the axes aren't equal then we can't rotate them.
+        equal_dim_axis = []
+        for idx in range(0, len(self.crop_dim)):
+            for jdx in range(idx+1, len(self.crop_dim)):
+                if self.crop_dim[idx] == self.crop_dim[jdx]:
+                    equal_dim_axis.append([idx, jdx])  # Valid rotation axes
+        dim_to_rotate = equal_dim_axis
+
+        if np.random.rand() > 0.5:
+            # Random 0,1 (axes to flip)
+            ax = np.random.choice(np.arange(len(self.crop_dim)-1))
+            img = np.flip(img, ax)
+            msk = np.flip(msk, ax)
+
+        elif (len(dim_to_rotate) > 0) and (np.random.rand() > 0.5):
+            rot = np.random.choice([1, 2, 3])  # 90, 180, or 270 degrees
+
+            # This will choose the axes to rotate
+            # Axes must be equal in size
+            random_axis = dim_to_rotate[np.random.choice(len(dim_to_rotate))]
+
+            img = np.rot90(img, rot, axes=random_axis)  # Rotate axes 0 and 1
+            msk = np.rot90(msk, rot, axes=random_axis)  # Rotate axes 0 and 1
+
+        return img, msk
+
+    def read_nifti_file(self, idx, randomize=False):
+        """
+        Read Nifti file
+        """
+
+        idx = idx.numpy()
+        imgFile = self.filenames[idx][0]
+        mskFile = self.filenames[idx][1]
+
+        img = np.array(nib.load(imgFile).dataobj)
+
+        img = img[...,[0]] # Just take the FLAIR channel (0)
+
+        msk = np.array(nib.load(mskFile).dataobj)
+
+        """
+        "labels": {
+             "0": "background",
+             "1": "edema",
+             "2": "non-enhancing tumor",
+             "3": "enhancing tumour"}
+         """
+        # Combine all masks but background
+        if self.number_output_classes == 1:
             msk[msk > 0] = 1.0
             msk = np.expand_dims(msk, -1)
+        else:
+            msk_temp = np.zeros(list(msk.shape) + [self.number_output_classes])
+            for channel in range(self.number_output_classes):
+                msk_temp[msk==channel,channel] = 1.0
+            msk = msk_temp
 
-            # Take a crop of the patch_dim size
-            img, msk = self.crop_img(img, msk, self.augment)
+        # Crop
+        img, msk = self.crop(img, msk, randomize)
 
-            img = self.z_normalize_img(img)  # Normalize the image
+        # Normalize
+        img = self.z_normalize_img(img)
 
-            # Data augmentation
-            if self.augment and (np.random.rand() > 0.5):
-                img, msk = self.augment_data(img, msk)
+        # Randomly rotate
+        if randomize:
+            img, msk = self.augment_data(img, msk)
 
-            imgs[idx, ] = img
-            msks[idx, ] = msk
+        return img, msk
 
-        return imgs, msks
+    def plot_images(self, ds, slice_num=90):
+        """
+        Plot images from dataset
+        """
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(20,20))
+
+        num_cols=2
+
+        msk_channel=1
+        img_channel=0
+
+        for img, msk in ds.take(1):
+            bs = img.shape[0]
+
+            for idx in range(bs):
+                plt.subplot(bs,num_cols,idx*num_cols + 1)
+                plt.imshow(img[idx,:,:,slice_num,img_channel], cmap="bone")
+                plt.title("MRI", fontsize=18)
+                plt.subplot(bs,num_cols,idx*num_cols + 2)
+                plt.imshow(msk[idx,:,:,slice_num,msk_channel], cmap="bone")
+                plt.title("Tumor", fontsize=18)
+
+        plt.show()
+
+        print("Mean pixel value of image = {}".format(np.mean(img[0,:,:,:,0])))
+
+    def display_train_images(self, slice_num=90):
+        """
+        Plots some training images
+        """
+        self.plot_images(self.ds_train, slice_num)
+
+    def display_validation_images(self, slice_num=90):
+        """
+        Plots some validation images
+        """
+        self.plot_images(self.ds_val, slice_num)
+
+    def display_test_images(self, slice_num=90):
+        """
+        Plots some test images
+        """
+        self.plot_images(self.ds_test, slice_num)
+
+    def get_train(self):
+        """
+        Return train dataset
+        """
+        return self.ds_train
+
+    def get_test(self):
+        """
+        Return test dataset
+        """
+        return self.ds_test
+
+    def get_validate(self):
+        """
+        Return validation dataset
+        """
+        return self.ds_val
+
+    def get_dataset(self):
+        """
+        Create a TensorFlow data loader
+        """
+
+        numTrain = int(self.numFiles * self.train_test_split)
+        numValTest = self.numFiles - numTrain
+
+        ds = tf.data.Dataset.range(self.numFiles).shuffle(self.numFiles, self.random_seed) # Shuffle the dataset
+
+        ds_train = ds.take(numTrain)
+        ds_val_test = ds.skip(numTrain)
+        ds_val = ds_val_test.take(int(numValTest * self.validate_test_split))
+        ds_test = ds_val_test.skip(int(numValTest * self.validate_test_split))
+
+        ds_train = ds_train.map(lambda x: tf.py_function(self.read_nifti_file,
+                                [x, True], [tf.float32, tf.float32]),
+                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        ds_val = ds_val.map(lambda x: tf.py_function(self.read_nifti_file,
+                            [x, False], [tf.float32, tf.float32]),
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        ds_test = ds_test.map(lambda x: tf.py_function(self.read_nifti_file,
+                                [x, False], [tf.float32, tf.float32]),
+                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        ds_train = ds_train.batch(self.batch_size)
+        ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
+
+        batch_size_val = 4
+        ds_val = ds_val.batch(batch_size_val)
+        ds_val = ds_val.prefetch(tf.data.experimental.AUTOTUNE)
+
+        batch_size_test = 1
+        ds_test = ds_test.batch(batch_size_test)
+        ds_test = ds_test.prefetch(tf.data.experimental.AUTOTUNE)
+
+        return ds_train, ds_val, ds_test
+
+
+
+if __name__ == "__main__":
+
+    print("Load the data and plot a few examples")
+
+    crop_dim = (args.tile_height, args.tile_width,
+                args.tile_depth, args.number_input_channels)
+
+    """
+    Load the dataset
+    """
+    brats_data = DatasetGenerator(crop_dim,
+                 data_path=args.data_path,
+                 batch_size=args.batch_size,
+                 train_test_split=args.train_test_split,
+                 validate_test_split=args.validate_test_split,
+                 number_output_classes=args.number_output_classes,
+                 random_seed=args.random_seed)
+
+    brats_data.print_info()
