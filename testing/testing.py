@@ -46,6 +46,11 @@ parser.add_argument("--bz",
                     default=1,
                     help="Batch size")
 
+parser.add_argument("--no_batch_norm",
+                    action="store_false",
+                    default=True,
+                    help="Don't use batch norm layers")
+
 parser.add_argument("--lr",
                     type = float,
                     default=0.001,
@@ -232,7 +237,7 @@ else:
     data_format = "channels_last"
 
 def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
-            print_summary = False, return_model=False):
+            print_summary = False, return_model=False, use_batch_norm=True):
     """
     3D U-Net model
     """
@@ -245,36 +250,44 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
                   kernel_initializer="he_uniform")
 
     conv1 = K.layers.Conv3D(name="conv1a", filters=32, **params)(inputs)
-    conv1 = K.layers.BatchNormalization()(conv1)
+    if use_batch_norm:
+        conv1 = K.layers.BatchNormalization()(conv1)
     conv1 = K.layers.Activation("relu")(conv1)
     conv1 = K.layers.Conv3D(name="conv1b", filters=64, **params)(conv1)
-    conv1 = K.layers.BatchNormalization()(conv1)
+    if use_batch_norm:
+        conv1 = K.layers.BatchNormalization()(conv1)
     conv1 = K.layers.Activation("relu")(conv1)
     pool1 = K.layers.MaxPooling3D(name="pool1", pool_size=(2, 2, 2))(conv1)
 
     conv2 = K.layers.Conv3D(name="conv2a", filters=64, **params)(pool1)
-    conv2 = K.layers.BatchNormalization()(conv2)
+    if use_batch_norm:
+        conv2 = K.layers.BatchNormalization()(conv2)
     conv2 = K.layers.Activation("relu")(conv2)
     conv2 = K.layers.Conv3D(name="conv2b", filters=128, **params)(conv2)
-    conv2 = K.layers.BatchNormalization()(conv2)
+    if use_batch_norm:
+        conv2 = K.layers.BatchNormalization()(conv2)
     conv2 = K.layers.Activation("relu")(conv2)
     pool2 = K.layers.MaxPooling3D(name="pool2", pool_size=(2, 2, 2))(conv2)
 
     conv3 = K.layers.Conv3D(name="conv3a", filters=128, **params)(pool2)
-    conv3 = K.layers.BatchNormalization()(conv3)
+    if use_batch_norm:
+        conv3 = K.layers.BatchNormalization()(conv3)
     conv3 = K.layers.Activation("relu")(conv3)
     conv3 = K.layers.Dropout(dropout)(conv3) ### Trying dropout layers earlier on, as indicated in the paper
     conv3 = K.layers.Conv3D(name="conv3b", filters=256, **params)(conv3)
-    conv3 = K.layers.BatchNormalization()(conv3)
+    if use_batch_norm:
+        conv3 = K.layers.BatchNormalization()(conv3)
     conv3 = K.layers.Activation("relu")(conv3)
     pool3 = K.layers.MaxPooling3D(name="pool3", pool_size=(2, 2, 2))(conv3)
 
     conv4 = K.layers.Conv3D(name="conv4a", filters=256, **params)(pool3)
-    conv4 = K.layers.BatchNormalization()(conv4)
+    if use_batch_norm:
+        conv4 = K.layers.BatchNormalization()(conv4)
     conv4 = K.layers.Activation("relu")(conv4)
     conv4 = K.layers.Dropout(dropout)(conv4) ### Trying dropout layers earlier on, as indicated in the paper
     conv4 = K.layers.Conv3D(name="conv4b", filters=512, **params)(conv4)
-    conv4 = K.layers.BatchNormalization()(conv4)
+    if use_batch_norm:
+        conv4 = K.layers.BatchNormalization()(conv4)
     conv4 = K.layers.Activation("relu")(conv4)
 
     if use_upsampling:
@@ -286,10 +299,12 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
     up4 = K.layers.concatenate([up, conv3], axis=concat_axis)
 
     conv5 = K.layers.Conv3D(name="conv5a", filters=256, **params)(up4)
-    conv5 = K.layers.BatchNormalization()(conv5)
+    if use_batch_norm:
+        conv5 = K.layers.BatchNormalization()(conv5)
     conv5 = K.layers.Activation("relu")(conv5)
     conv5 = K.layers.Conv3D(name="conv5b", filters=256, **params)(conv5)
-    conv5 = K.layers.BatchNormalization()(conv5)
+    if use_batch_norm:
+        conv5 = K.layers.BatchNormalization()(conv5)
     conv5 = K.layers.Activation("relu")(conv5)
 
     if use_upsampling:
@@ -301,10 +316,12 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
     up5 = K.layers.concatenate([up, conv2], axis=concat_axis)
 
     conv6 = K.layers.Conv3D(name="conv6a", filters=128, **params)(up5)
-    conv6 = K.layers.BatchNormalization()(conv6)
+    if use_batch_norm:
+        conv6 = K.layers.BatchNormalization()(conv6)
     conv6 = K.layers.Activation("relu")(conv6)
     conv6 = K.layers.Conv3D(name="conv6b", filters=128, **params)(conv6)
-    conv6 = K.layers.BatchNormalization()(conv6)
+    if use_batch_norm:
+        conv6 = K.layers.BatchNormalization()(conv6)
     conv6 = K.layers.Activation("relu")(conv6)
 
     if use_upsampling:
@@ -316,10 +333,12 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
     up6 = K.layers.concatenate([up, conv1], axis=concat_axis)
 
     conv7 = K.layers.Conv3D(name="conv7a", filters=64, **params)(up6)
-    conv7 = K.layers.BatchNormalization()(conv7)
+    if use_batch_norm:
+        conv7 = K.layers.BatchNormalization()(conv7)
     conv7 = K.layers.Activation("relu")(conv7)
     conv7 = K.layers.Conv3D(name="conv7b", filters=64, **params)(conv7)
-    conv7 = K.layers.BatchNormalization()(conv7)
+    if use_batch_norm:
+        conv7 = K.layers.BatchNormalization()(conv7)
     conv7 = K.layers.Activation("relu")(conv7)
     pred = K.layers.Conv3D(name="Prediction", filters=n_out, kernel_size=(1, 1, 1),
                     data_format=data_format, activation="sigmoid")(conv7)
@@ -486,7 +505,7 @@ def conv3D(input_img, print_summary = False, dropout=0.2, n_out=1,
         return pred
 
 
-def conv2D(input_tensor, print_summary = False, dropout=0.2, n_out=1, return_model=False):
+def conv2D(input_tensor, print_summary = False, dropout=0.2, n_out=1, return_model=False, use_batch_norm=True):
 
     """
     Simple 2D convolution model based on VGG-16
@@ -538,28 +557,27 @@ def conv2D(input_tensor, print_summary = False, dropout=0.2, n_out=1, return_mod
     else:
         return pred
 
-
 if args.single_class_output:
     if args.D2:    # 2D convnet model
         pred, model = conv2D(tensor_shape,
                        print_summary=args.print_model, n_out=args.num_outputs,
-                       return_model=True)
+                       return_model=True, use_batch_norm=args.no_batch_norm)
     else:            # 3D convet model
         pred, model = conv3D(tensor_shape,
                        print_summary=args.print_model, n_out=args.num_outputs,
-                       return_model=True)
+                       return_model=True, use_batch_norm=args.no_batch_norm)
 else:
 
     if args.D2:    # 2D U-Net model
         pred, model = unet2D(tensor_shape,
                        use_upsampling=args.use_upsampling,
                        print_summary=args.print_model, n_out=args.num_outputs,
-                       return_model=True)
+                       return_model=True, use_batch_norm=args.no_batch_norm)
     else:            # 3D U-Net model
         pred, model = unet3D(tensor_shape,
                        use_upsampling=args.use_upsampling,
                        print_summary=args.print_model, n_out=args.num_outputs,
-                       return_model=True)
+                       return_model=True, use_batch_norm=args.no_batch_norm)
 
 # Freeze layers
 if args.inference:
@@ -618,7 +636,7 @@ if args.inference:
    for _ in range(args.epochs):
        model.predict_generator(get_imgs(), steps=total_steps, verbose=1)
 else:
-    model.fit_generator(get_batch(), steps_per_epoch=total_steps,
+    model.fit(get_batch(), steps_per_epoch=total_steps,
                         epochs=args.epochs, verbose=1)
 
 if args.inference:
