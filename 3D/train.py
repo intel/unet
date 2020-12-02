@@ -85,9 +85,12 @@ callbacks = [checkpoint, tb_logs]
 """
 3. Train the model
 """
-model.fit(brats_datafiles.get_train(), epochs=args.epochs,
-          validation_data=brats_datafiles.get_validate(),
-          callbacks=callbacks)
+steps_per_epoch = brats_data.num_train
+model.fit(brats_data.get_train(), epochs=args.epochs,
+          steps_per_epoch=steps_per_epoch,
+          validation_data=brats_data.get_validate(),
+          callbacks=callbacks,
+          verbose=1)
 
 """
 4. Load best model on validation dataset and run on the test

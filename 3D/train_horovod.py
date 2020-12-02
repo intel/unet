@@ -62,6 +62,7 @@ brats_data = DatasetGenerator(crop_dim,
              shard=hvd.rank())
 
 if (hvd.rank() == 0):
+    print("{} workers".format(hvd.size()))
     brats_data.print_info()  # Print dataset information
 
 """

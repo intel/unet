@@ -321,6 +321,7 @@ class DatasetGenerator:
                                 [x, False], [tf.float32, tf.float32]),
                                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
+        ds_train = ds_train.repeat()
         ds_train = ds_train.batch(self.batch_size)
         ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
 
