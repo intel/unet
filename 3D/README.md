@@ -38,7 +38,7 @@ where `$DECATHLON_ROOT_DIRECTORY` is the root directory where you un-tarred the 
 
 ![commandline](images/3d_commandline.png)
 
-NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel&reg; Xeon&reg; 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--tile_height=64 --tile_width=64 --tile_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--batch_size=4` for a batch size of 4).
+NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel&reg; Xeon&reg; 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--tile_height=64 --tile_width=64 --tile_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--batch_size=4` for a batch size of 4).
 
 ![tensorboard](images/tensorboard.png)
 
