@@ -85,7 +85,7 @@ callbacks = [checkpoint, tb_logs]
 """
 3. Train the model
 """
-steps_per_epoch = brats_data.num_train
+steps_per_epoch = brats_data.num_train // args.batch_size
 model.fit(brats_data.get_train(), epochs=args.epochs,
           steps_per_epoch=steps_per_epoch,
           validation_data=brats_data.get_validate(),
