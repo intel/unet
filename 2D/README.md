@@ -2,7 +2,7 @@
 
 Please see our blog on the [IntelAI website](https://www.intel.ai/intel-neural-compute-stick-2-for-medical-imaging/)
 
-![prediction4385](https://github.com/IntelAI/unet/blob/master/2D/images/pred4385.png)
+![prediction4385](2D/images/pred4385.png)
 
 
 Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
@@ -33,11 +33,11 @@ bash run_brats_model.sh $DECATHLON_ROOT_DIRECTORY
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
-![run_brats_help](https://github.com/IntelAI/unet/blob/master/2D/images/run_brats_usage.png)
+![run_brats_help](2D/images/run_brats_usage.png)
 
 7. The bash script should pre-process the Decathlon data and store it in a new HDF5 file (`convert_raw_to_hdf5.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the validation set within 30 epochs.
 
-![prediction28](https://github.com/IntelAI/unet/blob/master/2D/images/pred28.png)
+![prediction28](2D/images/pred28.png)
 
 Tips for improving model:
 * The feature maps have been reduced so that the model will train using under 12GB of memory.  If you have more memory to use, consider increasing the feature maps using the commandline argument `--featuremaps`. The results I plot in the images subfolder are from a model with `--featuremaps=32`. This will increase the complexity of the model (which will also increase its memory footprint but decrease its execution speed).
@@ -45,10 +45,10 @@ Tips for improving model:
 * Consider different loss functions.  The default loss function here is a weighted sum of `-log(Dice)` and `binary_crossentropy`. Different loss functions yield different loss curves and may result in better accuracy. However, you may need to adjust the `learning_rate` and number of epochs to train as you experiment with different loss functions. The commandline argument `--weight_dice_loss` defines the weight to each loss function (`loss = weight_dice_loss * -log(dice) + (1-weight_loss_dice)*binary_cross_entropy_loss`).
 * Predict multiple output masks.  In `convert_raw_to_hdf5.py` we have combined all of the ground truth masks into one single mask. However, more complex models predict each of the subclasses (edema, tumor core, necrosis) of the glioma. This will involve some modification of the output layer to the model (e.g. more output layers for the sigmoid mask or a softmax layer at the output instead of a sigmoid).
 
-![run_train_command](https://github.com/IntelAI/unet/blob/master/2D/images/train_usage.png)
+![run_train_command](2D/images/train_usage.png)
 
-![prediction61](https://github.com/IntelAI/unet/blob/master/2D/images/pred61.png)
-![prediction7864](https://github.com/IntelAI/unet/blob/master/2D/images/pred7864.png)
+![prediction61](2D/images/pred61.png)
+![prediction7864](2D/images/pred7864.png)
 
 REFERENCES:
 
@@ -61,34 +61,4 @@ REFERENCES:
 
 ### Optimization notice
 Please see our [optimization notice](https://software.intel.com/en-us/articles/optimization-notice#opt-en).
-
-### Architecture
-|  lscpu  |   |
-| -- | -- | 
-| Architecture:   |       x86_64 |
-| CPU op-mode(s):  |      32-bit, 64-bit |
-| Byte Order:       |     Little Endian |
-| CPU(s):            |    56 |
-| On-line CPU(s) list: |  0-55 |
-| Thread(s) per core:  |  1 |
-| Core(s) per socket:  |  28 |
-| Socket(s):           |  2 |
-| NUMA node(s):        |  2 |
-| Vendor ID:          |   GenuineIntel |
-| CPU family:          |  6 |
-| Model:               |  85 |
-| Model name:          |  Intel&reg; Xeon&reg; Platinum 8180 CPU @ 2.50GHz |
-| Stepping:           |   4 |
-| CPU MHz:             |  999.908 |
-| CPU max MHz:          | 2500.0000 |
-| CPU min MHz:          | 1000.0000 |
-| BogoMIPS:             | 5000.00 |
-| Virtualization:       | VT-x |
-| L1d cache:            | 32K |
-| L1i cache:            | 32K |
-| L2 cache:             | 1024K |
-| L3 cache:             | 39424K |
-| NUMA node0 CPU(s):    | 0-27 |
-| NUMA node1 CPU(s):    | 28-55 |
-| Flags:                | fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch epb cat_l3 cdp_l3 intel_ppin intel_pt mba tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local ibpb ibrs dtherm arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req pku ospke |
 
