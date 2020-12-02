@@ -36,19 +36,21 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
 where `$DECATHLON_ROOT_DIRECTORY` is the root directory where you un-tarred the Decathlon dataset.
 
-![commandline](https://github.com/IntelAI/unet/blob/master/3D/images/3d_commandline.png)
+![commandline](images/3d_commandline.png)
 
 NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop of the original image and mask using 8 images/masks per training batch. This requires over [40 gigabytes](https://github.com/NervanaSystems/topologies/blob/master/3D_UNet/keras_training_only_version/images/training_memory_3d_unet.png) of memory to train the model. We trained our model on an Intel&reg; Xeon&reg; 8180 server with 384 GB of RAM. If you don't have enough memory or are getting out of memory (OOM) errors, you can pass `--tile_height=64 --tile_width=64 --tile_depth=64` to the `train.py` which will use a smaller ([64,64,64]) crop. You can also consider smaller batch sizes (e.g. `--batch_size=4` for a batch size of 4).
+
+![tensorboard](images/tensorboard.png)
 
 ### Displaying the Results
 
 There are many programs that will display [Nifti](https://nifti.nimh.nih.gov/) 3D files.  For the images above and below, the red overlay is the prediction from the model and the blue overlay is the ground truth mask. Any purple voxels are true positives.
 
-![pred195](https://github.com/IntelAI/unet/blob/master/3D/images/BRATS_195_img.gif "BRATS image #195:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+![pred195](images/BRATS_195_img.gif "BRATS image #195:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
- ![pred152](https://github.com/IntelAI/unet/blob/master/3D/images/BRATS_152.png "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+ ![pred152](images/BRATS_152.png "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
- ![pred426](https://github.com/IntelAI/unet/blob/master/3D/images/BRATS_426.png "BRATS image #426:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
+ ![pred426](images/BRATS_426.png "BRATS image #426:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives")
 
 
 REFERENCES:
