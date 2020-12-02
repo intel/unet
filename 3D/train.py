@@ -49,7 +49,7 @@ crop_dim = (args.tile_height, args.tile_width,
 """
 1. Load the dataset
 """
-brats_datafiles = DatasetGenerator(crop_dim,
+brats_data = DatasetGenerator(crop_dim,
              data_path=args.data_path,
              batch_size=args.batch_size,
              train_test_split=args.train_test_split,
@@ -57,7 +57,7 @@ brats_datafiles = DatasetGenerator(crop_dim,
              number_output_classes=args.number_output_classes,
              random_seed=args.random_seed)
 
-brats_datafiles.print_info()  # Print dataset information
+brats_data.print_info()  # Print dataset information
 
 """
 2. Create the TensorFlow model
@@ -101,7 +101,7 @@ best_model = K.models.load_model(args.saved_model_name,
                              "dice_coef":dice_coef,
                              "soft_dice_coef":soft_dice_coef})
 
-loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_datafiles.get_test())
+loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_data.get_test())
 
 print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
 
