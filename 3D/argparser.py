@@ -65,7 +65,7 @@ parser.add_argument("--train_test_split",
 parser.add_argument("--validate_test_split",
                     type=float,
                     default=0.50,
-                    help="Valdiation/test split (0-1)")
+                    help="Validation/test split (0-1)")
 parser.add_argument("--print_model",
                     action="store_true",
                     default=False,
