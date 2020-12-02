@@ -8,4 +8,4 @@
 data_path=/mnt/lustrefs/unet/decathlon/Task01_BrainTumour/
 script_path=/home/unet/scripts/unet/3D/train_horovod.py
 
-mpirun -n 20 -ppn 2 -print-rank-map -genv I_MPI_PIN_DOMAIN=socket -genv OMP_NUM_THREADS=24 -genv OMP_PROC_BIND=true -genv KMP_BLOCKTIME=1 python3 $script_path --keras_api --intraop_threads 24 --data_path $data_path
+mpirun -n 20 -ppn 2 -print-rank-map -genv I_MPI_PIN_DOMAIN=socket -genv OMP_NUM_THREADS=24 -genv OMP_PROC_BIND=true -genv KMP_BLOCKTIME=1 python3 $script_path --intraop_threads 24 --data_path $data_path

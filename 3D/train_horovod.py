@@ -97,7 +97,7 @@ else:
 """
 3. Train the model
 """
-steps_per_epoch = brats_data.num_train // hvd.rank()
+steps_per_epoch = brats_data.num_train // hvd.size()
 if steps_per_epoch < 2:  # Make sure we have at least 2 steps per epoch
     steps_per_epoch = 2
 
