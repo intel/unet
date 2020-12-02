@@ -2,7 +2,7 @@
 
 Please see our blog on the [IntelAI website](https://www.intel.ai/intel-neural-compute-stick-2-for-medical-imaging/)
 
-![prediction4385](2D/images/pred4385.png)
+![prediction4385](images/pred4385.png)
 
 
 Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
@@ -33,11 +33,11 @@ bash run_brats_model.sh $DECATHLON_ROOT_DIRECTORY
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
-![run_brats_help](2D/images/run_brats_usage.png)
+![run_brats_help](images/run_brats_usage.png)
 
 7. The bash script should pre-process the Decathlon data and store it in a new HDF5 file (`convert_raw_to_hdf5.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the validation set within 30 epochs.
 
-![prediction28](2D/images/pred28.png)
+![prediction28](images/pred28.png)
 
 Tips for improving model:
 * The feature maps have been reduced so that the model will train using under 12GB of memory.  If you have more memory to use, consider increasing the feature maps using the commandline argument `--featuremaps`. The results I plot in the images subfolder are from a model with `--featuremaps=32`. This will increase the complexity of the model (which will also increase its memory footprint but decrease its execution speed).
@@ -45,10 +45,10 @@ Tips for improving model:
 * Consider different loss functions.  The default loss function here is a weighted sum of `-log(Dice)` and `binary_crossentropy`. Different loss functions yield different loss curves and may result in better accuracy. However, you may need to adjust the `learning_rate` and number of epochs to train as you experiment with different loss functions. The commandline argument `--weight_dice_loss` defines the weight to each loss function (`loss = weight_dice_loss * -log(dice) + (1-weight_loss_dice)*binary_cross_entropy_loss`).
 * Predict multiple output masks.  In `convert_raw_to_hdf5.py` we have combined all of the ground truth masks into one single mask. However, more complex models predict each of the subclasses (edema, tumor core, necrosis) of the glioma. This will involve some modification of the output layer to the model (e.g. more output layers for the sigmoid mask or a softmax layer at the output instead of a sigmoid).
 
-![run_train_command](2D/images/train_usage.png)
+![run_train_command](images/train_usage.png)
 
-![prediction61](2D/images/pred61.png)
-![prediction7864](2D/images/pred7864.png)
+![prediction61](images/pred61.png)
+![prediction7864](images/pred7864.png)
 
 REFERENCES:
 
