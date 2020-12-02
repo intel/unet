@@ -85,9 +85,9 @@ callbacks = [checkpoint, tb_logs]
 """
 3. Train the model
 """
-# model.fit(brats_datafiles.get_train(), epochs=args.epochs,
-#           validation_data=brats_datafiles.get_validate(),
-#           callbacks=callbacks)
+model.fit(brats_datafiles.get_train(), epochs=args.epochs,
+          validation_data=brats_datafiles.get_validate(),
+          callbacks=callbacks)
 
 """
 4. Load best model on validation dataset and run on the test
@@ -103,6 +103,13 @@ loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_datafiles.get_test()
 print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
 
 """
-5. Save the best model without the optimizer
+5. Save the best model without the custom objects (dice, etc.)
+   NOTE: You should be able to do .load_model(compile=False), but this
+   appears to currently be broken in TF2. To compensate, we're
+   just going to re-compile the model without the custom objects and
+   save as a new model (with suffix "_final")
 """
-K.models.save_model(best_model, args.saved_model_name + "_no_optimizer", include_optimizer=False)
+best_model.compile(loss="binary_crossentropy", metrics=["accuracy"],
+                   optimizer="adam")
+K.models.save_model(best_model, args.saved_model_name + "_final",
+                    include_optimizer=False)

@@ -107,11 +107,13 @@ model.fit(brats_data.get_train(), epochs=args.epochs,
           callbacks=callbacks,
           verbose=1 if hvd.rank() == 0 else 0)
 
-"""
-4. Load best model on validation dataset and run on the test
-dataset to show generalizability
-"""
+
 if (hvd.rank() == 0):
+
+    """
+    4. Load best model on validation dataset and run on the test
+    dataset to show generalizability
+    """
 
     best_model = K.models.load_model(args.saved_model_name,
                  custom_objects={"dice_loss":dice_loss,
@@ -121,3 +123,15 @@ if (hvd.rank() == 0):
     loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_data.get_test())
 
     print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
+
+    """
+    5. Save the best model without the custom objects (dice, etc.)
+       NOTE: You should be able to do .load_model(compile=False), but this
+       appears to currently be broken in TF2. To compensate, we're
+       just going to re-compile the model without the custom objects and
+       save as a new model (with suffix "_final")
+    """
+    best_model.compile(loss="binary_crossentropy", metrics=["accuracy"],
+                       optimizer="adam")
+    K.models.save_model(best_model, args.saved_model_name + "_final",
+                        include_optimizer=False)
