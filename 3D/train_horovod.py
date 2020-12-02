@@ -61,7 +61,7 @@ brats_data = DatasetGenerator(crop_dim,
              random_seed=args.random_seed,
              shard=hvd.rank())
 
-if (hvd.rank()==0):
+if (hvd.rank() == 0):
     brats_data.print_info()  # Print dataset information
 
 """
@@ -97,7 +97,7 @@ else:
 """
 3. Train the model
 """
-steps_per_epoch = brats_data.num_train // hvd.size()
+steps_per_epoch = brats_data.num_train // (hvd.size() * args.batch_size)
 if steps_per_epoch < 2:  # Make sure we have at least 2 steps per epoch
     steps_per_epoch = 2
 
