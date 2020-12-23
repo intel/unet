@@ -45,7 +45,7 @@ def test_intel_tensorflow():
         print("Intel-optimizations (DNNL) enabled:",
               tf.pywrap_tensorflow.IsMklEnabled())
 
-
+print(args)
 test_intel_tensorflow()  # Prints if Intel-optimized TensorFlow is used.
 
 """
