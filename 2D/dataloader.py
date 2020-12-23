@@ -17,254 +17,193 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-
-import h5py
-
-from argparser import args
-"""
-For BraTS (Task 1):
-
-INPUT CHANNELS:  "modality": {
-     "0": "FLAIR",
-     "1": "T1w",
-     "2": "t1gd",
-     "3": "T2w"
- },
-LABEL_CHANNELS: "labels": {
-     "0": "background",
-     "1": "edema",
-     "2": "non-enhancing tumor",
-     "3": "enhancing tumour"
- }
-
-"""
-
+import tensorflow as tf
 import numpy as np
-"""
-This module loads the training and validation datasets.
-If you have custom datasets, you can load and preprocess them here.
-"""
-
-if args.keras_api:
-    import keras as K
-else:
-    from tensorflow import keras as K
-
-"""
-Load data from HDF5 file
-"""
 
 
-class PreprocessHDF5Matrix(K.utils.HDF5Matrix):
+class DatasetGenerator:
     """
-    Wraps HDF5Matrix in preprocessing code.
-    Performs image augmentation if needed.
+    TensorFlow Dataset from Python/NumPy Iterator
+
+    Loads the 2D slices NumPy files that were created via convert_raw_to_numpy.py
     """
 
-    def __init__(self, datapath, dataset, datagen, start=0, end=None,
-                 normalizer=None, crop_dim=128,
-                 use_augmentation=False, seed=args.seed,
-                 channels_first=args.channels_first):
-        """
-        This will need to keep up with the HDF5Matrix code
-        base.  It allows us to do random image cropping and
-        use Keras online data augmentation.
-        """
-        self.image_datagen = datagen
-        self.use_augmentation = use_augmentation
+    def __init__(self, dirName, batch_size=8, crop_dim=240, augment=False, seed=816):
+
+        self.dirName = dirName
+        self.batch_size = batch_size
+        self.crop_dim = [crop_dim, crop_dim]
+        self.augment = augment
         self.seed = seed
-        self.crop_dim = crop_dim
-        self.idx = 0
-        self.channels_first = channels_first
 
-        if h5py is None:
-            raise ImportError("The use of HDF5Matrix requires "
-                              "HDF5 and h5py installed.")
+        self.file_list = tf.io.gfile.glob(self.dirName)
+        self.__len__ = len(self.file_list)
 
-        if datapath not in list(self.refs.keys()):
-            f = h5py.File(datapath, "r")
-            self.refs[datapath] = f
-        else:
-            f = self.refs[datapath]
-        self.data = f[dataset]
-        self.start = start
-        if end is None:
-            self.end = self.data.shape[0]
-        else:
-            self.end = end
-        self.normalizer = normalizer
-        if self.normalizer is not None:
-            first_val = self.normalizer(self.data[0:1])
-        else:
-            first_val = self.data[0:1]
-        self._base_dtype = first_val.dtype
+        # Read one file to calculate the input and output shapes
+        img, msk = self.read_file(self.file_list[0])
+        self.input_shape = img.shape
+        self.output_shape = msk.shape
 
-        # Handle the shape if we want to crop
-        bshape = list(first_val.shape[1:])
-
-        self.original_height = bshape[0]
-        self.original_width = bshape[1]
-
-        if ((self.crop_dim[0] > 0) and
-            (self.crop_dim[1] > 0) and
-            (self.crop_dim[0] < self.original_height) and
-                (self.crop_dim[1] < self.original_width)):
-            bshape[0] = self.crop_dim[0]
-            bshape[1] = self.crop_dim[1]
-            base_shape = tuple(bshape)
-            self.crop = True
-        else:
-            # Don't crop
-            base_shape = first_val.shape[1:]
-            self.crop = False
-
-        if self.channels_first:
-            self._base_shape = tuple([base_shape[2], base_shape[0],
-                                      base_shape[1]])
-        else:
-            self._base_shape = base_shape
-
-    def random_crop_img(self, img):
+    def __shape__(self):
         """
-        Random crop image - Assumes 2D images. NHWC format
+        Gets the shape of the data loader return
         """
 
-        if self.crop:
+        return self.get_input_shape(), self.get_output_shape()
 
-            # Assuming NHWC format
-            height, width = img.shape[1], img.shape[2]
-            dx, dy = self.crop_dim[0], self.crop_dim[1]
-
-            img_temp = np.zeros((img.shape[0], dx, dy, img.shape[3]))
-            for idx in range(img.shape[0]):
-
-                if self.use_augmentation:
-                    x = np.random.randint(0, height - dx + 1)
-                    y = np.random.randint(0, width - dy + 1)
-
-                else:  # If no augmentation, then just do center crop
-                    x = (height - dx) // 2
-                    y = (width - dy) // 2
-
-                img_temp[idx] = img[idx, x:(x + dx), y:(y + dy), :]
-
-            return img_temp
-        else:  # Don't crop
-            return img
-
-    def __getitem__(self, key):
+    def get_input_shape(self):
         """
-        Grab a batch of images and do online data augmentation and cropping
+        Gets the shape of the input
         """
-        data = super().__getitem__(key)
-        self.idx += 1
-        if len(data.shape) == 3:
-            if self.use_augmentation:
-                img = self.image_datagen.random_transform(
-                    data, seed=self.seed + self.idx)
+        return self.input_shape
+
+    def get_output_shape(self):
+        """
+        Gets the shape of the output
+        """
+        return self.output_shape
+
+    def z_normalize_img(self, img):
+        """
+        Normalize the image so that the mean value for each image
+        is 0 and the standard deviation is 1.
+        """
+        for channel in range(img.shape[-1]):
+
+            img_temp = img[..., channel]
+
+            if np.std(img_temp) > 0:
+                img_temp = (img_temp - np.mean(img_temp)) / np.std(img_temp)
+
+            img[..., channel] = img_temp
+
+        return img
+
+    def crop_input(self, img, msk):
+        """
+        Randomly crop the image and mask
+        """
+
+        slices = []
+
+        # Do we randomize?
+        is_random = self.augment and np.random.rand() > 0.5
+
+        for idx in range(2):  # Go through each dimension
+
+            cropLen = self.crop_dim[idx]
+            imgLen = img.shape[idx]
+
+            start = (imgLen-cropLen)//2
+
+            ratio_crop = 0.20  # Crop up this this % of pixels for offset
+            # Number of pixels to offset crop in this dimension
+            offset = int(np.floor(start*ratio_crop))
+
+            if offset > 0:
+                if is_random:
+                    start += np.random.choice(range(-offset, offset))
+                    if ((start + cropLen) > imgLen):  # Don't fall off the image
+                        start = (imgLen-cropLen)//2
             else:
-                img = data
+                start = 0
 
-            img = self.random_crop_img(img)
+            slices.append(slice(start, start+cropLen))
 
-            if self.channels_first:  # NCHW
-                outData = np.swapaxes(img, 1, 3)
-            else:
-                outData = img
+        return img[tuple(slices)], msk[tuple(slices)]
 
-        else:  # Need to test the code below. Usually only 3D tensors expected
-            if self.use_augmentation:
-                img = np.array([
-                    self.image_datagen.random_transform(
-                        x, seed=self.seed + self.idx) for x in data
-                ])
-            else:
-                img = np.array([x for x in data])
+    def __length__(self):
+        """
+        Number of items in the dataset
+        """
 
-            img = self.random_crop_img(img)
+        return self.__len__
 
-            if self.channels_first:  # NCHW
-                outData = np.swapaxes(img, 1, 3)
-            else:
-                outData = img
+    def combine_mask(self, msk):
+        """
+        Combine the masks into one mask
+        """
+        msk[msk > 0] = 1.0
 
-        return outData
+        return msk
 
+    def augment_data(self, img, msk):
+        """
+        Data augmentation
+        Flip image and mask. Rotate image and mask.
+        """
 
-def load_data(hdf5_data_filename, batch_size=128, crop_dim=[-1, -1],
-              channels_first=args.channels_first, seed=args.seed):
-    """
-    Load the data from the HDF5 file using the Keras HDF5 wrapper.
-    """
+        if np.random.rand() > 0.5:
+            ax = np.random.choice([0, 1])
+            img = np.flip(img, ax)
+            msk = np.flip(msk, ax)
 
-    # Training dataset
-    # Make sure both input and label start with the same random seed
-    # Otherwise they won't get the same random transformation
+        if np.random.rand() > 0.5:
+            rot = np.random.choice([1, 2, 3])  # 90, 180, or 270 degrees
 
-    params = dict(horizontal_flip=True,
-                  vertical_flip=True,
-                  rotation_range=90,  # degrees
-                  shear_range=5  # degrees
-                  )
-    image_datagen = K.preprocessing.image.ImageDataGenerator(**params)
-    msk_datagen = K.preprocessing.image.ImageDataGenerator(**params)
+            img = np.rot90(img, rot, axes=[0, 1])  # Rotate axes 0 and 1
+            msk = np.rot90(msk, rot, axes=[0, 1])  # Rotate axes 0 and 1
 
-    imgs_train = PreprocessHDF5Matrix(hdf5_data_filename,
-                                      "imgs_train",
-                                      image_datagen,
-                                      crop_dim=crop_dim,
-                                      use_augmentation=args.use_augmentation,
-                                      seed=seed,
-                                      channels_first=channels_first)
-    msks_train = PreprocessHDF5Matrix(hdf5_data_filename,
-                                      "msks_train",
-                                      msk_datagen,
-                                      crop_dim=crop_dim,
-                                      use_augmentation=args.use_augmentation,
-                                      seed=seed,
-                                      channels_first=channels_first)
+        return img, msk
 
-    # Validation dataset
-    # No data augmentation
-    imgs_validation = PreprocessHDF5Matrix(hdf5_data_filename,
-                                           "imgs_validation",
-                                           image_datagen,
-                                           crop_dim=crop_dim,
-                                           use_augmentation=False,  # Don't augment
-                                           seed=seed,
-                                           channels_first=channels_first)
-    msks_validation = PreprocessHDF5Matrix(hdf5_data_filename,
-                                           "msks_validation",
-                                           msk_datagen,
-                                           crop_dim=crop_dim,
-                                           use_augmentation=False,  # Don't augment
-                                           seed=seed,
-                                           channels_first=channels_first)
+    def read_file(self, fileIdx):
+        """
+        Read from the NumPy file
+        """
 
-    # Testing dataset
-    # No data augmentation
-    imgs_testing = PreprocessHDF5Matrix(hdf5_data_filename,
-                                        "imgs_testing",
-                                        image_datagen,
-                                        crop_dim=crop_dim,
-                                        use_augmentation=False,  # Don't augment
-                                        seed=seed,
-                                        channels_first=channels_first)
-    msks_testing = PreprocessHDF5Matrix(hdf5_data_filename,
-                                        "msks_testing",
-                                        msk_datagen,
-                                        crop_dim=crop_dim,
-                                        use_augmentation=False,  # Don't augment
-                                        seed=seed,
-                                        channels_first=channels_first)
+        with np.load(fileIdx) as data:
+            img = data["img"]
+            msk = data["msk"]
 
-    print("Batch size = {}".format(batch_size))
+        msk = self.combine_mask(msk)
 
-    print("Training image dimensions:   {}".format(imgs_train.shape))
-    print("Training mask dimensions:    {}".format(msks_train.shape))
-    print("Validation image dimensions: {}".format(imgs_validation.shape))
-    print("Validation mask dimensions:  {}".format(msks_validation.shape))
-    print("Testing image dimensions: {}".format(imgs_testing.shape))
-    print("Testing mask dimensions:  {}".format(msks_testing.shape))
+        if self.crop_dim[0] != -1:  # Determine if we need to crop
+        	img, msk = self.crop_input(img, msk)
 
-    return imgs_train, msks_train, imgs_validation, msks_validation, imgs_testing, msks_testing
+        if self.augment:
+            img, msk = self.augment_data(img, msk)
+
+        img = self.z_normalize_img(img)
+
+        return img, msk
+
+    def read_file_tf(self, fileIdx):
+        """
+        Read file map to tf dataset
+        """
+
+        img, msk = self.read_file(fileIdx.numpy())
+
+        return img, msk
+
+    def get_dataset(self):
+        """
+        Return a dataset
+        """
+        ds = tf.data.Dataset.from_tensor_slices(
+            self.file_list).shuffle(self.__len__, seed=self.seed)
+        ds = ds.map(lambda x: tf.py_function(self.read_file_tf,
+                                             [x], [tf.float32, tf.float32]),
+                    num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        ds = ds.batch(self.batch_size)
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+
+        return ds
+
+    def plot_samples(self, num_samples=8):
+        """
+        Plot some dataset samples
+        """
+        import matplotlib.pyplot as plt
+
+        dt = self.get_dataset().take(1).as_numpy_iterator()
+        plt.figure(figsize=(20, 20))
+        for img, msk in dt:
+            if num_samples > img.shape[0]:
+                num_samples = img.shape[0]
+                
+            for idx in range(num_samples):
+                plt.subplot(num_samples, 2, 1+2*idx)
+                plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
+                plt.subplot(num_samples, 2, 2+2*idx)
+                plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")

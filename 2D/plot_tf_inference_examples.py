@@ -25,10 +25,11 @@ import os
 
 import numpy as np
 import tensorflow as tf
-import keras as K
+import time
+from tensorflow import keras as K
 import settings
 import argparse
-import h5py
+from dataloader import DatasetGenerator
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -36,17 +37,15 @@ matplotlib.use("Agg")
 
 
 parser = argparse.ArgumentParser(
-    description="Inference example for trained 2D U-Net model on BraTS.",
+    description="TensorFlow Inference example for trained 2D U-Net model on BraTS.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--data_path", default=settings.DATA_PATH,
                     help="the path to the data")
-parser.add_argument("--data_filename", default=settings.DATA_FILENAME,
-                    help="the HDF5 data filename")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
-                    help="the Keras inference model filename")
+                    help="the TensorFlow inference model filename")
 parser.add_argument("--use_pconv",help="use partial convolution based padding",
                     action="store_true",
                     default=settings.USE_PCONV)
@@ -57,21 +56,32 @@ parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
                     type=int, help="Number of intra-op-parallelism threads")
 parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
                     type=int, help="Number of inter-op-parallelism threads")
-parser.add_argument("--crop_dim", default=128,
+parser.add_argument("--crop_dim", default=settings.CROP_DIM,
                     type=int, help="Crop dimension for images")
+parser.add_argument("--seed", default=settings.SEED,
+                    type=int, help="Random seed")
 
 args = parser.parse_args()
 
-# Optimize CPU threads for TensorFlow
-CONFIG = tf.ConfigProto(
-    inter_op_parallelism_threads=args.interop_threads,
-    intra_op_parallelism_threads=args.intraop_threads)
+def test_intel_tensorflow():
+    """
+    Check if Intel version of TensorFlow is installed
+    """
+    import tensorflow as tf
+    
+    print("We are using Tensorflow version {}".format(tf.__version__))
+           
+    major_version = int(tf.__version__.split(".")[0])
+    if major_version >= 2:
+       from tensorflow.python import _pywrap_util_port
+       print("Intel-optimizations (DNNL) enabled:", _pywrap_util_port.IsMklEnabled())
+    else:
+       print("Intel-optimizations (DNNL) enabled:", tf.pywrap_tensorflow.IsMklEnabled()) 
 
-SESS = tf.Session(config=CONFIG)
-K.backend.set_session(SESS)
+test_intel_tensorflow()
 
 
-def calc_dice(target, prediction, smooth=0.01):
+def calc_dice(target, prediction, smooth=0.0001):
     """
     Sorenson Dice
     \frac{  2 \times \left | T \right | \cap \left | P \right |}{ \left | T \right | +  \left | P \right |  }
@@ -86,7 +96,7 @@ def calc_dice(target, prediction, smooth=0.01):
     return coef
 
 
-def calc_soft_dice(target, prediction, smooth=0.01):
+def calc_soft_dice(target, prediction, smooth=0.0001):
     """
     Sorensen (Soft) Dice coefficient - Don't round preictions
     """
@@ -97,79 +107,69 @@ def calc_soft_dice(target, prediction, smooth=0.01):
     return coef
 
 
-def plot_results(model, imgs_validation, msks_validation,
-                 img_no, png_directory):
-    """
-    Calculate the Dice and plot the predicted masks for image # img_no
-    """
+def plot_results(ds, idx, png_directory):
+    
+    dt = ds.get_dataset().take(1).as_numpy_iterator()  # Get some examples (use different seed for different samples)
 
-    img = imgs_validation[[img_no], ]
-    msk = msks_validation[[img_no], ]
+    plt.figure(figsize=(10,10))
 
-    # Crop the image
-    height = img.shape[1]
-    width = img.shape[2]
-    if (args.crop_dim != -1) and (args.crop_dim < height) and (args.crop_dim < width):
-        startx = (height - args.crop_dim) // 2
-        starty = (width - args.crop_dim) // 2
-        img = img[:,startx:(startx+args.crop_dim),starty:(starty+args.crop_dim),:]
-        msk = msk[:,startx:(startx+args.crop_dim),starty:(starty+args.crop_dim),:]
+    for img, msk in dt:
 
+        plt.subplot(1, 3, 1)
+        plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
+        plt.title("MRI {}".format(idx), fontsize=20)
 
-    pred_mask = model.predict(img)
+        plt.subplot(1, 3, 2)
+        plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")
+        plt.title("Ground truth", fontsize=20)
 
-    plt.figure(figsize=(10, 10))
-    plt.subplot(1, 3, 1)
-    plt.imshow(img[0, :, :, 0], cmap="bone", origin="lower")
-    plt.title("MRI")
-    plt.axis("off")
-    plt.subplot(1, 3, 2)
-    plt.imshow(msk[0, :, :, 0], origin="lower")
-    plt.title("Ground Truth")
-    plt.axis("off")
-    plt.subplot(1, 3, 3)
-    plt.imshow(pred_mask[0, :, :, 0], origin="lower")
-    plt.title("Prediction\n(Dice = {:.4f})".format(calc_dice(msk, pred_mask)))
-    plt.axis("off")
+        plt.subplot(1, 3, 3)
 
-    png_filename = os.path.join(png_directory, "pred_{}.png".format(img_no))
-    plt.savefig(png_filename, bbox_inches="tight", pad_inches=0)
-    print("Dice {:.4f}, Soft Dice {:.4f}, Saved png file to: {}".format(
-        calc_dice(msk, pred_mask), calc_soft_dice(msk, pred_mask), png_filename))
+        print("Index {}: ".format(idx), end="")
+        
+        # Predict using the TensorFlow model
+        start_time = time.time()
+        prediction = model.predict(img[[idx]])
+        print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
+        
+        plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
+        dice_coef = calc_dice(msk[idx], prediction)
+        print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
+        plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
 
-
+        save_name = os.path.join(png_directory, "prediction_tf_{}.png".format(idx))
+        print("Saved as: {}".format(save_name))
+        plt.savefig(save_name)
+        
 if __name__ == "__main__":
 
-    data_filename = os.path.join(args.data_path, args.data_filename)
     model_filename = os.path.join(args.output_path, args.inference_filename)
 
-    # Load data
-    df = h5py.File(data_filename, "r")
-    imgs_testing = df["imgs_testing"]
-    msks_testing = df["msks_testing"]
-    files_testing = df["testing_input_files"]
-
+    ds_testing = DatasetGenerator(os.path.join(args.data_path, "testing/*.npz"), 
+                              crop_dim=args.crop_dim, 
+                              batch_size=128, 
+                              augment=False, 
+                              seed=args.seed)
     # Load model
     if args.use_pconv:
         from model_pconv import unet
+        unet_model = unet(use_pconv=True)
     else:
-        from model import unet    
-    unet_model = unet()
+        from model import unet
+        unet_model = unet()
+        
+    
     model = unet_model.load_model(model_filename)
 
     # Create output directory for images
-    png_directory = "inference_examples"
+    png_directory = args.output_pngs
     if not os.path.exists(png_directory):
         os.makedirs(png_directory)
 
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_testing = [50, 61, 102, 210, 371,
-                        400, 1093, 2222, 3540, 4485,
-                        5566, 5675, 6433]
-
+    indicies_testing = [11,17,23,56,89,101,119]
 
     for idx in indicies_testing:
-        plot_results(model, imgs_testing, msks_testing,
-                     idx, args.output_pngs)
+        plot_results(ds_testing, idx, png_directory)

@@ -23,6 +23,7 @@ import numpy as np
 
 import nibabel as nib
 
+
 class DatasetGenerator:
 
     def __init__(self, crop_dim,
@@ -41,7 +42,7 @@ class DatasetGenerator:
         self.validate_test_split = validate_test_split
         self.number_output_classes = number_output_classes
         self.random_seed = random_seed
-        self.shard = shard # For Horovod, gives different shard per worker
+        self.shard = shard  # For Horovod, gives different shard per worker
 
         self.create_file_list()
 
@@ -80,9 +81,9 @@ class DatasetGenerator:
         self.filenames = {}
         for idx in range(self.numFiles):
             self.filenames[idx] = [os.path.join(self.data_path,
-                                              experiment_data["training"][idx]["image"]),
-                                    os.path.join(self.data_path,
-                                              experiment_data["training"][idx]["label"])]
+                                                experiment_data["training"][idx]["image"]),
+                                   os.path.join(self.data_path,
+                                                experiment_data["training"][idx]["label"])]
 
     def print_info(self):
         """
@@ -115,37 +116,37 @@ class DatasetGenerator:
         return img
 
     def crop(self, img, msk, randomize):
-            """
-            Randomly crop the image and mask
-            """
+        """
+        Randomly crop the image and mask
+        """
 
-            slices = []
+        slices = []
 
-            # Do we randomize?
-            is_random = randomize and np.random.rand() > 0.5
+        # Do we randomize?
+        is_random = randomize and np.random.rand() > 0.5
 
-            for idx in range(len(img.shape)-1):  # Go through each dimension
+        for idx in range(len(img.shape)-1):  # Go through each dimension
 
-                cropLen = self.crop_dim[idx]
-                imgLen = img.shape[idx]
+            cropLen = self.crop_dim[idx]
+            imgLen = img.shape[idx]
 
-                start = (imgLen-cropLen)//2
+            start = (imgLen-cropLen)//2
 
-                ratio_crop = 0.20  # Crop up this this % of pixels for offset
-                # Number of pixels to offset crop in this dimension
-                offset = int(np.floor(start*ratio_crop))
+            ratio_crop = 0.20  # Crop up this this % of pixels for offset
+            # Number of pixels to offset crop in this dimension
+            offset = int(np.floor(start*ratio_crop))
 
-                if offset > 0:
-                    if is_random:
-                        start += np.random.choice(range(-offset, offset))
-                        if ((start + cropLen) > imgLen):  # Don't fall off the image
-                            start = (imgLen-cropLen)//2
-                else:
-                    start = 0
+            if offset > 0:
+                if is_random:
+                    start += np.random.choice(range(-offset, offset))
+                    if ((start + cropLen) > imgLen):  # Don't fall off the image
+                        start = (imgLen-cropLen)//2
+            else:
+                start = 0
 
-                slices.append(slice(start, start+cropLen))
+            slices.append(slice(start, start+cropLen))
 
-            return img[tuple(slices)], msk[tuple(slices)]
+        return img[tuple(slices)], msk[tuple(slices)]
 
     def augment_data(self, img, msk):
         """
@@ -191,7 +192,7 @@ class DatasetGenerator:
 
         img = np.array(nib.load(imgFile).dataobj)
 
-        img = img[...,[0]] # Just take the FLAIR channel (0)
+        img = img[..., [0]]  # Just take the FLAIR channel (0)
 
         msk = np.array(nib.load(mskFile).dataobj)
 
@@ -209,7 +210,7 @@ class DatasetGenerator:
         else:
             msk_temp = np.zeros(list(msk.shape) + [self.number_output_classes])
             for channel in range(self.number_output_classes):
-                msk_temp[msk==channel,channel] = 1.0
+                msk_temp[msk == channel, channel] = 1.0
             msk = msk_temp
 
         # Crop
@@ -230,27 +231,28 @@ class DatasetGenerator:
         """
         import matplotlib.pyplot as plt
 
-        plt.figure(figsize=(20,20))
+        plt.figure(figsize=(20, 20))
 
-        num_cols=2
+        num_cols = 2
 
-        msk_channel=1
-        img_channel=0
+        msk_channel = 1
+        img_channel = 0
 
         for img, msk in ds.take(1):
             bs = img.shape[0]
 
             for idx in range(bs):
-                plt.subplot(bs,num_cols,idx*num_cols + 1)
-                plt.imshow(img[idx,:,:,slice_num,img_channel], cmap="bone")
+                plt.subplot(bs, num_cols, idx*num_cols + 1)
+                plt.imshow(img[idx, :, :, slice_num, img_channel], cmap="bone")
                 plt.title("MRI", fontsize=18)
-                plt.subplot(bs,num_cols,idx*num_cols + 2)
-                plt.imshow(msk[idx,:,:,slice_num,msk_channel], cmap="bone")
+                plt.subplot(bs, num_cols, idx*num_cols + 2)
+                plt.imshow(msk[idx, :, :, slice_num, msk_channel], cmap="bone")
                 plt.title("Tumor", fontsize=18)
 
         plt.show()
 
-        print("Mean pixel value of image = {}".format(np.mean(img[0,:,:,:,0])))
+        print("Mean pixel value of image = {}".format(
+            np.mean(img[0, :, :, :, 0])))
 
     def display_train_images(self, slice_num=90):
         """
@@ -295,7 +297,8 @@ class DatasetGenerator:
         self.num_train = int(self.numFiles * self.train_test_split)
         numValTest = self.numFiles - self.num_train
 
-        ds = tf.data.Dataset.range(self.numFiles).shuffle(self.numFiles, self.random_seed) # Shuffle the dataset
+        ds = tf.data.Dataset.range(self.numFiles).shuffle(
+            self.numFiles, self.random_seed)  # Shuffle the dataset
 
         """
         Horovod Sharding
@@ -304,7 +307,8 @@ class DatasetGenerator:
         shard. Then in the training loop we just go through the training
         dataset but the number of steps is divided by the number of shards.
         """
-        ds_train = ds.take(self.num_train).shuffle(self.num_train, self.shard) # Reshuffle based on shard
+        ds_train = ds.take(self.num_train).shuffle(
+            self.num_train, self.shard)  # Reshuffle based on shard
         ds_val_test = ds.skip(self.num_train)
         self.num_val = int(numValTest * self.validate_test_split)
         self.num_test = self.num_train - self.num_val
@@ -312,14 +316,14 @@ class DatasetGenerator:
         ds_test = ds_val_test.skip(self.num_val)
 
         ds_train = ds_train.map(lambda x: tf.py_function(self.read_nifti_file,
-                                [x, True], [tf.float32, tf.float32]),
+                                                         [x, True], [tf.float32, tf.float32]),
                                 num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_val = ds_val.map(lambda x: tf.py_function(self.read_nifti_file,
-                            [x, False], [tf.float32, tf.float32]),
+                                                     [x, False], [tf.float32, tf.float32]),
                             num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds_test = ds_test.map(lambda x: tf.py_function(self.read_nifti_file,
-                                [x, False], [tf.float32, tf.float32]),
-                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
+                                                       [x, False], [tf.float32, tf.float32]),
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         ds_train = ds_train.repeat()
         ds_train = ds_train.batch(self.batch_size)
@@ -336,7 +340,6 @@ class DatasetGenerator:
         return ds_train, ds_val, ds_test
 
 
-
 if __name__ == "__main__":
 
     print("Load the data and plot a few examples")
@@ -348,11 +351,11 @@ if __name__ == "__main__":
     Load the dataset
     """
     brats_data = DatasetGenerator(crop_dim,
-                 data_path=args.data_path,
-                 batch_size=args.batch_size,
-                 train_test_split=args.train_test_split,
-                 validate_test_split=args.validate_test_split,
-                 number_output_classes=args.number_output_classes,
-                 random_seed=args.random_seed)
+                                  data_path=args.data_path,
+                                  batch_size=args.batch_size,
+                                  train_test_split=args.train_test_split,
+                                  validate_test_split=args.validate_test_split,
+                                  number_output_classes=args.number_output_classes,
+                                  random_seed=args.random_seed)
 
     brats_data.print_info()

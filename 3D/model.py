@@ -21,6 +21,7 @@ from argparser import args
 import tensorflow as tf
 from tensorflow import keras as K
 
+
 def dice_coef(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     """
     Sorenson Dice
@@ -36,6 +37,7 @@ def dice_coef(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     coef = numerator / denominator
 
     return tf.reduce_mean(coef)
+
 
 def soft_dice_coef(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     """
@@ -67,6 +69,7 @@ def dice_loss(target, prediction, axis=(1, 2, 3), smooth=0.0001):
     dice_loss = -tf.math.log(2.*numerator) + tf.math.log(denominator)
 
     return dice_loss
+
 
 def unet_3d(input_dim, filters=args.filters,
             number_output_classes=args.number_output_classes,

@@ -38,15 +38,15 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-DECATHLON_DIR=${1:-"../../data/decathlon"}
+DECATHLON_DIR=${1:-"./data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
-IMG_SIZE=${3:-144}  # This should be a multiple of 16
+IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
-INFERENCE_FILENAME=${6:-"unet_model_for_decathlon.hdf5"}
+INFERENCE_FILENAME=${6:-"unet_model_for_decathlon"}
 
-MODEL_OUTPUT_FILENAME=${SUBSET_DIR}".h5"
+MODEL_OUTPUT_FILENAME=${SUBSET_DIR}
 
-NUM_EPOCHS=20  # Number of epochs to train
+NUM_EPOCHS=3 #20  # Number of epochs to train
 LEARNING_RATE=0.0001  # 0.00005  Adam optimizer
 
 # 32 feature maps is preferable, but uses about 16 GB of memory.
@@ -77,22 +77,21 @@ if [[ ! -f ${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json ]] ; then
 fi
 
 echo " "
-echo "******************************************"
-echo "Step 1 of 4: Convert raw data to HDF5 file"
-echo "******************************************"
+echo "********************************************"
+echo "Step 1 of 2: Convert raw data to NumPy files"
+echo "********************************************"
 
-echo "Converting Decathlon raw data to HDF5 file."
-# Run Python script to convert to a single HDF5 file
+echo "Converting Decathlon raw 3D data to NumPy 2D files (each file is a slice of the original MRI)."
+# Run Python script to convert to 2D NumPy files.
 # Resize should be a multiple of 16 because of the way the
 # max pooling and upsampling works in U-Net. The rule is
 # 2^n where n is the number of max pooling/upsampling concatenations.
-python convert_raw_to_hdf5.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
-       --output_filename $MODEL_OUTPUT_FILENAME \
-       --save_path $DECATHLON_DIR
+python convert_raw_to_npy.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
+       --save_path $DECATHLON_DIR 
 
 echo " "
 echo "***********************************"
-echo "Step 2 of 4: Train U-Net on dataset"
+echo "Step 2 of 2: Train U-Net on dataset"
 echo "***********************************"
 
 echo "Run U-Net training on BraTS Decathlon dataset"
@@ -103,37 +102,8 @@ python train.py \
        --learningrate $LEARNING_RATE \
        --data_path $DECATHLON_DIR \
        --crop_dim $IMG_SIZE \
-       --data_filename $MODEL_OUTPUT_FILENAME \
        --output_path $MODEL_OUTPUT_DIR \
        --inference_filename $INFERENCE_FILENAME \
        --featuremaps $FEATURE_MAPS \
        --print_model \
-       --keras_api \
        --use_augmentation
-
-echo " "
-echo "****************************************"
-echo "Step 3 of 4: Run sample inference script"
-echo "****************************************"
-
-python plot_inference_examples.py  \
-        --data_path $DECATHLON_DIR \
-        --data_filename $MODEL_OUTPUT_FILENAME \
-        --output_path $MODEL_OUTPUT_DIR \
-        --inference_filename $INFERENCE_FILENAME \
-        --crop_dim $IMG_SIZE
-
-echo " "
-echo "********************************************************"
-echo "Step 4 of 4: Converting the TensorFlow model to OpenVINO"
-echo "********************************************************"
-echo "If you have OpenVINO installed, then you can run the following command"
-echo "to create the OpenVINO model."
-echo ""
-echo "source /opt/intel/openvino/bin/setupvars.sh"
-echo "python ${INTEL_OPENVINO_DIR}/deployment_tools/model_optimizer/mo_tf.py \\"
-echo "   --input_model ./frozen_model/unet_model_for_decathlon.pb \\"
-echo "   --input_shape [1,${IMG_SIZE},${IMG_SIZE},4] \\"
-echo "   --output_dir openvino_models/FP32/ \\"
-echo "   --data_type FP32  --model_name saved_model"
-echo " "

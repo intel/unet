@@ -31,6 +31,8 @@ import settings
 import argparse
 from dataloader import DatasetGenerator
 
+from openvino.inference_engine import IECore
+
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use("Agg")
@@ -107,7 +109,7 @@ def calc_soft_dice(target, prediction, smooth=0.0001):
     return coef
 
 
-def plot_results(ds, idx, png_directory):
+def plot_results(ds, idx, png_directory, exec_net, input_layer_name, output_layer_name):
     
     dt = ds.get_dataset().take(1).as_numpy_iterator()  # Get some examples (use different seed for different samples)
 
@@ -125,15 +127,25 @@ def plot_results(ds, idx, png_directory):
 
         plt.subplot(1, 3, 3)
 
-        # Predict using the TensorFlow model
+        print("Index {}: ".format(idx), end="")
+
+        # Predict using the OpenVINO model
+        # NOTE: OpenVINO expects channels first for input and output
+        # So we transpose the input and output
         start_time = time.time()
-        prediction = model.predict(img[[idx]])
-        print("Elapsed time = {:.4f} msecs".format(1000.0*(time.time()-start_time)))
+        res = exec_net.infer({input_layer_name: np.transpose(img[[idx]], [0,3,1,2])})
+        prediction = np.transpose(res[output_layer_name], [0,2,3,1])    
+        print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
         
         plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
-        plt.title("Prediction\nDice = {:.4f}".format(calc_dice(msk[idx, :, :], prediction)), fontsize=20)
+        dice_coef = calc_dice(msk[idx], prediction)
+        plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
+
+        print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
         
-        plt.savefig(os.path.join(png_directory, "prediction_tf_{}.png".format(idx)))
+        save_name = os.path.join(png_directory, "prediction_openvino_{}.png".format(idx))
+        print("Saved as: {}".format(save_name))
+        plt.savefig(save_name)
 
 if __name__ == "__main__":
 
@@ -144,16 +156,18 @@ if __name__ == "__main__":
                               batch_size=128, 
                               augment=False, 
                               seed=args.seed)
-    # Load model
-    if args.use_pconv:
-        from model_pconv import unet
-        unet_model = unet(use_pconv=True)
-    else:
-        from model import unet
-        unet_model = unet()
-        
     
-    model = unet_model.load_model(model_filename)
+    path_to_xml_file = "./output/FP32/2d_unet_model_decathlon.xml"
+    path_to_bin_file = "./output/FP32/2d_unet_model_decathlon.bin"
+
+    ie = IECore()
+    net = ie.read_network(model=path_to_xml_file, weights=path_to_bin_file)
+
+    input_layer_name = next(iter(net.input_info))
+    output_layer_name = next(iter(net.outputs))
+    print("Input layer name = {}\nOutput layer name = {}".format(input_layer_name, output_layer_name))
+
+    exec_net = ie.load_network(network=net, device_name="CPU", num_requests=1)
 
     # Create output directory for images
     png_directory = args.output_pngs
@@ -166,4 +180,4 @@ if __name__ == "__main__":
     indicies_testing = [11,17,23,56,89,101,119]
 
     for idx in indicies_testing:
-        plot_results(ds_testing, idx, png_directory)
+        plot_results(ds_testing, idx, png_directory, exec_net, input_layer_name, output_layer_name)

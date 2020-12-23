@@ -354,7 +354,7 @@ def unet3D(input_img, use_upsampling=False, n_out=1, dropout=0.2,
         return pred
 
 def unet2D(input_tensor, use_upsampling=False,
-            n_out=1, dropout=0.2, print_summary = False, return_model=False):
+            n_out=1, dropout=0.2, print_summary = False, return_model=False, use_batch_norm=True):
     """
     2D U-Net
     """

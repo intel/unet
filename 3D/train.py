@@ -27,16 +27,24 @@ from argparser import args
 from dataloader import DatasetGenerator
 from model import dice_coef, soft_dice_coef, dice_loss, unet_3d
 
+
 def test_intel_tensorflow():
     """
     Check if Intel version of TensorFlow is installed
     """
-    from tensorflow.python import _pywrap_util_port
-    DNNL = _pywrap_util_port.IsMklEnabled()
-    if DNNL:
-        print("Intel-optimized TensorFlow with DNNL is enabled.")
+    import tensorflow as tf
+
+    print("We are using Tensorflow version {}".format(tf.__version__))
+
+    major_version = int(tf.__version__.split(".")[0])
+    if major_version >= 2:
+        from tensorflow.python import _pywrap_util_port
+        print("Intel-optimizations (DNNL) enabled:",
+              _pywrap_util_port.IsMklEnabled())
     else:
-        print("TensorFlow is not enabled with Intel optimizations for CPU.")
+        print("Intel-optimizations (DNNL) enabled:",
+              tf.pywrap_tensorflow.IsMklEnabled())
+
 
 test_intel_tensorflow()  # Prints if Intel-optimized TensorFlow is used.
 
@@ -50,12 +58,12 @@ crop_dim = (args.tile_height, args.tile_width,
 1. Load the dataset
 """
 brats_data = DatasetGenerator(crop_dim,
-             data_path=args.data_path,
-             batch_size=args.batch_size,
-             train_test_split=args.train_test_split,
-             validate_test_split=args.validate_test_split,
-             number_output_classes=args.number_output_classes,
-             random_seed=args.random_seed)
+                              data_path=args.data_path,
+                              batch_size=args.batch_size,
+                              train_test_split=args.train_test_split,
+                              validate_test_split=args.validate_test_split,
+                              number_output_classes=args.number_output_classes,
+                              random_seed=args.random_seed)
 
 brats_data.print_info()  # Print dataset information
 
@@ -63,21 +71,22 @@ brats_data.print_info()  # Print dataset information
 2. Create the TensorFlow model
 """
 model = unet_3d(input_dim=crop_dim, filters=args.filters,
-            number_output_classes=args.number_output_classes,
-            use_upsampling=args.use_upsampling,
-            concat_axis=-1, model_name=args.saved_model_name)
+                number_output_classes=args.number_output_classes,
+                use_upsampling=args.use_upsampling,
+                concat_axis=-1, model_name=args.saved_model_name)
 
 local_opt = K.optimizers.Adam()
 model.compile(loss=dice_loss,
-             metrics=[dice_coef, soft_dice_coef],
-             optimizer=local_opt)
+              metrics=[dice_coef, soft_dice_coef],
+              optimizer=local_opt)
 
 checkpoint = K.callbacks.ModelCheckpoint(args.saved_model_name,
                                          verbose=1,
                                          save_best_only=True)
 
 # TensorBoard
-logs_dir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+logs_dir = os.path.join(
+    "logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 tb_logs = K.callbacks.TensorBoard(log_dir=logs_dir)
 
 callbacks = [checkpoint, tb_logs]
@@ -97,9 +106,9 @@ model.fit(brats_data.get_train(), epochs=args.epochs,
 dataset to show generalizability
 """
 best_model = K.models.load_model(args.saved_model_name,
-             custom_objects={"dice_loss":dice_loss,
-                             "dice_coef":dice_coef,
-                             "soft_dice_coef":soft_dice_coef})
+                                 custom_objects={"dice_loss": dice_loss,
+                                                 "dice_coef": dice_coef,
+                                                 "soft_dice_coef": soft_dice_coef})
 
 loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_data.get_test())
 
