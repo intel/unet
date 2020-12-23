@@ -24,9 +24,7 @@ Takes a trained model and performs inference on a few validation examples.
 import os
 
 import numpy as np
-import tensorflow as tf
 import time
-from tensorflow import keras as K
 import settings
 import argparse
 from dataloader import DatasetGenerator
@@ -64,24 +62,6 @@ parser.add_argument("--seed", default=settings.SEED,
                     type=int, help="Random seed")
 
 args = parser.parse_args()
-
-def test_intel_tensorflow():
-    """
-    Check if Intel version of TensorFlow is installed
-    """
-    import tensorflow as tf
-    
-    print("We are using Tensorflow version {}".format(tf.__version__))
-           
-    major_version = int(tf.__version__.split(".")[0])
-    if major_version >= 2:
-       from tensorflow.python import _pywrap_util_port
-       print("Intel-optimizations (DNNL) enabled:", _pywrap_util_port.IsMklEnabled())
-    else:
-       print("Intel-optimizations (DNNL) enabled:", tf.pywrap_tensorflow.IsMklEnabled()) 
-
-test_intel_tensorflow()
-
 
 def calc_dice(target, prediction, smooth=0.0001):
     """
