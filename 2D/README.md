@@ -39,6 +39,26 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 Note: The only reason we convert the 3D files to 2D is to make the data loader easier and faster for the 2D model training. For example, in the [3D model](../3D) training we simply load the 3D Nifti files directly without this 3D->2D preprocessing step.
 
+8. OpenVINO(tm) - At the end of `train.py` you should see instructions on how to convert the model for use with the [Intel(r) Distribution of the OpenVINO(tm) toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html). Once you have OpenVINO installed, you can run a command like the one below to create an OpenVINO intermediate representation (IR) of the TensorFlow model. If you are using the [Intel(r) Neural Compute Stick(tm) (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html), simply replace the `FP32` for `FP16` in the command below:
+
+```
+source /opt/intel/openvino_2021/bin/setupvars.sh
+python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
+       --saved_model_dir ./output/unet_model_for_decathlon \
+       --input_shape [1,128,128,4] \
+       --model_name unet_model_for_decathlon \
+       --output_dir ./output/FP32 \
+       --data_type FP32
+```
+
+9. Once you have the OpenVINO IR model, you can run the command:
+
+```
+python plot_openvino_inference_examples.py
+```
+
+It should give you the same output as the `plot_tf_inference_examples.py` but execute faster on the same CPU.
+
 ![prediction28](images/pred28.png)
 
 Tips for improving model:
