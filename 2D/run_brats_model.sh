@@ -42,7 +42,7 @@ DECATHLON_DIR=${1:-"../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
 IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
-INFERENCE_FILENAME=${6:-"unet_model_for_decathlon"}
+INFERENCE_FILENAME=${6:-"2d_unet_model_for_decathlon"}
 
 MODEL_OUTPUT_FILENAME=${SUBSET_DIR}
 

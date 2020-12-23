@@ -23,7 +23,7 @@ import os
 DATA_PATH = os.path.join("../data/decathlon/")
 DATA_FILENAME = "Task01_BrainTumour.h5"
 OUT_PATH = os.path.join("./output/")
-INFERENCE_FILENAME = "unet_model_for_decathlon"
+INFERENCE_FILENAME = "2d_unet_model_for_decathlon"
 
 EPOCHS = 25  # Number of epochs to train
 
