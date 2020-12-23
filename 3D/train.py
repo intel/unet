@@ -121,9 +121,10 @@ print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
    just going to re-compile the model without the custom objects and
    save as a new model (with suffix "_final")
 """
+final_model_name = args.saved_model_name + "_final"
 best_model.compile(loss="binary_crossentropy", metrics=["accuracy"],
                    optimizer="adam")
-K.models.save_model(best_model, args.saved_model_name + "_final",
+K.models.save_model(best_model, final_model_name,
                     include_optimizer=False)
 
 """
@@ -132,7 +133,7 @@ Converting the model to OpenVINO
 print("Convert the TensorFlow model to OpenVINO by running:\n")
 print("source /opt/intel/openvino/bin/setupvars.sh")
 print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
-print("       --saved_model_dir {} \\".format(args.saved_model_name))
+print("       --saved_model_dir {} \\".format(final_model_name))
 print("       --model_name {} \\".format(args.saved_model_name))
 print("       --batch 1  \\")
 print("       --output_dir {} \\".format(os.path.join("openvino_models", "FP32")))
