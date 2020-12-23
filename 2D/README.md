@@ -14,7 +14,7 @@ Steps:
 
 3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; MKL-DNN](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
-conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil
+conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil jupyter matplotlib
 ```
 
 4. Enable the new environment. Command: 
@@ -37,7 +37,7 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 7. The bash script should pre-process the Decathlon 3D scan data and store the slices of the 3D Nifti files into separate 2D NumPy files (`convert_raw_to_npy.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_tf_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the testing set within 30 epochs.
 
-Note: The only reason we convert the 3D files to 2D is to make the data loader easier and faster for the 2D model training. For example, in the [3D model](../3D) training we simply load the 3D Nifti files directly without this 3D->2D preprocessing step.
+Note: The only reason we convert the 3D files to 2D is to make the data loader easier and faster for the 2D model training. For example, in the [3D model](../3D) training we simply load the 3D Nifti files directly without this 3D&rarr;2D preprocessing step.
 
 8. OpenVINO&trade; - At the end of `train.py` you should see instructions on how to convert the model for use with the [Intel&reg; Distribution of the OpenVINO&trade; toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html). Once you have OpenVINO installed, you can run a command like the one below to create an OpenVINO intermediate representation (IR) of the TensorFlow model. If you are using the [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html), simply replace the `FP32` for `FP16` in the command below:
 
