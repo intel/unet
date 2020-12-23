@@ -391,5 +391,6 @@ class unet(object):
         shape_string += "]"
 
         print("       --input_shape {} \\".format(shape_string))
-        print("       --output_dir openvino_models/FP32/ \\")
+        print("       --model_name {} \\".format(self.inference_filename))
+        print("       --output_dir {}/FP32/ \\".format(self.output_path))
         print("       --data_type FP32\n\n")

@@ -157,8 +157,8 @@ if __name__ == "__main__":
                               augment=False, 
                               seed=args.seed)
     
-    path_to_xml_file = "./output/FP32/2d_unet_model_decathlon.xml"
-    path_to_bin_file = "./output/FP32/2d_unet_model_decathlon.bin"
+    path_to_xml_file = "{}/FP32/{}.xml".format(args.output_path, args.inference_filename)
+    path_to_bin_file = "{}/FP32/{}.bin".format(args.output_path, args.inference_filename)
 
     ie = IECore()
     net = ie.read_network(model=path_to_xml_file, weights=path_to_bin_file)
