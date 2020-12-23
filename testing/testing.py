@@ -21,10 +21,7 @@ import psutil
 import time
 import datetime
 import tensorflow as tf
-
-from tensorflow.python.saved_model import builder as saved_model_builder
-from tensorflow.python.saved_model.signature_def_utils import predict_signature_def
-from tensorflow.python.saved_model import tag_constants
+from tensorflow import keras as K
 
 parser = argparse.ArgumentParser(
     description="Sanity testing for 3D and 2D Convolution Models",add_help=True)
@@ -104,10 +101,6 @@ parser.add_argument("--ngraph",
                     action="store_true",
                     default=False,
                     help="Use ngraph")
-parser.add_argument("--keras_api",
-                    action="store_true",
-                    default=False,
-                    help="Use Keras API. False=Use tf.keras")
 parser.add_argument("--channels_first",
                     action="store_true",
                     default=False,
@@ -126,24 +119,33 @@ os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 
 print("Started script on {}".format(datetime.datetime.now()))
 
-print("args = {}".format(args))
-os.system("uname -a")
-print("TensorFlow version: {}".format(tf.__version__))
+def test_intel_tensorflow():
+    """
+    Check if Intel version of TensorFlow is installed
+    """
+    import tensorflow as tf
 
-if args.keras_api:
-    import keras as K
-    print("Using Keras API")
-else:
-    from tensorflow import keras as K
-    print("Using tf.keras")
+    print("We are using Tensorflow version {}".format(tf.__version__))
+
+    major_version = int(tf.__version__.split(".")[0])
+    if major_version >= 2:
+        from tensorflow.python import _pywrap_util_port
+        print("Intel-optimizations (DNNL) enabled:",
+              _pywrap_util_port.IsMklEnabled())
+    else:
+        print("Intel-optimizations (DNNL) enabled:",
+              tf.pywrap_tensorflow.IsMklEnabled())
+
+print(args)
+test_intel_tensorflow()  # Prints if Intel-optimized TensorFlow is used.
+
+os.system("uname -a")
 
 if args.ngraph:
     print("Using nGraph")
     import ngraph_bridge
     if args.channels_first:
         os.environ["NGRAPH_PASS_ENABLES"]="CPUReshapeSinking:1;ReshapeElimination:1"
-
-print("Keras API version: {}".format(K.__version__))
 
 if args.D2:  # Define shape of the tensors (2D)
     dims = (1,2)
@@ -634,39 +636,10 @@ else:
 start_time = time.time()
 if args.inference:
    for _ in range(args.epochs):
-       model.predict_generator(get_imgs(), steps=total_steps, verbose=1)
+       model.predict(get_imgs(), steps=total_steps, verbose=1)
 else:
     model.fit(get_batch(), steps_per_epoch=total_steps,
                         epochs=args.epochs, verbose=1)
-
-if args.inference:
-   import shutil
-   dirName = "./tensorflow_serving_model"
-   if args.single_class_output:
-      dirName += "_VGG16"
-   else:
-      dirName += "_UNET"
-   if args.D2:
-      dirName += "_2D"
-   else:
-      dirName += "_3D"
-
-   shutil.rmtree(dirName, ignore_errors=True)
-   # Save TensorFlow serving model
-   builder = saved_model_builder.SavedModelBuilder(dirName)
-   # Create prediction signature to be used by TensorFlow Serving Predict API
-   signature = predict_signature_def(inputs={"images": model.input},
-                                      outputs={"scores": model.output})
-   # Save the meta graph and the variables
-   builder.add_meta_graph_and_variables(sess=K.backend.get_session(), tags=[tag_constants.SERVING],
-                                        signature_def_map={"predict": signature})
-
-   builder.save()
-   print("Saved TensorFlow Serving model to: {}".format(dirName))
-
 stop_time = time.time()
 
 print("\n\nTotal time = {:,.3f} seconds".format(stop_time - start_time))
-print("Total images = {:,}".format(args.epochs*args.num_datapoints))
-print("Speed = {:,.3f} images per second".format( \
-            (args.epochs*args.num_datapoints)/(stop_time - start_time)))
