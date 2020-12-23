@@ -44,9 +44,9 @@ Note: The only reason we convert the 3D files to 2D is to make the data loader e
 ```
 source /opt/intel/openvino_2021/bin/setupvars.sh
 python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
-       --saved_model_dir ./output/unet_model_for_decathlon \
+       --saved_model_dir ./output/2d_unet_model_for_decathlon \
        --input_shape [1,128,128,4] \
-       --model_name unet_model_for_decathlon \
+       --model_name 2d_unet_model_for_decathlon \
        --output_dir ./output/FP32 \
        --data_type FP32
 ```
