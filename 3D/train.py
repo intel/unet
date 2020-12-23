@@ -125,3 +125,15 @@ best_model.compile(loss="binary_crossentropy", metrics=["accuracy"],
                    optimizer="adam")
 K.models.save_model(best_model, args.saved_model_name + "_final",
                     include_optimizer=False)
+
+"""
+Converting the model to OpenVINO
+"""
+print("Convert the TensorFlow model to OpenVINO by running:\n")
+print("source /opt/intel/openvino/bin/setupvars.sh")
+print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
+print("       --saved_model_dir {} \\".format(args.saved_model_name))
+print("       --model_name {} \\".format(args.saved_model_name))
+print("       --batch 1  \\")
+print("       --output_dir {} \\".format(os.path.join("openvino_models", "FP32")))
+print("       --data_type FP32\n\n")
