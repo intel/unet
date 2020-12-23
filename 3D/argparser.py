@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--data_path",
-                    default="../../data/decathlon/Task01_BrainTumour/",
+                    default="../data/decathlon/Task01_BrainTumour/",
                     help="Root directory for Medical Decathlon dataset")
 parser.add_argument("--epochs",
                     type=int,

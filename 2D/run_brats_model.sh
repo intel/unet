@@ -38,7 +38,7 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-DECATHLON_DIR=${1:-"./data/decathlon"}
+DECATHLON_DIR=${1:-"../data/decathlon"}
 SUBSET_DIR=${2:-"Task01_BrainTumour"}
 IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
