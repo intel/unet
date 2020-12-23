@@ -19,27 +19,9 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# Copy the model and scripts from the OpenVINO directory here
-echo "Copying the contents of openvino_saved_model directory here."
-rsync -av ../openvino/* . --exclude=README.md
-rsync -av ../output/*.hdf5 ./models/keras/
+# Please see the full instructions at https://hub.docker.com/r/openvino/ubuntu18_dev_no_samples
+# If you need Myriad* (NCS2) accelerator only, run image with the following command:
+# docker run -it --device-cgroup-rule='c 189:* rmw' -v /dev/bus/usb:/dev/bus/usb --rm openvino/ubuntu18_dev_no_samples:latest 
 
-echo "Building Docker container"
-docker build -t unet_openvino \
-       --build-arg HTTP_PROXY=${HTTP_PROXY} \
-       --build-arg HTTPS_PROXY=${HTTPS_PROXY} \
-       --build-arg NO_PROXY=${NO_PROXY} \
-       --build-arg http_proxy=${http_proxy} \
-       --build-arg https_proxy=${https_proxy} \
-       --build-arg no_proxy=${no_proxy} \
-       .
-
-if [ $? -eq 0 ]; then
-    echo "Docker built successfully."
-    echo "TO RUN BUILT DOCKER CONTAINER:"
-    echo "1. For Neural Compute Stick 2 - 'docker run --net=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix --privileged -v /dev:/dev -it unet_openvino'"
-    echo "2. For CPU - 'docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp.X11-unix  -it unet_openvino'"
-else
-    echo "DOCKER BUILD FAILED."
-fi
-
+# For CPU only, run this command:
+docker run -it --rm openvino/ubuntu18_dev_no_samples:latest 
