@@ -46,6 +46,8 @@ parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
                     help="the TensorFlow inference model filename")
+parser.add_argument("--device", default="CPU",
+                    help="the inference device")
 parser.add_argument("--output_pngs", default="inference_examples",
                     help="the directory for the output prediction pngs")
 
@@ -134,7 +136,10 @@ if __name__ == "__main__":
                               augment=False, 
                               seed=args.seed)
     
-    precision="FP32"
+    if args.device != "CPU":
+        precision="FP16"
+    else:
+        precision = "FP32"
     path_to_xml_file = "{}.xml".format(os.path.join(args.output_path, precision, args.inference_filename))
     path_to_bin_file = "{}.bin".format(os.path.join(args.output_path, precision, args.inference_filename))
 
@@ -145,7 +150,7 @@ if __name__ == "__main__":
     output_layer_name = next(iter(net.outputs))
     print("Input layer name = {}\nOutput layer name = {}".format(input_layer_name, output_layer_name))
 
-    exec_net = ie.load_network(network=net, device_name="CPU", num_requests=1)
+    exec_net = ie.load_network(network=net, device_name=args.device, num_requests=1)
 
     # Create output directory for images
     png_directory = args.output_pngs
