@@ -59,7 +59,7 @@ NUM_INTER_THREADS = 1
 import multiprocessing
 NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(logical=False))
 
-CROP_DIM=144  # Crop height and width to this size
+CROP_DIM=128  # Crop height and width to this size
 SEED=816      # Random seed
 
 CHANNELS_FIRST = False
