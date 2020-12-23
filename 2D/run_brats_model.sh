@@ -78,7 +78,7 @@ fi
 
 echo " "
 echo "********************************************"
-echo "Step 1 of 2: Convert raw data to NumPy files"
+echo "Step 1 of 3: Convert raw data to NumPy files"
 echo "********************************************"
 
 echo "Converting Decathlon raw 3D data to NumPy 2D files (each file is a slice of the original MRI)."
@@ -91,7 +91,7 @@ python convert_raw_to_npy.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
 
 echo " "
 echo "***********************************"
-echo "Step 2 of 2: Train U-Net on dataset"
+echo "Step 2 of 3: Train U-Net on dataset"
 echo "***********************************"
 
 echo "Run U-Net training on BraTS Decathlon dataset"
@@ -107,3 +107,13 @@ python train.py \
        --featuremaps $FEATURE_MAPS \
        --print_model \
        --use_augmentation
+
+echo " "
+echo "**************************************************"
+echo "Step 3 of 3: Evaluate U-Net on the testing dataset"
+echo "**************************************************"
+python plot_tf_inference_examples.py \
+       --data_path $DECATHLON_DIR \
+       --output_path $MODEL_OUTPUT_DIR \
+       --inference_filename $INFERENCE_FILENAME
+
