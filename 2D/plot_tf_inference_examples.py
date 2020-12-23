@@ -22,6 +22,7 @@
 Takes a trained model and performs inference on a few validation examples.
 """
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 import numpy as np
 import tensorflow as tf
