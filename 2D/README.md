@@ -35,7 +35,7 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 ![run_brats_help](images/run_brats_usage.png)
 
-7. The bash script should pre-process the Decathlon 3D scan data and store the slices of the 3D Nifti files into separate 2D NumPy files (`convert_raw_to_npy.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the testing set within 30 epochs.
+7. The bash script should pre-process the Decathlon 3D scan data and store the slices of the 3D Nifti files into separate 2D NumPy files (`convert_raw_to_npy.py`). Then it trains a U-Net model (`train.py`). Finally, it performs inference on a handful of MRI slices in the validation dataset (`plot_tf_inference_examples.py`).  You should be able to get a model to train to a Dice of over 0.85 on the testing set within 30 epochs.
 
 Note: The only reason we convert the 3D files to 2D is to make the data loader easier and faster for the 2D model training. For example, in the [3D model](../3D) training we simply load the 3D Nifti files directly without this 3D->2D preprocessing step.
 
