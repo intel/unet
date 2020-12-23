@@ -397,6 +397,6 @@ class unet(object):
 
         print("       --input_shape {} \\".format(shape_string))
         print("       --model_name {} \\".format(self.inference_filename))
-        print("       --output_dir {}/FP32/ \\".format(self.output_path)
+        print("       --output_dir {} \\".format(os.path.join(self.output_path, "FP32"))
         print("       --data_type FP32\n\n")
     
