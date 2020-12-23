@@ -47,7 +47,7 @@ NOTE: The default settings take a [Height, Width, Depth] = [144, 144, 144] crop 
 ```
 source /opt/intel/openvino_2021/bin/setupvars.sh
 python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
-       --saved_model_dir ./3d_unet_decathlon \
+       --saved_model_dir ./3d_unet_decathlon_final \
        --batch 1 \
        --model_name 3d_unet_model_for_decathlon \
        --output_dir ./openvino_models/FP32 \
