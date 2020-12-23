@@ -7,8 +7,8 @@ If you need Myriad* (NCS2) accelerator only, run image with the following comman
 ```
 docker run -it --device-cgroup-rule='c 189:* rmw' -v /dev/bus/usb:/dev/bus/usb --rm openvino/ubuntu18_dev_no_samples:latest
 ```
-
-## For CPU only, run this command:
+## CPU
+For CPU only, run this command:
 ```
 docker run -it --rm openvino/ubuntu18_dev_no_samples:latest
 ```
