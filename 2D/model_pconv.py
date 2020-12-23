@@ -342,7 +342,9 @@ class unet(object):
             log_dir=tensorboard_filename,
             write_graph=True, write_images=True)
 
-        return model_filename, [model_checkpoint, tensorboard_checkpoint]
+        early_stopping = K.callbacks.EarlyStopping(patience=5, restore_best_weights=True)
+
+        return model_filename, [model_checkpoint, early_stopping, tensorboard_checkpoint]
 
     def evaluate_model(self, model_filename, ds_validation):
         """
@@ -397,6 +399,6 @@ class unet(object):
 
         print("       --input_shape {} \\".format(shape_string))
         print("       --model_name {} \\".format(self.inference_filename))
-        print("       --output_dir {} \\".format(os.path.join(self.output_path, "FP32"))
+        print("       --output_dir {} \\".format(os.path.join(self.output_path, "FP32")))
         print("       --data_type FP32\n\n")
     
