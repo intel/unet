@@ -14,7 +14,7 @@ Steps:
 
 3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; MKL-DNN](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
-conda create -c anaconda -n decathlon pip python=3.6 tensorflow tqdm psutil
+conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil
 ```
 
 4. Enable the new environment. Command: 
