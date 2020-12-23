@@ -99,7 +99,7 @@ def calc_dice(target, prediction, smooth=0.0001):
 
 def calc_soft_dice(target, prediction, smooth=0.0001):
     """
-    Sorensen (Soft) Dice coefficient - Don't round preictions
+    Sorensen (Soft) Dice coefficient - Don't round predictions
     """
     numerator = 2.0 * np.sum(target * prediction) + smooth
     denominator = np.sum(target) + np.sum(prediction) + smooth
