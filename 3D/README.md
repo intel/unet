@@ -1,6 +1,6 @@
 # 3D U-Net for Medical Decathlon Dataset
 
-![pred152_3D](https://github.com/IntelAI/unet/blob/master/3D/images/BRATS_152_img3D.gif
+![pred152_3D](images/BRATS_152_img3D.gif
 "BRATS image #152:  Purple voxels indicate a perfect prediction by the model. Red are false positives. Blue are false negatives").
 
 ## Trains a 3D U-Net on the brain tumor segmentation ([BraTS](https://www.med.upenn.edu/sbia/brats2017.html)) subset of the [Medical Segmentation Decathlon dataset](http://medicaldecathlon.com/) dataset. 
@@ -56,6 +56,7 @@ python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
 
 8. Plot the predictions - A Jupyter Notebook (`plot_predictions.ipynb`) is provided which will load the testing dataset, the final TensorFlow model, and the OpenVINO&trade; model. It will perform inference using both models and compare the inference speed and outputs.
 
+![plot_predictions](images/3d_unet_plot_predictions.png)
 
 ### Displaying the Results
 
