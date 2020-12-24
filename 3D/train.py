@@ -110,9 +110,11 @@ best_model = K.models.load_model(args.saved_model_name,
                                                  "dice_coef": dice_coef,
                                                  "soft_dice_coef": soft_dice_coef})
 
+print("\n\nEvaluating best model on the testing dataset.")
+print("=============================================")
 loss, dice_coef, soft_dice_coef = best_model.evaluate(brats_data.get_test())
 
-print("Average Dice Coefficient on test dataset = {:.4f}".format(dice_coef))
+print("Average Dice Coefficient on testing dataset = {:.4f}".format(dice_coef))
 
 """
 5. Save the best model without the custom objects (dice, etc.)
@@ -130,7 +132,7 @@ K.models.save_model(best_model, final_model_name,
 """
 Converting the model to OpenVINO
 """
-print("Convert the TensorFlow model to OpenVINO by running:\n")
+print("\n\nConvert the TensorFlow model to OpenVINO by running:\n")
 print("source /opt/intel/openvino/bin/setupvars.sh")
 print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
 print("       --saved_model_dir {} \\".format(final_model_name))
@@ -138,3 +140,4 @@ print("       --model_name {} \\".format(args.saved_model_name))
 print("       --batch 1  \\")
 print("       --output_dir {} \\".format(os.path.join("openvino_models", "FP32")))
 print("       --data_type FP32\n\n")
+
