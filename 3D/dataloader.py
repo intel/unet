@@ -192,9 +192,9 @@ class DatasetGenerator:
 
         img = np.array(nib.load(imgFile).dataobj)
 
-        img = img[..., [0]]  # Just take the FLAIR channel (0)
+        img = np.rot90(img[..., [0]])  # Just take the FLAIR channel (0)
 
-        msk = np.array(nib.load(mskFile).dataobj)
+        msk = np.rot90(np.array(nib.load(mskFile).dataobj))
 
         """
         "labels": {
