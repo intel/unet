@@ -27,6 +27,7 @@ from argparser import args
 import os
 import time
 import shutil
+import settings
 
 import tensorflow as tf  # conda install -c anaconda tensorflow
 
@@ -83,7 +84,6 @@ class unet(object):
         self.output_path = output_path
         self.inference_filename = inference_filename
 
-        self.batch_size = batch_size
 
         self.metrics = [self.dice_coef, self.soft_dice_coef]
 
