@@ -54,6 +54,9 @@ python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
        --data_type FP32
 ```
 
+8. Plot the predictions - A Jupyter Notebook (`plot_predictions.ipynb`) is provided which will load the testing dataset, the final TensorFlow model, and the OpenVINO&trade; model. It will perform inference using both models and compare the inference speed and outputs.
+
+
 ### Displaying the Results
 
 There are many programs that will display [Nifti](https://nifti.nimh.nih.gov/) 3D files.  For the images above and below, the red overlay is the prediction from the model and the blue overlay is the ground truth mask. Any purple voxels are true positives.
