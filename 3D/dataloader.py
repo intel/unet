@@ -17,9 +17,9 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-from argparser import args
 import tensorflow as tf
 import numpy as np
+import settings
 
 import nibabel as nib
 
@@ -27,12 +27,12 @@ import nibabel as nib
 class DatasetGenerator:
 
     def __init__(self, crop_dim,
-                 data_path=args.data_path,
-                 batch_size=args.batch_size,
-                 train_test_split=args.train_test_split,
-                 validate_test_split=args.validate_test_split,
-                 number_output_classes=args.number_output_classes,
-                 random_seed=args.random_seed,
+                 data_path=settings.DATA_PATH,
+                 batch_size=settings.BATCH_SIZE,
+                 train_test_split=settings.TRAIN_TEST_SPLIT,
+                 validate_test_split=settings.VALIDATE_TEST_SPLIT,
+                 number_output_classes=settings.NUMBER_OUTPUT_CLASSES,
+                 random_seed=settings.RANDOM_SEED,
                  shard=0):
 
         self.data_path = data_path
@@ -344,6 +344,8 @@ if __name__ == "__main__":
 
     print("Load the data and plot a few examples")
 
+    from argparser import args
+    
     crop_dim = (args.tile_height, args.tile_width,
                 args.tile_depth, args.number_input_channels)
 
