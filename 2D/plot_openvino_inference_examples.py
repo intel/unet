@@ -160,7 +160,7 @@ if __name__ == "__main__":
     # Plot some results
     # The plots will be saved to the png_directory
     # Just picking some random samples.
-    indicies_testing = [11,17,23,56,89,101,119]
+    indicies_testing = [11,17,25,56,89,101,119]
 
     for idx in indicies_testing:
         plot_results(ds_testing, idx, png_directory, exec_net, input_layer_name, output_layer_name)
