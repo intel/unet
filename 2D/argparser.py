@@ -94,7 +94,7 @@ parser.add_argument("--output_pngs",
                     help="the directory for the output prediction pngs")
 parser.add_argument("--input_filename",
                     help="Name of saved TensorFlow model directory",
-                    default=os.path..join(settings.OUT_PATH,settings.INFERENCE_FILENAME)
+                    default=os.path.join(settings.OUT_PATH,settings.INFERENCE_FILENAME)
 
 args = parser.parse_args()
 
