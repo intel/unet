@@ -17,7 +17,7 @@ Steps:
 conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil jupyter matplotlib
 ```
 
-This has been tested with TensorFlow 2.2 on Ubuntu 18.04 Linux.
+This has been tested with [TensorFlow 2.2](https://anaconda.org/anaconda/tensorflow-mkl) on Ubuntu 18.04 Linux.
 
 4. Enable the new environment. Command: 
 ```
