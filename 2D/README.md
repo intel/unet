@@ -54,10 +54,12 @@ python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
 9. Once you have the OpenVINO&trade; IR model, you can run the command:
 
 ```
-python plot_openvino_inference_examples.py
+python plot_openvino_inference_examples.py --device CPU
 ```
 
-It should give you the same output as the `plot_tf_inference_examples.py` but execute faster on the same CPU.
+It should give you the same output as the `plot_tf_inference_examples.py` but execute faster on the same CPU. You can try the options `--device GPU` or `--device=MYRIAD` if you have the [Intel&reg; integrated GPU](https://ark.intel.com/content/www/us/en/ark/products/graphics/197532/intel-iris-plus-graphics.html) or [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html) installed on your computer.
+
+For a complete demo showing the [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html) try out the [Intel&reg; DevCloud for Edge](https://devcloud.intel.com/edge/advanced/sample_applications/). You'll be able to try running inference on lots of Intel&reg; hardware using the same OpenVINO&trade; pipeline.
 
 ![prediction28](images/pred28.png)
 
