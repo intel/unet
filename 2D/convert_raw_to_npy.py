@@ -50,32 +50,7 @@ import nibabel as nib  # pip install nibabel
 import numpy as np
 from tqdm import tqdm  # pip install tqdm
 import json
-
-import argparse
-
-
-def get_args():
-
-    parser = argparse.ArgumentParser(
-        description="Convert Decathlon raw Nifti data "
-        "(http://medicaldecathlon.com) "
-        "files to Numpy data files",
-        add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument("--data_path",
-                        default="./data/decathlon/Task01_BrainTumour/",
-                        help="Path to the raw BraTS datafiles")
-    parser.add_argument("--save_path",
-                        default="./data/decathlon/",
-                        help="Folder to save NumPy data files")
-    parser.add_argument("--resize", type=int, default=-1,
-                        help="Resize height and width to this size. "
-                        "-1 = No cropping performed.")
-    parser.add_argument("--split", type=float, default=0.85,
-                        help="Train/test split ratio")
-    parser.add_argument("--seed", type=int, default=816,
-                        help="Random seed")
-    return parser.parse_args()
+import settings
 
 
 def crop_center(img, cropx, cropy, cropz):
@@ -251,7 +226,7 @@ def convert_raw_data_to_numpy(trainIdx, validateIdx, testIdx,
 
 if __name__ == "__main__":
 
-    args = get_args()
+    from argparser import args
     print(args)
 
     """
@@ -261,7 +236,7 @@ if __name__ == "__main__":
 	the input and label filenames.
 	"""
 
-    json_filename = os.path.join(args.data_path, "dataset.json")
+    json_filename = os.path.join(args.original_data_path, "dataset.json")
 
     try:
         with open(json_filename, "r") as fp:
@@ -304,7 +279,7 @@ if __name__ == "__main__":
     testList = otherList[randomList < 0.5]
 
     convert_raw_data_to_numpy(trainList, validateList, testList,
-                              args.data_path,
+                              args.original_data_path,
                               experiment_data,
-                              args.save_path,
+                              args.data_path,
                               args.resize)

@@ -24,6 +24,7 @@ This layer is Keras implementation of Partial Convolution based padding.
 See original contribution here: https://github.com/NVIDIA/partialconv
 """
 
+import tensorflow as tf
 from keras.utils import conv_utils
 from keras import backend as K
 from keras.engine import InputSpec

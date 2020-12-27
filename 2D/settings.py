@@ -20,12 +20,12 @@
 import psutil
 import os
 
-DATA_PATH = os.path.join("../data/decathlon/")
-DATA_FILENAME = "Task01_BrainTumour.h5"
+ORIGINAL_DATA_PATH=os.path.join("../data/decathlon/Task01_BrainTumour")
+DATA_PATH = os.path.join("../data/decathlon/Task01_BrainTumour/2D_model")
 OUT_PATH = os.path.join("./output/")
-INFERENCE_FILENAME = "2d_unet_model_for_decathlon"
+INFERENCE_FILENAME = "2d_unet_decathlon"
 
-EPOCHS = 25  # Number of epochs to train
+EPOCHS = 30  # Number of epochs to train
 
 """
 If the batch size is too small, then training is unstable.
@@ -38,7 +38,7 @@ enough memory, it is easiest just to select a sufficiently
 large batch size to make sure we have a few slices with
 tumors in each batch.
 """
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 
 # Using Adam optimizer
 LEARNING_RATE = 0.0001  # 0.00005
@@ -61,9 +61,10 @@ NUM_INTRA_THREADS = min(len(psutil.Process().cpu_affinity()), psutil.cpu_count(l
 
 CROP_DIM=128  # Crop height and width to this size
 SEED=816      # Random seed
+TRAIN_TEST_SPLIT=0.80 # The train/test split
 
 CHANNELS_FIRST = False
 USE_UPSAMPLING = False
 USE_AUGMENTATION = True  # Use data augmentation during training
-USE_DROPOUT = False  # Use spatial dropout in model
+USE_DROPOUT = True  # Use spatial dropout in model
 USE_PCONV = False   # If True, Partial Convolution based padding will be used. See https://arxiv.org/pdf/1811.11718.pdf

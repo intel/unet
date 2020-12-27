@@ -27,9 +27,11 @@ import settings    # Use the custom settings.py file for default parameters
 import os
 
 parser = argparse.ArgumentParser(
-    description="Trains 2D U-Net model (Keras/TF) on BraTS dataset.",
+    description="2D U-Net model (Keras/TF) on BraTS Decathlon dataset.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+parser.add_argument("--original_data_path", default=settings.ORIGINAL_DATA_PATH,
+                    help="The path to the raw Nifti 3D MRI files")
 parser.add_argument("--data_path", default=settings.DATA_PATH,
                     help="the path to the data")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
@@ -47,10 +49,14 @@ parser.add_argument("--num_inter_threads", type=int,
                     help="the number of intraop threads")
 parser.add_argument("--batch_size", type=int, default=settings.BATCH_SIZE,
                     help="the batch size for training")
+parser.add_argument("--split", type=float, default=settings.TRAIN_TEST_SPLIT,
+                    help="Train/testing split for the data")
 parser.add_argument("--seed", type=int, default=settings.SEED,
                     help="Seed for random number generation")
 parser.add_argument("--crop_dim", type=int, default=settings.CROP_DIM,
                     help="Size to crop images (square, in pixels). If -1, then no cropping.")
+parser.add_argument("--resize", type=int, default=-1,
+                    help="For original data. -1 = No resize/keep original height/width.")
 parser.add_argument("--blocktime", type=int,
                     default=settings.BLOCKTIME,
                     help="blocktime")

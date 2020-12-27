@@ -29,7 +29,7 @@
 # tar -xvf  Task01_BrainTumour.tar
 #
 if [ "$1" == "-h" ]; then
-  echo "Usage: `basename $0` [DECATHLON_DIR] [SUBSET_DIR] [IMG_SIZE]" \
+  echo "Usage: `basename $0` [DECATHLON_DIR] [SAVE_DATA_DIR] [IMG_SIZE]" \
        " [MODEL_OUTPUT_DIR] [INFERENCE_FILENAME]"
   echo "Trains a U-Net model based on the Decathlon Brain Tumor" \
        "Segmentation (BraTS) dataset found at: "
@@ -38,13 +38,11 @@ if [ "$1" == "-h" ]; then
   exit 0
 fi
 
-DECATHLON_DIR=${1:-"../data/decathlon"}
-SUBSET_DIR=${2:-"Task01_BrainTumour"}
+DECATHLON_DIR=${1:-"../data/decathlon/Task01_BrainTumour"}
+SAVE_DATA_DIR=${2:-"../data/decathlon/Task01_BrainTumour/2D_model"}
 IMG_SIZE=${3:-128}  # This should be a multiple of 16
 MODEL_OUTPUT_DIR=${4:-"./output"}
-INFERENCE_FILENAME=${6:-"2d_unet_model_for_decathlon"}
-
-MODEL_OUTPUT_FILENAME=${SUBSET_DIR}
+INFERENCE_FILENAME=${5:-"2d_unet_decathlon"}
 
 NUM_EPOCHS=30  # Number of epochs to train
 LEARNING_RATE=0.0001  # 0.00005  Adam optimizer
@@ -66,10 +64,10 @@ echo "tar -xvf Task01_BrainTumour.tar"
 echo "Make sure to change the DECATHLON_DIR variable in this script"
 echo " to wherever you untarred the dataset."
 
-if [[ ! -f ${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json ]] ; then
+if [[ ! -f ${DECATHLON_DIR}/dataset.json ]] ; then
     echo " "
     echo "ERROR:"
-    echo "File '${DECATHLON_DIR}/${SUBSET_DIR}/dataset.json' " \
+    echo "File '${DECATHLON_DIR}/dataset.json' " \
          "is not there, aborting."
     echo "Please download the Decathlon dataset, extract it, " \
          "and point this script to that directory."
@@ -86,8 +84,8 @@ echo "Converting Decathlon raw 3D data to NumPy 2D files (each file is a slice o
 # Resize should be a multiple of 16 because of the way the
 # max pooling and upsampling works in U-Net. The rule is
 # 2^n where n is the number of max pooling/upsampling concatenations.
-python convert_raw_to_npy.py --data_path $DECATHLON_DIR/${SUBSET_DIR} \
-       --save_path $DECATHLON_DIR 
+python convert_raw_to_npy.py --original_data_path $DECATHLON_DIR \
+       --data_path $SAVE_DATA_DIR
 
 echo " "
 echo "***********************************"
@@ -100,7 +98,7 @@ echo "Run U-Net training on BraTS Decathlon dataset"
 python train.py \
        --epochs $NUM_EPOCHS  \
        --learningrate $LEARNING_RATE \
-       --data_path $DECATHLON_DIR \
+       --data_path $SAVE_DATA_DIR \
        --crop_dim $IMG_SIZE \
        --output_path $MODEL_OUTPUT_DIR \
        --inference_filename $INFERENCE_FILENAME \
@@ -113,7 +111,7 @@ echo "**************************************************"
 echo "Step 3 of 3: Evaluate U-Net on the testing dataset"
 echo "**************************************************"
 python plot_tf_inference_examples.py \
-       --data_path $DECATHLON_DIR \
+       --data_path $SAVE_DATA_DIR \
        --output_path $MODEL_OUTPUT_DIR \
        --inference_filename $INFERENCE_FILENAME
 
