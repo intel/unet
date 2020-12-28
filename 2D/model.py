@@ -383,7 +383,7 @@ class unet(object):
         model = self.load_model(model_filename)
 
         print("Convert the TensorFlow model to OpenVINO by running:\n")
-        print("source /opt/intel/openvino/bin/setupvars.sh")
+        print("source /opt/intel/openvino_2021/bin/setupvars.sh")
         print("python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \\")
         print("       --saved_model_dir {} \\".format(model_filename))
 
