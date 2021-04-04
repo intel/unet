@@ -30,7 +30,7 @@ import os
 import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
 
-from dataloader import DatasetGenerator
+from dataloader import DatasetGenerator, get_decathlon_filelist
 
 import numpy as np
 
@@ -43,8 +43,6 @@ See https://github.com/intel/mkl-dnn
 """
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
-os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
-os.environ["KMP_BLOCKTIME"] = "1"
 
 # If hyperthreading is enabled, then use
 os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
@@ -52,6 +50,12 @@ os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
 # If hyperthreading is NOT enabled, then use
 #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
 
+os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+
+os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+os.environ["INTRA_THREADS"] = str(args.num_threads)
+os.environ["INTER_THREADS"] = str(args.num_inter_threads)
+os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
 def test_intel_tensorflow():
     """
@@ -70,38 +74,30 @@ def test_intel_tensorflow():
         print("Intel-optimizations (DNNL) enabled:",
               tf.pywrap_tensorflow.IsMklEnabled())
 
+if __name__ == "__main__":
 
-def train_and_predict(data_path, crop_dim, batch_size, n_epoch):
+    START_TIME = datetime.datetime.now()
+    print("Started script on {}".format(START_TIME))
+
+    print("Runtime arguments = {}".format(args))
+    test_intel_tensorflow() # Print if we are using Intel-optimized TensorFlow
+
     """
     Create a model, load the data, and train it.
     """
 
     """
-    Step 1: Load the data
+    Step 1: Define a data loader
     """
     print("-" * 30)
-    print("Loading the data from the NumPy files to tf.dataset ...")
+    print("Loading the data from the Medical Decathlon directory to a TensorFlow data loader ...")
     print("-" * 30)
 
-    ds_train = DatasetGenerator(os.path.join(data_path, "train/*.npz"),
-                                crop_dim=crop_dim,
-                                batch_size=batch_size,
-                                augment=True,
-                                seed=args.seed)
+    trainFiles, validateFiles, testFiles = get_decathlon_filelist(data_path=args.data_path, seed=args.seed, split=args.split)
 
-    ds_validation = DatasetGenerator(os.path.join(
-        data_path, "validation/*.npz"),
-        crop_dim=crop_dim,
-        batch_size=batch_size,
-        augment=False,
-        seed=args.seed)
-
-    ds_testing = DatasetGenerator(os.path.join(
-        data_path, "testing/*.npz"),
-        crop_dim=crop_dim,
-        batch_size=batch_size,
-        augment=False,
-        seed=args.seed)
+    ds_train = DatasetGenerator(trainFiles, batch_size=args.batch_size, crop_dim=[args.crop_dim,args.crop_dim], augment=True, seed=args.seed)
+    ds_validation = DatasetGenerator(validateFiles, batch_size=args.batch_size, crop_dim=[args.crop_dim,args.crop_dim], augment=False, seed=args.seed)
+    ds_test = DatasetGenerator(testFiles, batch_size=args.batch_size, crop_dim=[args.crop_dim,args.crop_dim], augment=False, seed=args.seed)
 
     print("-" * 30)
     print("Creating and compiling model ...")
@@ -121,12 +117,6 @@ def train_and_predict(data_path, crop_dim, batch_size, n_epoch):
 
     model_filename, model_callbacks = unet_model.get_callbacks()
 
-    # If there is a current saved file, then load weights and start from
-    # there.
-    saved_model = os.path.join(args.output_path, args.inference_filename)
-    if os.path.isfile(saved_model):
-        model.load_weights(saved_model)
-
     """
     Step 3: Train the model on the data
     """
@@ -134,9 +124,9 @@ def train_and_predict(data_path, crop_dim, batch_size, n_epoch):
     print("Fitting model with training data ...")
     print("-" * 30)
 
-    model.fit(ds_train.get_dataset(),
-              epochs=n_epoch,
-              validation_data=ds_validation.get_dataset(),
+    model.fit(ds_train,
+              epochs=args.epochs,
+              validation_data=ds_validation,
               verbose=1,
               callbacks=model_callbacks)
 
@@ -147,7 +137,7 @@ def train_and_predict(data_path, crop_dim, batch_size, n_epoch):
     print("Loading the best trained model ...")
     print("-" * 30)
 
-    unet_model.evaluate_model(model_filename, ds_testing.get_dataset())
+    unet_model.evaluate_model(model_filename, ds_test)
 
     """
     Step 5: Print the command to convert TensorFlow model into OpenVINO format with model optimizer.
@@ -155,19 +145,7 @@ def train_and_predict(data_path, crop_dim, batch_size, n_epoch):
     print("-" * 30)
     print("-" * 30)
     unet_model.print_openvino_mo_command(
-        model_filename, ds_testing.get_input_shape())
-
-
-if __name__ == "__main__":
-
-    START_TIME = datetime.datetime.now()
-    print("Started script on {}".format(START_TIME))
-
-    print("Runtime arguments = {}".format(args))
-    test_intel_tensorflow()
-
-    train_and_predict(args.data_path, args.crop_dim,
-                      args.batch_size, args.epochs)
+        model_filename, ds_test.get_input_shape())
 
     print(
         "Total time elapsed for program = {} seconds".format(

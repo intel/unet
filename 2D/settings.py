@@ -20,8 +20,7 @@
 import psutil
 import os
 
-ORIGINAL_DATA_PATH=os.path.join("../data/decathlon/Task01_BrainTumour")
-DATA_PATH = os.path.join("../data/decathlon/Task01_BrainTumour/2D_model")
+DATA_PATH=os.path.join("/data/medical_decathlon/Task01_BrainTumour")
 OUT_PATH = os.path.join("./output/")
 INFERENCE_FILENAME = "2d_unet_decathlon"
 
@@ -44,7 +43,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 0.0001  # 0.00005
 WEIGHT_DICE_LOSS = 0.85  # Combined loss weight for dice versus BCE
 
-FEATURE_MAPS = 32  # 32 is a good number, but requires about 16 GB of memory
+FEATURE_MAPS = 32
 PRINT_MODEL = True  # Print the model
 
 # CPU specific parameters for multi-threading.

@@ -30,10 +30,8 @@ parser = argparse.ArgumentParser(
     description="2D U-Net model (Keras/TF) on BraTS Decathlon dataset.",
     add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument("--original_data_path", default=settings.ORIGINAL_DATA_PATH,
-                    help="The path to the raw Nifti 3D MRI files")
 parser.add_argument("--data_path", default=settings.DATA_PATH,
-                    help="the path to the data")
+                    help="The path to the Medical Decathlon directory")
 parser.add_argument("--output_path", default=settings.OUT_PATH,
                     help="the folder to save the model and checkpoints")
 parser.add_argument("--inference_filename", default=settings.INFERENCE_FILENAME,
@@ -55,8 +53,6 @@ parser.add_argument("--seed", type=int, default=settings.SEED,
                     help="Seed for random number generation")
 parser.add_argument("--crop_dim", type=int, default=settings.CROP_DIM,
                     help="Size to crop images (square, in pixels). If -1, then no cropping.")
-parser.add_argument("--resize", type=int, default=-1,
-                    help="For original data. -1 = No resize/keep original height/width.")
 parser.add_argument("--blocktime", type=int,
                     default=settings.BLOCKTIME,
                     help="blocktime")
@@ -98,12 +94,4 @@ parser.add_argument("--input_filename",
 
 args = parser.parse_args()
 
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
-os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-# os.environ["KMP_AFFINITY"] = "granularity=fine,compact,1,0"
-
-os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
-os.environ["INTRA_THREADS"] = str(args.num_threads)
-os.environ["INTER_THREADS"] = str(args.num_inter_threads)
-os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime

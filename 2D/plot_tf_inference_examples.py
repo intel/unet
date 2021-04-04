@@ -30,7 +30,7 @@ import time
 from tensorflow import keras as K
 import settings
 import argparse
-from dataloader import DatasetGenerator
+from dataloader import DatasetGenerator, get_decathlon_filelist
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -61,6 +61,8 @@ parser.add_argument("--crop_dim", default=settings.CROP_DIM,
                     type=int, help="Crop dimension for images")
 parser.add_argument("--seed", default=settings.SEED,
                     type=int, help="Random seed")
+parser.add_argument("--split", type=float, default=settings.TRAIN_TEST_SPLIT,
+                    help="Train/testing split for the data")
 
 args = parser.parse_args()
 
@@ -108,49 +110,48 @@ def calc_soft_dice(target, prediction, smooth=0.0001):
     return coef
 
 
-def plot_results(ds, idx, png_directory):
+def plot_results(ds, batch_num, png_directory):
     
-    dt = ds.get_dataset().take(1).as_numpy_iterator()  # Get some examples (use different seed for different samples)
-
     plt.figure(figsize=(10,10))
 
-    for img, msk in dt:
+    img, msk = next(ds.ds)
 
-        plt.subplot(1, 3, 1)
-        plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
-        plt.title("MRI {}".format(idx), fontsize=20)
+    idx = np.argmax(np.sum(np.sum(msk[:,:,:,0], axis=1), axis=1)) # find the slice with the largest tumor
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")
-        plt.title("Ground truth", fontsize=20)
+    plt.subplot(1, 3, 1)
+    plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
+    plt.title("MRI {}".format(idx), fontsize=20)
 
-        plt.subplot(1, 3, 3)
+    plt.subplot(1, 3, 2)
+    plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")
+    plt.title("Ground truth", fontsize=20)
 
-        print("Index {}: ".format(idx), end="")
-        
-        # Predict using the TensorFlow model
-        start_time = time.time()
-        prediction = model.predict(img[[idx]])
-        print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
-        
-        plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
-        dice_coef = calc_dice(msk[idx], prediction)
-        print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
-        plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
+    plt.subplot(1, 3, 3)
 
-        save_name = os.path.join(png_directory, "prediction_tf_{}.png".format(idx))
-        print("Saved as: {}".format(save_name))
-        plt.savefig(save_name)
+    print("Index {}: ".format(idx), end="")
+    
+    # Predict using the TensorFlow model
+    start_time = time.time()
+    prediction = model.predict(img[[idx]])
+    print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
+    
+    plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
+    dice_coef = calc_dice(msk[idx], prediction)
+    print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
+    plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
+
+    save_name = os.path.join(png_directory, "prediction_tf_{}_{}.png".format(batch_num, idx))
+    print("Saved as: {}".format(save_name))
+    plt.savefig(save_name)
         
 if __name__ == "__main__":
 
     model_filename = os.path.join(args.output_path, args.inference_filename)
 
-    ds_testing = DatasetGenerator(os.path.join(args.data_path, "testing/*.npz"), 
-                              crop_dim=args.crop_dim, 
-                              batch_size=128, 
-                              augment=False, 
-                              seed=args.seed)
+    trainFiles, validateFiles, testFiles = get_decathlon_filelist(data_path=args.data_path, seed=args.seed, split=args.split)
+
+    ds_test = DatasetGenerator(testFiles, batch_size=128, crop_dim=[args.crop_dim,args.crop_dim], augment=False, seed=args.seed)
+
     # Load model
     if args.use_pconv:
         from model_pconv import unet
@@ -167,10 +168,5 @@ if __name__ == "__main__":
     if not os.path.exists(png_directory):
         os.makedirs(png_directory)
 
-    # Plot some results
-    # The plots will be saved to the png_directory
-    # Just picking some random samples.
-    indicies_testing = [11,17,25,56,89,101,119]
-
-    for idx in indicies_testing:
-        plot_results(ds_testing, idx, png_directory)
+    for batchnum in range(10):
+        plot_results(ds_test, batchnum, png_directory)

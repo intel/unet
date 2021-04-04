@@ -354,7 +354,6 @@ class unet(object):
         model = K.models.load_model(
             model_filename, custom_objects=self.custom_objects)
 
-        K.backend.set_learning_phase(0)
         print("Evaluating model on test dataset. Please wait...")
         metrics = model.evaluate(
             ds_validation,

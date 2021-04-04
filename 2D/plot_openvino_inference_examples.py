@@ -27,7 +27,7 @@ import numpy as np
 import time
 import settings
 import argparse
-from dataloader import DatasetGenerator
+from dataloader import DatasetGenerator, get_decathlon_filelist
 
 from openvino.inference_engine import IECore
 
@@ -59,6 +59,8 @@ parser.add_argument("--crop_dim", default=settings.CROP_DIM,
                     type=int, help="Crop dimension for images")
 parser.add_argument("--seed", default=settings.SEED,
                     type=int, help="Random seed")
+parser.add_argument("--split", type=float, default=settings.TRAIN_TEST_SPLIT,
+                    help="Train/testing split for the data")
 
 args = parser.parse_args()
 
@@ -88,53 +90,51 @@ def calc_soft_dice(target, prediction, smooth=0.0001):
     return coef
 
 
-def plot_results(ds, idx, png_directory, exec_net, input_layer_name, output_layer_name):
+def plot_results(ds, batch_num, png_directory, exec_net, input_layer_name, output_layer_name):
     
-    dt = ds.get_dataset().take(1).as_numpy_iterator()  # Get some examples (use different seed for different samples)
-
     plt.figure(figsize=(10,10))
 
-    for img, msk in dt:
+    img, msk = next(ds.ds)
 
-        plt.subplot(1, 3, 1)
-        plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
-        plt.title("MRI {}".format(idx), fontsize=20)
+    idx = np.argmax(np.sum(np.sum(msk[:,:,:,0], axis=1), axis=1)) # find the slice with the largest tumor
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")
-        plt.title("Ground truth", fontsize=20)
+    plt.subplot(1, 3, 1)
+    plt.imshow(img[idx, :, :, 0], cmap="bone", origin="lower")
+    plt.title("MRI {}".format(idx), fontsize=20)
 
-        plt.subplot(1, 3, 3)
+    plt.subplot(1, 3, 2)
+    plt.imshow(msk[idx, :, :], cmap="bone", origin="lower")
+    plt.title("Ground truth", fontsize=20)
 
-        print("Index {}: ".format(idx), end="")
+    plt.subplot(1, 3, 3)
 
-        # Predict using the OpenVINO model
-        # NOTE: OpenVINO expects channels first for input and output
-        # So we transpose the input and output
-        start_time = time.time()
-        res = exec_net.infer({input_layer_name: np.transpose(img[[idx]], [0,3,1,2])})
-        prediction = np.transpose(res[output_layer_name], [0,2,3,1])    
-        print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
-        
-        plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
-        dice_coef = calc_dice(msk[idx], prediction)
-        plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
+    print("Index {}: ".format(idx), end="")
 
-        print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
-        
-        save_name = os.path.join(png_directory, "prediction_openvino_{}.png".format(idx))
-        print("Saved as: {}".format(save_name))
-        plt.savefig(save_name)
+    # Predict using the OpenVINO model
+    # NOTE: OpenVINO expects channels first for input and output
+    # So we transpose the input and output
+    start_time = time.time()
+    res = exec_net.infer({input_layer_name: np.transpose(img[[idx]], [0,3,1,2])})
+    prediction = np.transpose(res[output_layer_name], [0,2,3,1])    
+    print("Elapsed time = {:.4f} msecs, ".format(1000.0*(time.time()-start_time)), end="")
+    
+    plt.imshow(prediction[0,:,:,0], cmap="bone", origin="lower")
+    dice_coef = calc_dice(msk[idx], prediction)
+    plt.title("Prediction\nDice = {:.4f}".format(dice_coef), fontsize=20)
+
+    print("Dice coefficient = {:.4f}, ".format(dice_coef), end="")
+    
+    save_name = os.path.join(png_directory, "prediction_openvino_{}_{}.png".format(batch_num, idx))
+    print("Saved as: {}".format(save_name))
+    plt.savefig(save_name)
 
 if __name__ == "__main__":
 
     model_filename = os.path.join(args.output_path, args.inference_filename)
 
-    ds_testing = DatasetGenerator(os.path.join(args.data_path, "testing/*.npz"), 
-                              crop_dim=args.crop_dim, 
-                              batch_size=128, 
-                              augment=False, 
-                              seed=args.seed)
+    trainFiles, validateFiles, testFiles = get_decathlon_filelist(data_path=args.data_path, seed=args.seed, split=args.split)
+
+    ds_test = DatasetGenerator(testFiles, batch_size=128, crop_dim=[args.crop_dim,args.crop_dim], augment=False, seed=args.seed)
     
     if args.device != "CPU":
         precision="FP16"
@@ -157,10 +157,5 @@ if __name__ == "__main__":
     if not os.path.exists(png_directory):
         os.makedirs(png_directory)
 
-    # Plot some results
-    # The plots will be saved to the png_directory
-    # Just picking some random samples.
-    indicies_testing = [11,17,25,56,89,101,119]
-
-    for idx in indicies_testing:
-        plot_results(ds_testing, idx, png_directory, exec_net, input_layer_name, output_layer_name)
+    for batch_num in range(10):
+        plot_results(ds_test, batch_num, png_directory, exec_net, input_layer_name, output_layer_name)
