@@ -35,6 +35,8 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
+![brats_train](images/run_brats_usage.png)
+
 7. [OpenVINO&trade;](https://www.youtube.com/watch?v=kY9nZbX1DWM) - At the end of `train.py` you should see instructions on how to [convert the model](https://docs.openvinotoolkit.org/latest/openvino_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html) for use with the [Intel&reg; Distribution of the OpenVINO&trade; toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html). Once you have OpenVINO&trade; installed, you can run a command like the one below to create an OpenVINO&trade; intermediate representation (IR) of the TensorFlow model. If you are using the [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html), simply replace the `FP32` with `FP16` in the command below:
 
 ```
