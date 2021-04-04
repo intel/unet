@@ -43,7 +43,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 0.0001  # 0.00005
 WEIGHT_DICE_LOSS = 0.85  # Combined loss weight for dice versus BCE
 
-FEATURE_MAPS = 32
+FEATURE_MAPS = 16
 PRINT_MODEL = True  # Print the model
 
 # CPU specific parameters for multi-threading.
@@ -66,4 +66,4 @@ CHANNELS_FIRST = False
 USE_UPSAMPLING = False
 USE_AUGMENTATION = True  # Use data augmentation during training
 USE_DROPOUT = True  # Use spatial dropout in model
-USE_PCONV = False   # If True, Partial Convolution based padding will be used. See https://arxiv.org/pdf/1811.11718.pdf
+USE_PCONV = False  # If True, Partial Convolution based padding will be used. See https://arxiv.org/pdf/1811.11718.pdf

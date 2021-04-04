@@ -111,7 +111,16 @@ if __name__ == "__main__":
     else:
         from model import unet
 
-    unet_model = unet()
+    unet_model = unet(channels_first=args.channels_first,
+                 fms=args.featuremaps,
+                 output_path=args.output_path,
+                 inference_filename=args.inference_filename,
+                 learning_rate=args.learningrate,
+                 weight_dice_loss=args.weight_dice_loss,
+                 use_upsampling=args.use_upsampling,
+                 use_dropout=args.use_dropout,
+                 print_model=args.print_model)
+
     model = unet_model.create_model(
         ds_train.get_input_shape(), ds_train.get_output_shape())
 

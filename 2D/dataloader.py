@@ -80,13 +80,20 @@ class DatasetGenerator(Sequence):
         import nibabel as nib
 
         img = np.array(nib.load(filenames[0]).dataobj) # Load the first image
-        self.slice_dim = 2
+        self.slice_dim = 2  # We'll assume z-dimension (slice) is last
         # Determine the number of slices (we'll assume this is consistent for the other images)
         self.num_slices_per_scan = img.shape[self.slice_dim]  
 
+        # If crop_dim == -1, then don't crop
+        if crop_dim[0] == -1:
+            crop_dim[0] = img.shape[0]
+        if crop_dim[1] == -1:
+            crop_dim[1] = img.shape[1]
+        self.crop_dim = crop_dim  
+
         self.filenames = filenames
         self.batch_size = batch_size
-        self.crop_dim = crop_dim  
+
         self.augment = augment
         self.seed = seed
         
@@ -184,7 +191,7 @@ class DatasetGenerator(Sequence):
             """
             Pack N_IMAGES files at a time to queue
             """
-            NUM_QUEUED_IMAGES = max(3, 1 + self.batch_size // self.num_slices_per_scan)  # Get enough for full batch + 1 (or at least 3)
+            NUM_QUEUED_IMAGES = 1 + self.batch_size // self.num_slices_per_scan  # Get enough for full batch + 1
             
             for idz in range(NUM_QUEUED_IMAGES):
 
