@@ -311,7 +311,9 @@ class DatasetGenerator:
             self.num_train, self.shard)  # Reshuffle based on shard
         ds_val_test = ds.skip(self.num_train)
         self.num_val = int(numValTest * self.validate_test_split)
-        self.num_test = self.num_train - self.num_val
+        
+        #self.num_test = self.num_train - self.num_val 
+        self.num_test = numValTest - self.num_val # or self.numFiles - (self.num_train + self.num_val) <- shouldn't this line be
         ds_val = ds_val_test.take(self.num_val)
         ds_test = ds_val_test.skip(self.num_val)
 
