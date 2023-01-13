@@ -7,44 +7,44 @@ Please see our blog on the [IntelAI website](https://www.intel.ai/intel-neural-c
 
 Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
 
-Steps:
+## Download Dataset:
 1. Go to the [Medical Segmentation Decathlon](http://medicaldecathlon.com) website and download the [BraTS subset](https://drive.google.com/file/d/1A2IU8Sgea1h3fYLpYtFb2v7NYdMjvEhU/view?usp=sharing). The dataset has the [Creative Commons Attribution-ShareAlike 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).
 
 2. Untar the "Task01_BrainTumour.tar" file (e.g. `tar -xvf Task01_BrainTumour.tar`)
 
-3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
+## Steps to train the model 
+
+1. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
 conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil jupyter matplotlib
 ```
 
 This has been tested with [TensorFlow 2.2](https://anaconda.org/anaconda/tensorflow-mkl) on Ubuntu 18.04 Linux.
 
-4. Enable the new environment. Command: 
+2. Enable the new environment. Command: 
 ```
 conda activate decathlon
 ```
 
-5. Install the package [nibabel](http://nipy.org/nibabel/). Command: 
+3. Install the package [nibabel](http://nipy.org/nibabel/). Command: 
 ```
 pip install nibabel
 ```
 
-6. Run the command 
+4. Run the command 
 ```
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 
-## Running it on Intel dGPU with Intel Extension of TensorFlow
+## Steps to Train the model on Intel dGPU(ATS-M) with Intel Extension of TensorFlow
 
-rains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
 
-Steps:
-First 2 steps are same as they are for dataset download. 
+
 For using ITEX on GPU, there are 2 software prerequisites:
-- Intel GPU drivers. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-gpu-drivers
-- Intel oneAPI Base toolkit. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-oneapi-base-toolkit-packages
+1. Intel GPU drivers. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-gpu-drivers
+2. Intel oneAPI Base toolkit. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-oneapi-base-toolkit-packages
 
 3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
@@ -65,6 +65,10 @@ pip install tensorflow==2.11.0
 6. Install Intel Extension of TensorFlow for GPU.
 ```
 pip install --upgrade intel-extension-for-tensorflow[gpu]
+```
+7. Install other required packages.
+```
+pip install tqdm psutil jupyter matplotlib nibabel
 ```
 
 6. Run the command 
