@@ -26,6 +26,7 @@ best model.
 
 import datetime
 import os
+import intel_extension_for_tensorflow as itex
 
 import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
@@ -36,43 +37,55 @@ import numpy as np
 
 from argparser import args
 
+
+def set_itex_amp(device, amp_target):
+    # set configure for auto mixed precision.
+    auto_mixed_precision_options = itex.AutoMixedPrecisionOptions()
+    if amp_target=="BF16":
+        auto_mixed_precision_options.data_type = itex.BFLOAT16
+    else:
+        auto_mixed_precision_options.data_type = itex.FLOAT16
+
+    graph_options = itex.GraphOptions(auto_mixed_precision_options=auto_mixed_precision_options)
+    # enable auto mixed precision.
+    graph_options.auto_mixed_precision = itex.ON
+    
+    config = itex.ConfigProto(graph_options=graph_options)
+    # set GPU backend.
+
+    backend = device
+    itex.set_backend(backend, config)
+
+    print("Set itex for AMP (auto_mixed_precision, {}_FP32) with backend {}".format(amp_target, backend))
+
+
 """
 For best CPU speed set the number of intra and inter threads
 to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+if args.OMP:
+  # If hyperthreading is enabled, then use
+  os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+  
+  # If hyperthreading is NOT enabled, then use
+  #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+  
+  os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+  os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+  os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
-# If hyperthreading is enabled, then use
-os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
-
-# If hyperthreading is NOT enabled, then use
-#os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
-
-os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-
-os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
 os.environ["INTRA_THREADS"] = str(args.num_threads)
 os.environ["INTER_THREADS"] = str(args.num_inter_threads)
-os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
-def test_intel_tensorflow():
-    """
-    Check if Intel version of TensorFlow is installed
-    """
-    import tensorflow as tf
 
-    print("We are using Tensorflow version {}".format(tf.__version__))
-
-    major_version = int(tf.__version__.split(".")[0])
-    if major_version >= 2:
-        from tensorflow.python import _pywrap_util_port
-        print("Intel-optimizations (DNNL) enabled:",
-              _pywrap_util_port.IsMklEnabled())
-    else:
-        print("Intel-optimizations (DNNL) enabled:",
-              tf.pywrap_tensorflow.IsMklEnabled())
+    
+if args.BF16:
+  print("set itex amp")
+  set_itex_amp(args.device_type,"BF16")
+    
+    
 
 if __name__ == "__main__":
 
