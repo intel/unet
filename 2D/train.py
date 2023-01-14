@@ -26,7 +26,8 @@ best model.
 
 import datetime
 import os
-import intel_extension_for_tensorflow as itex
+
+import intel_extension_for_tensorflow as itex 
 
 import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
@@ -65,24 +66,27 @@ to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
 
-if args.OMP:
-  # If hyperthreading is enabled, then use
-  os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+if args.device_type==CPU:
+  if args.OMP:
+    # If hyperthreading is enabled, then use
+    os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
   
-  # If hyperthreading is NOT enabled, then use
-  #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+    # If hyperthreading is NOT enabled, then use
+    #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
   
-  os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
-  os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
-  os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
+    os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+    os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+    os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
-os.environ["INTRA_THREADS"] = str(args.num_threads)
-os.environ["INTER_THREADS"] = str(args.num_inter_threads)
+  else 
+    os.environ["INTRA_THREADS"] = str(args.num_threads)
+    os.environ["INTER_THREADS"] = str(args.num_inter_threads)
 
 
-    
+#setting BF16 Auto mixed precision     
 if args.BF16:
   print("set itex amp")
+  args.inference_filename = "2d_unet_decathlon_bf16"
   set_itex_amp(args.device_type,"BF16")
     
     
@@ -93,7 +97,7 @@ if __name__ == "__main__":
     print("Started script on {}".format(START_TIME))
 
     print("Runtime arguments = {}".format(args))
-    test_intel_tensorflow() # Print if we are using Intel-optimized TensorFlow
+    
 
     """
     Create a model, load the data, and train it.
