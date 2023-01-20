@@ -39,7 +39,7 @@ import numpy as np
 from argparser import args
 
 
-def set_itex_amp(device, amp_target):
+def set_itex_amp(amp_target):
     # set configure for auto mixed precision.
     auto_mixed_precision_options = itex.AutoMixedPrecisionOptions()
     if amp_target=="BF16":
@@ -50,14 +50,13 @@ def set_itex_amp(device, amp_target):
     graph_options = itex.GraphOptions(auto_mixed_precision_options=auto_mixed_precision_options)
     # enable auto mixed precision.
     graph_options.auto_mixed_precision = itex.ON
-    
+
     config = itex.ConfigProto(graph_options=graph_options)
     # set GPU backend.
 
-    backend = device
-    itex.set_backend(backend, config)
+    itex.set_config(config)
 
-    print("Set itex for AMP (auto_mixed_precision, {}_FP32) with backend {}".format(amp_target, backend))
+    print("Set itex for AMP (auto_mixed_precision, {}_FP32)".format(amp_target)
 
 
 """
@@ -66,19 +65,19 @@ to take advantage of multi-core systems.
 See https://github.com/intel/mkl-dnn
 """
 
-if args.device_type==CPU:
-  if args.OMP:
+
+if args.OMP:
     # If hyperthreading is enabled, then use
     os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
-  
+
     # If hyperthreading is NOT enabled, then use
     #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
-  
+
     os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
     os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
     os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
-  else 
+else 
     os.environ["INTRA_THREADS"] = str(args.num_threads)
     os.environ["INTER_THREADS"] = str(args.num_inter_threads)
 
@@ -87,7 +86,7 @@ if args.device_type==CPU:
 if args.BF16:
   print("set itex amp")
   args.inference_filename = "2d_unet_decathlon_bf16"
-  set_itex_amp(args.device_type,"BF16")
+  set_itex_amp( amp_target="BF16" )
     
     
 
