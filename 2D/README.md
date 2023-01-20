@@ -38,13 +38,11 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 
-## Steps to Train the model on Intel dGPU(ATS-M) with Intel Extension of TensorFlow
+## Steps to Train the model on Intel CPU with Intel Extension of TensorFlow
 
 
 
-For using ITEX on GPU, there are 2 software prerequisites:
-1. Intel GPU drivers. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-gpu-drivers
-2. Intel oneAPI Base toolkit. https://github.com/intel-innersource/frameworks.ai.infrastructure.intel-extension-for-tensorflow.intel-extension-for-tensorflow/blob/master/docs/install/install_for_gpu.md#install-oneapi-base-toolkit-packages
+
 
 3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
@@ -64,19 +62,19 @@ pip install tensorflow==2.11.0
 ```
 6. Install Intel Extension of TensorFlow for GPU.
 ```
-pip install --upgrade intel-extension-for-tensorflow[gpu]
+pip install --upgrade intel-extension-for-tensorflow[cpu]
 ```
 7. Install other required packages.
 ```
 pip install tqdm psutil jupyter matplotlib nibabel
 ```
 
-6. Run the command 
+6. Run the command
 ```
-python train.py --data_path $DECATHLON_ROOT_DIRECTORY
+python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --BF16
 ```
-where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
-
+where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
+To train the model in Auto mixed precision(AMP) BF16, we can add BF16 argument if CPU supports BF16 operations i.e. Saphhire Rapids.
 
 
 
