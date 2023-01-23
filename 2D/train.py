@@ -120,7 +120,7 @@ else
 if args.BF16:
   print("set itex amp")
   args.inference_filename = "2d_unet_decathlon_bf16"
-  set_itex_amp( amp_target="BF16" )
+  set_itex_amp( amp_target="BF16", device="cpu" )
     
     
 
