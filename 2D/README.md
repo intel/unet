@@ -53,7 +53,7 @@ This has been tested with [TensorFlow 2.10] on Ubuntu 22.04 Linux.
 
 4. Enable the new environment. Command: 
 ```
-conda activate itex_gpu
+conda activate itex_cpu
 ```
 
 5. Install TensorFlow=2.10 Command: 
