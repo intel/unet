@@ -46,23 +46,23 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
 ```
-conda create -n itex_gpu python=3.9
+conda create -n itex_cpu python=3.10
 ```
 
-This has been tested with [TensorFlow 2.11] on Ubuntu 20.04 Linux.
+This has been tested with [TensorFlow 2.10] on Ubuntu 22.04 Linux.
 
 4. Enable the new environment. Command: 
 ```
 conda activate itex_gpu
 ```
 
-5. Install TensorFlow=2.11 Command: 
+5. Install TensorFlow=2.10 Command: 
 ```
-pip install tensorflow==2.11.0
+pip install tensorflow==2.10.0
 ```
-6. Install Intel Extension of TensorFlow for GPU.
+6. Install Intel Extension of TensorFlow for CPU.
 ```
-pip install --upgrade intel-extension-for-tensorflow[cpu]
+pip install intel-extension-for-tensorflow[cpu]==1.0
 ```
 7. Install other required packages.
 ```
