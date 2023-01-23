@@ -27,8 +27,6 @@ best model.
 import datetime
 import os
 
-import intel_extension_for_tensorflow as itex 
-
 import tensorflow as tf  # conda install -c anaconda tensorflow
 import settings   # Use the custom settings.py file for default parameters
 
@@ -96,7 +94,7 @@ test_oneDNN()
 """
 For best CPU speed set the number of intra and inter threads
 to take advantage of multi-core systems.
-See https://github.com/intel/mkl-dnn
+See https://github.com/oneapi-src/oneDNN
 """
 
 
