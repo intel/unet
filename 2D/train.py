@@ -109,7 +109,7 @@ if args.OMP:
     os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
     os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
 
-else 
+else: 
     os.environ["INTRA_THREADS"] = str(args.num_threads)
     os.environ["INTER_THREADS"] = str(args.num_inter_threads)
 
