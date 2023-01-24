@@ -65,7 +65,7 @@ parser.add_argument("--seed", default=settings.SEED,
                     type=int, help="Random seed")
 parser.add_argument("--split", type=float, default=settings.TRAIN_TEST_SPLIT,
                     help="Train/testing split for the data")
-parser.add_argument("--BF16", help="auto mixed precision",
+parser.add_argument("--AMP", help="auto mixed precision",
                     action="store_true")
 parser.add_argument("--OMP", help="openMP thread settings",
                     action="store_true")   
@@ -144,7 +144,7 @@ def set_itex_amp(amp_target, device):
 
     print("Set itex for AMP (auto_mixed_precision, {}_FP32) with backend {}".format(amp_target, backend))
 
-if args.BF16:
+if args.AMP:
   print("set itex amp")
   set_itex_amp( amp_target="BF16", device="cpu" )
 
