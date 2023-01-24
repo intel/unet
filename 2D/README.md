@@ -38,7 +38,7 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
 
 
-## Steps to Train the model on Intel CPU with Intel Extension of TensorFlow
+## Steps to Train and Infer the model on Intel CPU with Intel Extension of TensorFlow(IPEX[CPU])
 
 
 
@@ -69,14 +69,14 @@ pip install intel-extension-for-tensorflow[cpu]==1.0
 pip install tqdm psutil jupyter matplotlib nibabel
 ```
 
-8. Run the command for training the model
+8. Run the command for training the model with TF+ITEX[CPU]
 ```
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
 To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
 
-8. Run the following command for model inference with ITEX
+8. Run the following command for model inference with TF+ITEX[CPU]
 ```
 python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 ```
