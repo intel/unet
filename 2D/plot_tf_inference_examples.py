@@ -146,7 +146,6 @@ def set_itex_amp(amp_target, device):
 
 if args.BF16:
   print("set itex amp")
-  args.inference_filename = "2d_unet_decathlon_bf16"
   set_itex_amp( amp_target="BF16", device="cpu" )
 
 
@@ -214,7 +213,18 @@ def plot_results(ds, batch_num, png_directory):
         
 if __name__ == "__main__":
 
-    model_filename = os.path.join(args.output_path, args.inference_filename)
+    model_filename_fp32 = os.path.join(args.output_path, "2d_unet_decathlon")
+    model_filename_bf16 = os.path.join(args.output_path, "2d_unet_decathlon_bf16")
+
+    if(os.path.exists(model_filename_fp32)):
+        model_filename= model_filename_fp32
+    elif(os.path.exists(model_filename_bf16)):
+        model_filename= model_filename_bf16
+    else:
+        print("Please train the model first: exiting")
+        exit()
+
+
 
     trainFiles, validateFiles, testFiles = get_decathlon_filelist(data_path=args.data_path, seed=args.seed, split=args.split)
 
