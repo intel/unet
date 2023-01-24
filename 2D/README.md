@@ -36,6 +36,7 @@ pip install nibabel
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset.
+
 ![brats_train](images/run_brats_usage.png)
 
 ## Steps to Train and Infer the model on Intel CPU with Intel Extension of TensorFlow(IPEX[CPU])
