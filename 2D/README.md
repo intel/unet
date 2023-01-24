@@ -69,13 +69,19 @@ pip install intel-extension-for-tensorflow[cpu]==1.0
 pip install tqdm psutil jupyter matplotlib nibabel
 ```
 
-6. Run the command
+8. Run the command for training the model
 ```
-python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --BF16
+python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 ```
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
-To train the model in Auto mixed precision(AMP) BF16, we can add BF16 argument if CPU supports BF16 operations i.e. Saphhire Rapids.
+To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
 
+8. Run the following command for model inference with ITEX
+```
+python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
+```
+where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
+To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
 
 
 
