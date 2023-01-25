@@ -77,7 +77,7 @@ python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
 To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
 
-8. Run the following command for model inference with TF+ITEX[CPU]
+9. Run the following command for model inference with TF+ITEX[CPU]
 ```
 python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 ```
