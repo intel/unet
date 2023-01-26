@@ -70,7 +70,7 @@ pip install intel-extension-for-tensorflow[cpu]==1.0
 pip install tqdm psutil jupyter matplotlib nibabel
 ```
 
-8. Run the command for training the model with TF+ITEX[CPU]
+8. Run the following command for training the model with TF+ITEX[CPU]
 ```
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
 ```
