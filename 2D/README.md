@@ -12,26 +12,32 @@ Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical
 
 2. Untar the "Task01_BrainTumour.tar" file (e.g. `tar -xvf Task01_BrainTumour.tar`)
 
-## Steps to train the model 
+## Steps to train and infer the model with TensorFlow 
 
-1. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
+
+3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with python 3.10. Run the command: 
 ```
-conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil jupyter matplotlib
+conda create -n decathlon python=3.10
 ```
 
-This has been tested with [TensorFlow 2.2](https://anaconda.org/anaconda/tensorflow-mkl) on Ubuntu 18.04 Linux.
+This has been tested with [TensorFlow 2.10] on Ubuntu 22.04 Linux.
 
-2. Enable the new environment. Command: 
+4. Enable the new environment. Command: 
 ```
 conda activate decathlon
 ```
 
-3. Install the package [nibabel](http://nipy.org/nibabel/). Command: 
+5. Install TensorFlow=2.10 Command: 
 ```
-pip install nibabel
+pip install tensorflow==2.10.0
 ```
 
-4. Run the command 
+7. Install other required packages.
+```
+pip install tqdm psutil jupyter matplotlib nibabel
+```
+
+8. Run the command 
 ```
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
@@ -39,13 +45,18 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 ![brats_train](images/run_brats_usage.png)
 
-## Steps to Train and Infer the model on Intel CPU with Intel Extension of TensorFlow(IPEX[CPU])
+9. Run the following command for model inference
+```
+python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY 
+```
+
+## Steps to Train and Infer the model on Intel CPU with Intel Extension of TensorFlow(IPEX[CPU]) for optimization using OpenMP and Auto-Mixed Precision(AMP) 
 
 
 
 
 
-3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
+3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with python 3.10, Run the command: 
 ```
 conda create -n itex_cpu python=3.10
 ```
