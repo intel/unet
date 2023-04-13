@@ -91,6 +91,12 @@ parser.add_argument("--output_pngs",
 parser.add_argument("--input_filename",
                     help="Name of saved TensorFlow model directory",
                     default=os.path.join(settings.OUT_PATH,settings.INFERENCE_FILENAME))
+parser.add_argument("--AMP", help="auto mixed precision",
+                    action="store_true")
+parser.add_argument("--OMP", help="openMP thread settings",
+                    action="store_true")
+
+
 
 args = parser.parse_args()
 

@@ -17,6 +17,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
+import intel_extension_for_tensorflow as itex
 import tensorflow as tf   # TensorFlow 2
 from tensorflow import keras as K
 
@@ -27,28 +28,50 @@ from argparser import args
 from dataloader import DatasetGenerator
 from model import dice_coef, soft_dice_coef, dice_loss, unet_3d
 
-
-def test_intel_tensorflow():
-    """
-    Check if Intel version of TensorFlow is installed
-    """
-    import tensorflow as tf
-
-    print("We are using Tensorflow version {}".format(tf.__version__))
-
-    major_version = int(tf.__version__.split(".")[0])
-    if major_version >= 2:
-        from tensorflow.python import _pywrap_util_port
-        print("Intel-optimizations (DNNL) enabled:",
-              _pywrap_util_port.IsMklEnabled())
+def set_itex_amp(device, amp_target):
+    # set configure for auto mixed precision.
+    auto_mixed_precision_options = itex.AutoMixedPrecisionOptions()
+    if amp_target=="BF16":
+        auto_mixed_precision_options.data_type = itex.BFLOAT16
     else:
-        print("Intel-optimizations (DNNL) enabled:",
-              tf.pywrap_tensorflow.IsMklEnabled())
+        auto_mixed_precision_options.data_type = itex.FLOAT16
+
+    graph_options = itex.GraphOptions(auto_mixed_precision_options=auto_mixed_precision_options)
+    # enable auto mixed precision.
+    graph_options.auto_mixed_precision = itex.ON
+    
+    config = itex.ConfigProto(graph_options=graph_options)
+    # set GPU backend.
+
+    backend = device
+    itex.set_backend(backend, config)
+
+    print("Set itex for AMP (auto_mixed_precision, {}_FP32) with backend {}".format(amp_target, backend))
+    
+
+
 
 print(args)
-test_intel_tensorflow()  # Prints if Intel-optimized TensorFlow is used.
 
-"""
+if args.BF16:
+  print("set itex amp")
+  set_itex_amp(args.device_type,"BF16")
+
+if args.OMP:
+  # If hyperthreading is enabled, then use
+  os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+  
+  # If hyperthreading is NOT enabled, then use
+  #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+  
+  os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+  os.environ["OMP_NUM_THREADS"] = str(args.num_threads)
+  os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
+
+os.environ["INTRA_THREADS"] = str(args.num_threads)
+os.environ["INTER_THREADS"] = str(args.num_inter_threads)
+    
+    
 crop_dim = Dimensions to crop the input tensor
 """
 crop_dim = (args.tile_height, args.tile_width,

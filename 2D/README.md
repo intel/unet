@@ -7,29 +7,37 @@ Please see our blog on the [IntelAI website](https://www.intel.ai/intel-neural-c
 
 Trains a 2D U-Net on the brain tumor segmentation (BraTS) subset of the [Medical Segmentation Decathlon](http://medicaldecathlon.com/) dataset.
 
-Steps:
+## Download Dataset:
 1. Go to the [Medical Segmentation Decathlon](http://medicaldecathlon.com) website and download the [BraTS subset](https://drive.google.com/file/d/1A2IU8Sgea1h3fYLpYtFb2v7NYdMjvEhU/view?usp=sharing). The dataset has the [Creative Commons Attribution-ShareAlike 4.0 International license](https://creativecommons.org/licenses/by-sa/4.0/).
 
 2. Untar the "Task01_BrainTumour.tar" file (e.g. `tar -xvf Task01_BrainTumour.tar`)
 
-3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with [TensorFlow* with Intel&reg; DNNL](https://software.intel.com/en-us/articles/intel-optimization-for-tensorflow-installation-guide?page=1). Run the command: 
+## Steps to train and infer the model with TensorFlow 
+
+
+3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with python 3.10. Run the command: 
 ```
-conda create -c anaconda -n decathlon pip python=3.7 tensorflow tqdm psutil jupyter matplotlib
+conda create -n decathlon python=3.10
 ```
 
-This has been tested with [TensorFlow 2.2](https://anaconda.org/anaconda/tensorflow-mkl) on Ubuntu 18.04 Linux.
+This has been tested with [TensorFlow 2.10] on Ubuntu 22.04 Linux.
 
 4. Enable the new environment. Command: 
 ```
 conda activate decathlon
 ```
 
-5. Install the package [nibabel](http://nipy.org/nibabel/). Command: 
+5. Install TensorFlow=2.10 Command: 
 ```
-pip install nibabel
+pip install tensorflow==2.10.0
 ```
 
-6. Run the command 
+7. Install other required packages.
+```
+pip install tqdm psutil jupyter matplotlib nibabel
+```
+
+8. Run the command 
 ```
 python train.py --data_path $DECATHLON_ROOT_DIRECTORY
 ```
@@ -37,7 +45,62 @@ where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the De
 
 ![brats_train](images/run_brats_usage.png)
 
-7. [OpenVINO&trade;](https://www.youtube.com/watch?v=kY9nZbX1DWM) - At the end of `train.py` you should see instructions on how to [convert the model](https://docs.openvinotoolkit.org/latest/openvino_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html) for use with the [Intel&reg; Distribution of the OpenVINO&trade; toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html). Once you have OpenVINO&trade; installed, you can run a command like the one below to create an OpenVINO&trade; intermediate representation (IR) of the TensorFlow model. If you are using the [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html), simply replace the `FP32` with `FP16` in the command below:
+9. Run the following command for model inference
+```
+python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY 
+```
+
+## Steps to Train and Infer the model on Intel CPU with Intel Extension of TensorFlow(IPEX[CPU]) for optimization using OpenMP and Auto-Mixed Precision(AMP) 
+
+
+
+
+
+3. We use [conda virtual environments](https://www.anaconda.com/distribution/#download-section) to run Python scripts. Once you download and install conda, create a new conda environment with python 3.10, Run the command: 
+```
+conda create -n itex_cpu python=3.10
+```
+
+This has been tested with [TensorFlow 2.10] on Ubuntu 22.04 Linux.
+
+4. Enable the new environment. Command: 
+```
+conda activate itex_cpu
+```
+
+5. Install TensorFlow=2.10 Command: 
+```
+pip install tensorflow==2.10.0
+```
+6. Install Intel Extension of TensorFlow for CPU.
+```
+pip install intel-extension-for-tensorflow[cpu]==1.0
+```
+7. Install other required packages.
+```
+pip install tqdm psutil jupyter matplotlib nibabel
+```
+
+8. Run the following command for training the model with TF+ITEX[CPU]
+```
+python train.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
+```
+where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
+To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
+
+9. Run the following command for model inference with TF+ITEX[CPU]
+```
+python plot_tf_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY --OMP --AMP
+```
+where $DECATHLON_ROOT_DIRECTORY is the root directory where you un-tarred the Decathlon dataset. OMP arguement will use OpenMP settings available in ITEX.
+To train the model in Auto mixed precision(AMP) BF16, we can add AMP argument if CPU supports BF16 operations i.e. Intel Xeon 4th Gen CPU codenamed as Saphhire Rapids(SPR).
+
+
+
+
+## Inference with OpenVINO
+
+1. [OpenVINO&trade;](https://www.youtube.com/watch?v=kY9nZbX1DWM) - At the end of `train.py` you should see instructions on how to [convert the model](https://docs.openvinotoolkit.org/latest/openvino_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html) for use with the [Intel&reg; Distribution of the OpenVINO&trade; toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html). Once you have OpenVINO&trade; installed, you can run a command like the one below to create an OpenVINO&trade; intermediate representation (IR) of the TensorFlow model. If you are using the [Intel&reg; Neural Compute Stick&trade; (NCS2)](https://ark.intel.com/content/www/us/en/ark/products/140109/intel-neural-compute-stick-2.html), simply replace the `FP32` with `FP16` in the command below:
 
 ```
 source /opt/intel/openvino_2021/bin/setupvars.sh
@@ -51,7 +114,7 @@ python $INTEL_OPENVINO_DIR/deployment_tools/model_optimizer/mo_tf.py \
 
 This has been tested with the [Intel&reg; Distribution of the OpenVINO&trade; toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html) 2021.2.
 
-8. Once you have the OpenVINO&trade; IR model, you can run the command:
+2. Once you have the OpenVINO&trade; IR model, you can run the command:
 
 ```
 python plot_openvino_inference_examples.py --data_path $DECATHLON_ROOT_DIRECTORY --device CPU

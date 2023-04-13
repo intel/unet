@@ -82,5 +82,22 @@ parser.add_argument("--use_upsampling",
 parser.add_argument("--random_seed",
                     default=settings.RANDOM_SEED,
                     help="Random seed for determinism")
+parser.add_argument("--BF16", help="auto mixed precision",
+                    action="store_true")
+parser.add_argument("--device_type", type=str,
+                    default=settings.device,
+                    help="CPU|GPU")
+parser.add_argument("--num_threads", type=int,
+                    default=settings.NUM_INTRA_THREADS,
+                    help="the number of threads")
+parser.add_argument("--num_inter_threads", type=int,
+                    default=settings.NUM_INTER_THREADS,
+                    help="the number of intraop threads")
+parser.add_argument("--blocktime", type=int,
+                    default=settings.BLOCKTIME,
+                    help="blocktime")
+parser.add_argument("--OMP", help="openMP thread settings",
+                    action="store_true")
+
 
 args = parser.parse_args()

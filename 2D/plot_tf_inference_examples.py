@@ -22,7 +22,7 @@
 Takes a trained model and performs inference on a few validation examples.
 """
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
+#os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Get rid of the AVX, SSE warnings
 
 import numpy as np
 import tensorflow as tf
@@ -52,7 +52,9 @@ parser.add_argument("--use_pconv",help="use partial convolution based padding",
                     default=settings.USE_PCONV)
 parser.add_argument("--output_pngs", default="inference_examples",
                     help="the directory for the output prediction pngs")
-
+parser.add_argument("--blocktime", type=int,
+                    default=settings.BLOCKTIME,
+                    help="blocktime")
 parser.add_argument("--intraop_threads", default=settings.NUM_INTRA_THREADS,
                     type=int, help="Number of intra-op-parallelism threads")
 parser.add_argument("--interop_threads", default=settings.NUM_INTER_THREADS,
@@ -63,25 +65,90 @@ parser.add_argument("--seed", default=settings.SEED,
                     type=int, help="Random seed")
 parser.add_argument("--split", type=float, default=settings.TRAIN_TEST_SPLIT,
                     help="Train/testing split for the data")
+parser.add_argument("--AMP", help="auto mixed precision",
+                    action="store_true")
+parser.add_argument("--OMP", help="openMP thread settings",
+                    action="store_true")   
 
 args = parser.parse_args()
 
-def test_intel_tensorflow():
-    """
-    Check if Intel version of TensorFlow is installed
-    """
-    import tensorflow as tf
-    
-    print("We are using Tensorflow version {}".format(tf.__version__))
-           
-    major_version = int(tf.__version__.split(".")[0])
-    if major_version >= 2:
-       from tensorflow.python import _pywrap_util_port
-       print("Intel-optimizations (DNNL) enabled:", _pywrap_util_port.IsMklEnabled())
-    else:
-       print("Intel-optimizations (DNNL) enabled:", tf.pywrap_tensorflow.IsMklEnabled()) 
 
-test_intel_tensorflow()
+def test_oneDNN():
+    import tensorflow as tf
+
+    import os
+
+    def get_mkl_enabled_flag():
+
+        mkl_enabled = False
+        major_version = int(tf.__version__.split(".")[0])
+        minor_version = int(tf.__version__.split(".")[1])
+        if major_version >= 2:
+            if minor_version < 5:
+                from tensorflow.python import _pywrap_util_port
+            elif minor_version >= 9:
+
+                from tensorflow.python.util import _pywrap_util_port
+                onednn_enabled = int(os.environ.get('TF_ENABLE_ONEDNN_OPTS', '1'))
+
+            else:
+                from tensorflow.python.util import _pywrap_util_port
+                onednn_enabled = int(os.environ.get('TF_ENABLE_ONEDNN_OPTS', '0'))
+            mkl_enabled = _pywrap_util_port.IsMklEnabled() or (onednn_enabled == 1)
+        else:
+            mkl_enabled = tf.pywrap_tensorflow.IsMklEnabled()
+        return mkl_enabled
+
+    print ("We are using Tensorflow version", tf.__version__)
+    print("oneDNN enabled :", get_mkl_enabled_flag())
+test_oneDNN()
+
+
+if args.OMP:
+    # If hyperthreading is enabled, then use
+    os.environ["KMP_AFFINITY"] = "granularity=thread,compact,1,0"
+
+    # If hyperthreading is NOT enabled, then use
+    #os.environ["KMP_AFFINITY"] = "granularity=thread,compact"
+
+    os.environ["KMP_BLOCKTIME"] = str(args.blocktime)
+    os.environ["OMP_NUM_THREADS"] = str(args.intraop_threads)
+    os.environ["KMP_SETTINGS"] = "0"  # Show the settings at runtime
+
+else:
+    os.environ["INTRA_THREADS"] = str(args.intraop_threads)
+    os.environ["INTER_THREADS"] = str(args.interop_threads)
+
+
+
+def set_itex_amp(amp_target, device):
+    # set configure for auto mixed precision.
+    import intel_extension_for_tensorflow as itex
+    print("intel_extension_for_tensorflow {}".format(itex.__version__))
+
+    auto_mixed_precision_options = itex.AutoMixedPrecisionOptions()
+    if amp_target=="BF16":
+        auto_mixed_precision_options.data_type = itex.BFLOAT16
+    else:
+        auto_mixed_precision_options.data_type = itex.FLOAT16
+
+    graph_options = itex.GraphOptions(auto_mixed_precision_options=auto_mixed_precision_options)
+    # enable auto mixed precision.
+    graph_options.auto_mixed_precision = itex.ON
+
+    config = itex.ConfigProto(graph_options=graph_options)
+    # set GPU backend.
+    print(config)
+    backend = device
+    itex.set_backend(backend, config)
+
+    print("Set itex for AMP (auto_mixed_precision, {}_FP32) with backend {}".format(amp_target, backend))
+
+if args.AMP:
+  print("set itex amp")
+  set_itex_amp( amp_target="BF16", device="cpu" )
+
+
 
 
 def calc_dice(target, prediction, smooth=0.0001):
@@ -146,7 +213,18 @@ def plot_results(ds, batch_num, png_directory):
         
 if __name__ == "__main__":
 
-    model_filename = os.path.join(args.output_path, args.inference_filename)
+    model_filename_fp32 = os.path.join(args.output_path, "2d_unet_decathlon")
+    model_filename_bf16 = os.path.join(args.output_path, "2d_unet_decathlon_bf16")
+
+    if(os.path.exists(model_filename_fp32)):
+        model_filename= model_filename_fp32
+    elif(os.path.exists(model_filename_bf16)):
+        model_filename= model_filename_bf16
+    else:
+        print("Please train the model first: exiting")
+        exit()
+
+
 
     trainFiles, validateFiles, testFiles = get_decathlon_filelist(data_path=args.data_path, seed=args.seed, split=args.split)
 
